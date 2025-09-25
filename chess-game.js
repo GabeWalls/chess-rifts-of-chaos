@@ -66,6 +66,11 @@ class ChessGame {
                     square.classList.add('rift');
                 }
                 
+                // Add frozen class if piece is frozen
+                if (this.frozenPieces.has(`${row}-${col}`)) {
+                    square.classList.add('frozen-piece');
+                }
+                
                 // Add piece if present
                 const piece = this.board[row][col];
                 if (piece) {
@@ -450,6 +455,15 @@ class ChessGame {
         const piece = this.board[fromRow][fromCol];
         const capturedPiece = this.board[toRow][toCol];
         
+        // Check for king capture first
+        if (capturedPiece && capturedPiece.type === 'king') {
+            this.capturedPieces[capturedPiece.color].push(capturedPiece);
+            this.updateCapturedPieces();
+            this.renderBoard();
+            this.endGame(this.currentPlayer);
+            return;
+        }
+        
         // Handle capture
         if (capturedPiece) {
             this.capturedPieces[capturedPiece.color].push(capturedPiece);
@@ -461,14 +475,17 @@ class ChessGame {
         this.board[fromRow][fromCol] = null;
         piece.hasMoved = true;
         
+        // Store the moving piece and destination for rift effects
+        this.lastMovedPiece = { piece, fromRow, fromCol, toRow, toCol };
+        
         // Check for rift activation
         if (this.isRift(toRow, toCol) && !this.riftActivatedThisTurn) {
             this.activateRift(toRow, toCol);
             this.riftActivatedThisTurn = true;
+        } else {
+            this.renderBoard();
+            this.switchPlayer();
         }
-        
-        this.renderBoard();
-        this.switchPlayer();
     }
 
     activateRift(row, col) {
@@ -532,26 +549,345 @@ class ChessGame {
     }
 
     applyRiftEffect(effect, roll) {
-        // This is a simplified implementation - in a full game, each effect would have detailed logic
-        if (effect.type === 'field') {
-            // Add or remove field effect
-            const effectIndex = this.activeFieldEffects.indexOf(effect.name.toLowerCase().replace(/[^a-z]/g, '_'));
-            if (effectIndex > -1) {
-                this.activeFieldEffects.splice(effectIndex, 1);
-            } else {
-                this.activeFieldEffects.push(effect.name.toLowerCase().replace(/[^a-z]/g, '_'));
+        const riftRow = this.lastMovedPiece.toRow;
+        const riftCol = this.lastMovedPiece.toCol;
+        const activatingPiece = this.lastMovedPiece.piece;
+        
+        // Store current game state for potential reversals
+        const previousBoard = JSON.parse(JSON.stringify(this.board));
+        const previousCaptured = JSON.parse(JSON.stringify(this.capturedPieces));
+        
+        try {
+            switch (roll) {
+                case 1: // Necromancer's Trap
+                    this.applyNecromancerTrap(riftRow, riftCol, activatingPiece);
+                    break;
+                case 2: // Archer's Trick Shot
+                    this.applyArcherTrickShot(riftRow, riftCol);
+                    break;
+                case 3: // Sandworm
+                    this.applySandworm(riftRow, riftCol);
+                    break;
+                case 4: // Honorable Sacrifice
+                    this.applyHonorableSacrifice(riftRow, riftCol, activatingPiece);
+                    break;
+                case 5: // Demotion
+                    this.applyDemotion(riftRow, riftCol, activatingPiece);
+                    break;
+                case 6: // Foot Soldier's Gambit
+                    this.applyFootSoldierGambit(activatingPiece, riftRow, riftCol);
+                    break;
+                case 7: // Famine
+                    this.applyFieldEffect('famine');
+                    break;
+                case 8: // Holiday's Rejuvenation
+                    this.applyFieldEffect('holiday_rejuvenation');
+                    break;
+                case 9: // Sandstorm
+                    this.applyFieldEffect('sandstorm');
+                    break;
+                case 10: // Dragon's Breath
+                    this.applyDragonBreath(riftRow, riftCol);
+                    break;
+                case 11: // Jack Frost's Mischief
+                    this.applyFieldEffect('jack_frost_mischief');
+                    break;
+                case 12: // Portal in the Rift
+                    this.applyPortalInRift(riftRow, riftCol, activatingPiece);
+                    break;
+                case 13: // Catapult Roulette
+                    this.applyCatapultRoulette();
+                    break;
+                case 14: // Conqueror's Tale
+                    this.applyConquerorTale(activatingPiece.color);
+                    break;
+                case 15: // Medusa's Gaze
+                    this.applyMedusaGaze(riftRow, riftCol);
+                    break;
+                case 16: // Time Distortion/Stasis
+                    this.applyTimeDistortion(riftRow, riftCol);
+                    break;
+                case 17: // Crossroad Demon's Deal
+                    this.applyCrossroadDemonDeal(riftRow, riftCol, activatingPiece);
+                    break;
+                case 18: // Fairy Fountain
+                    this.applyFairyFountain(riftRow, riftCol, activatingPiece);
+                    break;
+                case 19: // Eerie Fog's Turmoil
+                    this.applyFieldEffect('eerie_fog_turmoil');
+                    break;
+                case 20: // Spring of Revival
+                    this.applySpringOfRevival(activatingPiece.color);
+                    break;
+                case 21: // Blank
+                    this.applyFieldEffect('blank');
+                    break;
+                default:
+                    this.applyFieldEffect('blank');
+                    break;
             }
-            this.updateFieldEffects();
+        } catch (error) {
+            console.error('Error applying rift effect:', error);
+            // Revert game state if effect fails
+            this.board = previousBoard;
+            this.capturedPieces = previousCaptured;
         }
         
-        // For now, just close the modal after a short delay
+        this.renderBoard();
+        this.updateCapturedPieces();
+        this.updateFieldEffects();
+        
+        // Close modal after a delay
         setTimeout(() => {
             this.closeModal();
-        }, 2000);
+            this.switchPlayer();
+        }, 3000);
     }
 
     closeModal() {
         document.getElementById('rift-effects-modal').style.display = 'none';
+    }
+
+    // Individual Rift Effect Implementations
+    applyNecromancerTrap(riftRow, riftCol, activatingPiece) {
+        // Remove activating piece
+        this.board[riftRow][riftCol] = null;
+        
+        // Place opponent's captured piece if available
+        const opponentColor = activatingPiece.color === 'white' ? 'black' : 'white';
+        if (this.capturedPieces[opponentColor].length > 0) {
+            const pieceToResurrect = this.capturedPieces[opponentColor].pop();
+            this.board[riftRow][riftCol] = pieceToResurrect;
+            this.updateCapturedPieces();
+        }
+    }
+
+    applyArcherTrickShot(riftRow, riftCol) {
+        // This would need UI to select direction - for now, remove pieces in all 8 directions
+        const directions = [[-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [1, 0], [1, 1]];
+        
+        directions.forEach(([rowOffset, colOffset]) => {
+            for (let i = 1; i <= 3; i++) {
+                const targetRow = riftRow + (rowOffset * i);
+                const targetCol = riftCol + (colOffset * i);
+                
+                if (this.isInBounds(targetRow, targetCol) && this.board[targetRow][targetCol]) {
+                    const piece = this.board[targetRow][targetCol];
+                    if (piece.color !== this.currentPlayer) {
+                        this.capturedPieces[piece.color].push(piece);
+                        this.board[targetRow][targetCol] = null;
+                        break; // Only remove first piece in direction
+                    }
+                }
+            }
+        });
+    }
+
+    applySandworm(riftRow, riftCol) {
+        // Remove all pieces within 1 square of the rift
+        for (let rowOffset = -1; rowOffset <= 1; rowOffset++) {
+            for (let colOffset = -1; colOffset <= 1; colOffset++) {
+                const targetRow = riftRow + rowOffset;
+                const targetCol = riftCol + colOffset;
+                
+                if (this.isInBounds(targetRow, targetCol) && this.board[targetRow][targetCol]) {
+                    const piece = this.board[targetRow][targetCol];
+                    this.capturedPieces[piece.color].push(piece);
+                    this.board[targetRow][targetCol] = null;
+                }
+            }
+        }
+    }
+
+    applyHonorableSacrifice(riftRow, riftCol, activatingPiece) {
+        // Remove activating piece
+        this.board[riftRow][riftCol] = null;
+        this.capturedPieces[activatingPiece.color].push(activatingPiece);
+        
+        // Remove any enemy piece within 1 square
+        const directions = [[-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [1, 0], [1, 1]];
+        for (const [rowOffset, colOffset] of directions) {
+            const targetRow = riftRow + rowOffset;
+            const targetCol = riftCol + colOffset;
+            
+            if (this.isInBounds(targetRow, targetCol) && this.board[targetRow][targetCol]) {
+                const piece = this.board[targetRow][targetCol];
+                if (piece.color !== this.currentPlayer) {
+                    this.capturedPieces[piece.color].push(piece);
+                    this.board[targetRow][targetCol] = null;
+                    break; // Only remove one piece
+                }
+            }
+        }
+    }
+
+    applyDemotion(riftRow, riftCol, activatingPiece) {
+        // Remove activating piece
+        this.board[riftRow][riftCol] = null;
+        this.capturedPieces[activatingPiece.color].push(activatingPiece);
+        
+        // Place captured pawn if available and piece was not a pawn
+        if (['rook', 'knight', 'bishop', 'queen'].includes(activatingPiece.type)) {
+            const capturedPawns = this.capturedPieces[activatingPiece.color].filter(p => p.type === 'pawn');
+            if (capturedPawns.length > 0) {
+                const pawnIndex = this.capturedPieces[activatingPiece.color].findIndex(p => p.type === 'pawn');
+                const pawn = this.capturedPieces[activatingPiece.color].splice(pawnIndex, 1)[0];
+                this.board[riftRow][riftCol] = pawn;
+            }
+        }
+    }
+
+    applyFootSoldierGambit(activatingPiece, riftRow, riftCol) {
+        // Mark piece for extra move
+        this.extraMovePiece = { piece: activatingPiece, row: riftRow, col: riftCol };
+        // This would require UI interaction to select the second move
+    }
+
+    applyDragonBreath(riftRow, riftCol) {
+        // Remove pieces in all 4 cardinal directions up to 3 squares
+        const directions = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+        
+        directions.forEach(([rowOffset, colOffset]) => {
+            for (let i = 1; i <= 3; i++) {
+                const targetRow = riftRow + (rowOffset * i);
+                const targetCol = riftCol + (colOffset * i);
+                
+                if (this.isInBounds(targetRow, targetCol) && this.board[targetRow][targetCol]) {
+                    const piece = this.board[targetRow][targetCol];
+                    if (piece.color !== this.currentPlayer) {
+                        this.capturedPieces[piece.color].push(piece);
+                        this.board[targetRow][targetCol] = null;
+                        break; // Only remove first piece in direction
+                    }
+                }
+            }
+        });
+    }
+
+    applyPortalInRift(riftRow, riftCol, activatingPiece) {
+        // Find another rift
+        const otherRifts = this.rifts.filter(rift => !(rift.row === riftRow && rift.col === riftCol));
+        if (otherRifts.length > 0) {
+            const targetRift = otherRifts[0];
+            
+            // If target rift is occupied, remove the piece
+            if (this.board[targetRift.row][targetRift.col]) {
+                const piece = this.board[targetRift.row][targetRift.col];
+                this.capturedPieces[piece.color].push(piece);
+            }
+            
+            // Move piece to target rift
+            this.board[targetRift.row][targetRift.col] = activatingPiece;
+            this.board[riftRow][riftCol] = null;
+        }
+    }
+
+    applyCatapultRoulette() {
+        // Roll 2D8 for random position
+        const col = Math.floor(Math.random() * 8);
+        const row = Math.floor(Math.random() * 8);
+        
+        if (this.board[row][col]) {
+            const piece = this.board[row][col];
+            this.capturedPieces[piece.color].push(piece);
+            this.board[row][col] = null;
+        }
+    }
+
+    applyConquerorTale(playerColor) {
+        // Give king double move ability
+        this.kingAbilities[playerColor] = { ...this.kingAbilities[playerColor], doubleMove: true };
+    }
+
+    applyMedusaGaze(riftRow, riftCol) {
+        // Freeze the piece on the rift
+        this.frozenPieces.add(`${riftRow}-${riftCol}`);
+    }
+
+    applyTimeDistortion(riftRow, riftCol) {
+        // Roll for radius
+        const radiusRoll = Math.floor(Math.random() * 20) + 1;
+        let radius = 1;
+        if (radiusRoll >= 9 && radiusRoll <= 14) radius = 2;
+        else if (radiusRoll >= 15 && radiusRoll <= 18) radius = 3;
+        else if (radiusRoll >= 19) radius = 4;
+        
+        // Freeze all pieces within radius
+        for (let rowOffset = -radius; rowOffset <= radius; rowOffset++) {
+            for (let colOffset = -radius; colOffset <= radius; colOffset++) {
+                const targetRow = riftRow + rowOffset;
+                const targetCol = riftCol + colOffset;
+                
+                if (this.isInBounds(targetRow, targetCol) && this.board[targetRow][targetCol]) {
+                    this.frozenPieces.add(`${targetRow}-${targetCol}`);
+                }
+            }
+        }
+    }
+
+    applyCrossroadDemonDeal(riftRow, riftCol, activatingPiece) {
+        // Remove activating piece
+        this.board[riftRow][riftCol] = null;
+        this.capturedPieces[activatingPiece.color].push(activatingPiece);
+        
+        // Roll D20 for additional pieces to remove
+        const additionalRoll = Math.floor(Math.random() * 20) + 1;
+        const piecesToRemove = additionalRoll % 2 === 0 ? 2 : 1;
+        
+        // Remove additional pieces (simplified - just remove random pieces)
+        let removed = 0;
+        for (let row = 0; row < 8 && removed < piecesToRemove; row++) {
+            for (let col = 0; col < 8 && removed < piecesToRemove; col++) {
+                if (this.board[row][col] && this.board[row][col].color === this.currentPlayer && 
+                    this.board[row][col].type !== 'king') {
+                    this.capturedPieces[this.currentPlayer].push(this.board[row][col]);
+                    this.board[row][col] = null;
+                    removed++;
+                }
+            }
+        }
+        
+        // Place opponent's captured piece
+        const opponentColor = this.currentPlayer === 'white' ? 'black' : 'white';
+        const nonPawnPieces = this.capturedPieces[opponentColor].filter(p => p.type !== 'pawn');
+        if (nonPawnPieces.length > 0) {
+            const pieceIndex = this.capturedPieces[opponentColor].findIndex(p => p.type !== 'pawn');
+            const piece = this.capturedPieces[opponentColor].splice(pieceIndex, 1)[0];
+            this.board[riftRow][riftCol] = piece;
+        }
+    }
+
+    applyFairyFountain(riftRow, riftCol, activatingPiece) {
+        // Only affects pawns - give them enhanced movement
+        if (activatingPiece.type === 'pawn') {
+            activatingPiece.fairyFountain = true;
+        }
+    }
+
+    applySpringOfRevival(playerColor) {
+        // Place captured piece on starting square
+        if (this.capturedPieces[playerColor].length > 0) {
+            const piece = this.capturedPieces[playerColor].pop();
+            const startRow = playerColor === 'white' ? 7 : 0;
+            
+            // Find an empty starting square
+            for (let col = 0; col < 8; col++) {
+                if (!this.board[startRow][col]) {
+                    this.board[startRow][col] = piece;
+                    break;
+                }
+            }
+        }
+    }
+
+    applyFieldEffect(effectName) {
+        // Toggle field effect
+        const effectIndex = this.activeFieldEffects.indexOf(effectName);
+        if (effectIndex > -1) {
+            this.activeFieldEffects.splice(effectIndex, 1);
+        } else {
+            this.activeFieldEffects.push(effectName);
+        }
     }
 
     switchPlayer() {
