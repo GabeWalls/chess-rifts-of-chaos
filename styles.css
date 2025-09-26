@@ -145,9 +145,17 @@ body {
 
 /* Rift styling */
 .chess-square.rift {
-    background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4);
+    background: linear-gradient(45deg, #667eea, #764ba2, #4facfe, #00f2fe);
     background-size: 400% 400%;
-    animation: rift-glow 3s ease-in-out infinite;
+    animation: rift-glow 6s ease-in-out infinite;
+    position: relative;
+}
+
+/* Keep rifts blue in dark mode - ensure they show the background */
+body.dark-mode .chess-square.rift {
+    background: linear-gradient(45deg, #667eea, #764ba2, #4facfe, #00f2fe) !important;
+    background-size: 400% 400% !important;
+    animation: rift-glow 6s ease-in-out infinite !important;
     position: relative;
 }
 
@@ -157,6 +165,22 @@ body {
     font-size: 1.5rem;
     z-index: 10;
     text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+    animation: rift-swirl 4s linear infinite;
+}
+
+@keyframes rift-swirl {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Ensure swirl animation works in dark mode */
+body.dark-mode .chess-square.rift::before {
+    content: '🌀';
+    position: absolute;
+    font-size: 1.5rem;
+    z-index: 10;
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+    animation: rift-swirl 4s linear infinite;
 }
 
 @keyframes rift-glow {
@@ -175,33 +199,7 @@ body {
 }
 
 /* Board coordinates */
-.board-coordinates {
-    position: relative;
-    margin-top: 10px;
-}
 
-.file-labels {
-    display: grid;
-    grid-template-columns: repeat(8, 70px);
-    text-align: center;
-    font-weight: bold;
-    color: #4a5568;
-    margin-bottom: 5px;
-}
-
-.rank-labels {
-    position: absolute;
-    left: -30px;
-    top: 0;
-    display: flex;
-    flex-direction: column;
-    height: 560px;
-    justify-content: space-between;
-    font-weight: bold;
-    color: #4a5568;
-    width: 25px;
-    align-items: center;
-}
 
 /* Game controls */
 .game-controls {
@@ -417,14 +415,6 @@ body {
         font-size: 2rem;
     }
     
-    .file-labels {
-        grid-template-columns: repeat(8, 60px);
-    }
-    
-    .rank-labels {
-        height: 480px;
-        left: -30px;
-    }
 }
 
 @media (max-width: 600px) {
@@ -439,15 +429,6 @@ body {
         font-size: 1.5rem;
     }
     
-    .file-labels {
-        grid-template-columns: repeat(8, 40px);
-    }
-    
-    .rank-labels {
-        height: 320px;
-        left: -25px;
-        width: 20px;
-    }
     
     .game-header h1 {
         font-size: 2rem;
@@ -477,6 +458,499 @@ body {
 .check-indicator {
     background-color: #ff6b6b !important;
     box-shadow: inset 0 0 20px rgba(255, 107, 107, 0.8);
+}
+
+/* Game Log and Chat Styles */
+.game-log, .chat-section {
+    margin: 15px 0;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 15px;
+    backdrop-filter: blur(5px);
+}
+
+.game-log h4, .chat-section h4 {
+    color: #333;
+    margin-bottom: 10px;
+    font-size: 1rem;
+    text-shadow: none;
+}
+
+body.dark-mode .game-log h4, 
+body.dark-mode .chat-section h4 {
+    color: #ffffff;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.log-content, .chat-messages {
+    max-height: 150px;
+    overflow-y: auto;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 5px;
+    padding: 10px;
+    margin-bottom: 10px;
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+.log-content {
+    color: #2c3e50;
+}
+
+.chat-messages {
+    color: #2c3e50;
+}
+
+.log-entry, .chat-message {
+    margin-bottom: 5px;
+    padding: 2px 0;
+}
+
+.log-entry.system {
+    color: #6b46c1;
+    font-style: italic;
+}
+
+.log-entry.move {
+    color: #1e40af;
+}
+
+.log-entry.effect {
+    color: #f687b3;
+}
+
+.chat-message.own {
+    color: #68d391;
+}
+
+.chat-message.opponent {
+    color: #fbb6ce;
+}
+
+.chat-input-container {
+    display: flex;
+    gap: 5px;
+}
+
+.chat-input-container input {
+    flex: 1;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 5px;
+    background: rgba(255, 255, 255, 0.9);
+    color: #333;
+    font-size: 0.9rem;
+}
+
+.chat-input-container input:focus {
+    outline: none;
+    background: rgba(255, 255, 255, 1);
+    box-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+}
+
+.btn.small {
+    padding: 8px 12px;
+    font-size: 0.8rem;
+    min-width: auto;
+}
+
+/* Piece removal animation */
+@keyframes pieceRemoval {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.2);
+        opacity: 0.7;
+    }
+    100% {
+        transform: scale(0);
+        opacity: 0;
+    }
+}
+
+.piece-removing {
+    animation: pieceRemoval 1.5s ease-in-out forwards;
+}
+
+/* Rift effect choice buttons */
+.effect-choices {
+    margin: 15px 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+}
+
+.effect-choice {
+    padding: 10px 15px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.effect-choice:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.effect-choice.decline {
+    background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
+}
+
+.effect-choice.accept {
+    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+}
+
+/* Dark Mode Styles */
+body.dark-mode {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    color: #e2e8f0;
+}
+
+body.dark-mode .game-header {
+    background: rgba(0, 0, 0, 0.8);
+    color: #e2e8f0;
+}
+
+body.dark-mode .game-header h1 {
+    color: #f7fafc;
+}
+
+body.dark-mode .current-player, 
+body.dark-mode .game-phase {
+    background: rgba(255, 255, 255, 0.1);
+    color: #e2e8f0;
+}
+
+/* Chess board styling for dark mode */
+body.dark-mode .chess-board {
+    background: #000000 !important;
+    border: 3px solid #ffffff;
+}
+
+/* Make chess board container background black in dark mode */
+body.dark-mode .chess-board-container {
+    background: #000000;
+    padding: 30px;
+    border-radius: 20px;
+}
+
+body.dark-mode .chess-square {
+    color: #333;
+}
+
+body.dark-mode .chess-square.light {
+    background: #f0d9b5;
+    color: #333;
+}
+
+body.dark-mode .chess-square.dark {
+    background: #b58863;
+    color: #333;
+}
+
+/* Ensure rift squares override dark mode square colors */
+body.dark-mode .chess-square.dark.rift {
+    background: linear-gradient(45deg, #667eea, #764ba2, #4facfe, #00f2fe) !important;
+    background-size: 400% 400% !important;
+    animation: rift-glow 6s ease-in-out infinite !important;
+}
+
+body.dark-mode .chess-square.light.rift {
+    background: linear-gradient(45deg, #667eea, #764ba2, #4facfe, #00f2fe) !important;
+    background-size: 400% 400% !important;
+    animation: rift-glow 6s ease-in-out infinite !important;
+}
+
+body.dark-mode .game-controls {
+    background: rgba(0, 0, 0, 0.6);
+    color: #e2e8f0;
+}
+
+body.dark-mode .game-controls h3 {
+    color: #ffffff;
+}
+
+body.dark-mode .setup-controls h3 {
+    color: #ffffff;
+}
+
+body.dark-mode .setup-controls p {
+    color: #ffffff;
+}
+
+body.dark-mode .rift-counter {
+    color: #333 !important;
+}
+
+body.dark-mode .rift-counter span {
+    color: #333 !important;
+}
+
+/* Keep buttons unchanged in dark mode */
+body.dark-mode .btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+}
+
+body.dark-mode .btn:hover {
+    background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+}
+
+body.dark-mode .btn.primary {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+body.dark-mode .btn.danger {
+    background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
+}
+
+body.dark-mode .log-content, 
+body.dark-mode .chat-messages {
+    background: rgba(0, 0, 0, 0.4);
+    color: #e2e8f0;
+}
+
+/* Fix light mode text legibility */
+.log-content, 
+.chat-messages {
+    background: rgba(0, 0, 0, 0.1);
+    color: #2c3e50;
+}
+
+.game-log h4, 
+.chat-section h4 {
+    color: #2c3e50;
+    text-shadow: none;
+}
+
+/* Fix captured pieces text in dark mode */
+body.dark-mode .captured-white span,
+body.dark-mode .captured-black span {
+    color: #333 !important;
+}
+
+/* Fix active field effects text in dark mode */
+body.dark-mode .active-effects h4 {
+    color: #e2e8f0;
+}
+
+body.dark-mode .field-effect-item {
+    background: rgba(255, 255, 255, 0.9);
+    color: #333;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+body.dark-mode .field-effect-item:hover {
+    background: rgba(255, 255, 255, 1);
+    transform: scale(1.02);
+}
+
+body.dark-mode .log-entry.system {
+    color: #fbbf24;
+}
+
+body.dark-mode .log-entry.move {
+    color: #60a5fa;
+}
+
+body.dark-mode .log-entry.effect {
+    color: #f472b6;
+}
+
+body.dark-mode .chat-message.own {
+    color: #34d399;
+}
+
+body.dark-mode .chat-message.opponent {
+    color: #fbb6ce;
+}
+
+body.dark-mode .chat-input-container input {
+    background: rgba(255, 255, 255, 0.1);
+    color: #e2e8f0;
+    border: 1px solid #4a5568;
+}
+
+body.dark-mode .chat-input-container input:focus {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: #60a5fa;
+}
+
+body.dark-mode .modal-content {
+    background: rgba(0, 0, 0, 0.9);
+    color: #e2e8f0;
+}
+
+body.dark-mode .effect-choice {
+    background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
+    color: #e2e8f0;
+}
+
+body.dark-mode .effect-choice.decline {
+    background: linear-gradient(135deg, #e53e3e 0%, #c53030 100%);
+}
+
+body.dark-mode .effect-choice.accept {
+    background: linear-gradient(135deg, #38a169 0%, #2f855a 100%);
+}
+
+/* Settings Menu */
+.settings-menu {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+}
+
+.settings-btn {
+    background: rgba(255, 255, 255, 0.9);
+    border: none;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    cursor: pointer;
+    font-size: 1.5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+}
+
+.settings-btn:hover {
+    background: rgba(255, 255, 255, 1);
+    transform: scale(1.1);
+}
+
+body.dark-mode .settings-btn {
+    background: rgba(0, 0, 0, 0.8);
+    color: #e2e8f0;
+}
+
+body.dark-mode .settings-btn:hover {
+    background: rgba(0, 0, 0, 0.9);
+}
+
+.settings-panel {
+    position: absolute;
+    top: 60px;
+    right: 0;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 10px;
+    padding: 20px;
+    min-width: 200px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(10px);
+    display: none;
+}
+
+body.dark-mode .settings-panel {
+    background: rgba(0, 0, 0, 0.9);
+    color: #e2e8f0;
+}
+
+.settings-panel.show {
+    display: block;
+}
+
+.setting-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.setting-item:last-child {
+    margin-bottom: 0;
+}
+
+.toggle-switch {
+    position: relative;
+    width: 50px;
+    height: 24px;
+    background: #ccc;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+.toggle-switch.active {
+    background: #4CAF50;
+}
+
+.toggle-switch::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 20px;
+    height: 20px;
+    background: white;
+    border-radius: 50%;
+    transition: transform 0.3s ease;
+}
+
+.toggle-switch.active::after {
+    transform: translateX(26px);
+}
+
+/* D20 Animation */
+.dice-rolling {
+    animation: diceRoll 2s ease-in-out;
+}
+
+@keyframes diceRoll {
+    0% { transform: scale(1); }
+    25% { transform: scale(1.1); }
+    50% { transform: scale(1.2); }
+    75% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+.dice-display {
+    font-size: 3rem;
+    font-weight: bold;
+    color: #ff6b6b;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s ease;
+}
+
+body.dark-mode .dice-display {
+    color: #ff8a80;
+}
+
+/* Field Effect Items */
+.field-effect-item {
+    background: rgba(255, 255, 255, 0.9);
+    color: #333;
+    padding: 8px 12px;
+    margin: 5px 0;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.field-effect-item:hover {
+    background: rgba(255, 255, 255, 1);
+    transform: scale(1.02);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.field-effect-item.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.field-effect-item.active:hover {
+    background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
 }
 
 .frozen-piece {

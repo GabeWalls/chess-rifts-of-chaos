@@ -11,6 +11,10 @@ class ChessGame {
         this.kingAbilities = { white: {}, black: {} };
         this.frozenPieces = new Set();
         this.riftActivatedThisTurn = false;
+        this.diceRolledThisTurn = false;
+        this.gameLog = [];
+        this.chatMessages = [];
+        this.darkMode = false;
         
         this.initializeBoard();
         this.setupEventListeners();
@@ -48,6 +52,30 @@ class ChessGame {
         document.getElementById('roll-dice').addEventListener('click', () => this.rollDice());
         document.getElementById('close-modal').addEventListener('click', () => this.closeModal());
         document.getElementById('new-game').addEventListener('click', () => this.newGame());
+        
+        // Chat controls
+        document.getElementById('send-chat').addEventListener('click', () => this.sendChatMessage());
+        document.getElementById('chat-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                this.sendChatMessage();
+            }
+        });
+        
+        // Settings controls
+        document.getElementById('settings-btn').addEventListener('click', () => this.toggleSettingsPanel());
+        document.getElementById('dark-mode-toggle').addEventListener('click', () => this.toggleDarkMode());
+        
+        // Load saved settings
+        this.loadSettings();
+        
+        // Close settings panel when clicking outside
+        document.addEventListener('click', (e) => {
+            const settingsPanel = document.getElementById('settings-panel');
+            const settingsBtn = document.getElementById('settings-btn');
+            if (!settingsPanel.contains(e.target) && !settingsBtn.contains(e.target)) {
+                settingsPanel.classList.remove('show');
+            }
+        });
     }
 
     renderBoard() {
@@ -182,6 +210,8 @@ class ChessGame {
         this.gamePhase = 'playing';
         this.updateUI();
         this.renderBoard();
+        this.addToGameLog('Game started!', 'system');
+        this.addToGameLog(`Rifts placed at: ${this.rifts.map(r => String.fromCharCode(97 + r.col) + (8 - r.row)).join(', ')}`, 'system');
     }
 
     handleGameMove(row, col) {
@@ -460,6 +490,7 @@ class ChessGame {
             this.capturedPieces[capturedPiece.color].push(capturedPiece);
             this.updateCapturedPieces();
             this.renderBoard();
+            this.addToGameLog(`${this.currentPlayer} captured the enemy king!`, 'system');
             this.endGame(this.currentPlayer);
             return;
         }
@@ -468,12 +499,19 @@ class ChessGame {
         if (capturedPiece) {
             this.capturedPieces[capturedPiece.color].push(capturedPiece);
             this.updateCapturedPieces();
+            this.addToGameLog(`${this.currentPlayer} captured ${capturedPiece.color}'s ${capturedPiece.type}`, 'move');
         }
         
         // Move piece
         this.board[toRow][toCol] = piece;
         this.board[fromRow][fromCol] = null;
         piece.hasMoved = true;
+        
+        // Log the move
+        const fromCoords = String.fromCharCode(97 + fromCol) + (8 - fromRow);
+        const toCoords = String.fromCharCode(97 + toCol) + (8 - toRow);
+        const moveNotation = capturedPiece ? `${piece.type} x ${toCoords}` : `${piece.type} to ${toCoords}`;
+        this.addToGameLog(`${this.currentPlayer} ${moveNotation}`, 'move');
         
         // Store the moving piece and destination for rift effects
         this.lastMovedPiece = { piece, fromRow, fromCol, toRow, toCol };
@@ -506,18 +544,53 @@ class ChessGame {
         document.getElementById('dice-result').textContent = '?';
         document.getElementById('rift-effect-description').textContent = 'Roll the dice to determine the rift effect!';
         document.getElementById('rift-effect-options').innerHTML = '';
+        
+        // Show dice roll section and reset button state
+        document.querySelector('.dice-roll').style.display = 'block';
+        document.getElementById('roll-dice').disabled = false;
+        this.diceRolledThisTurn = false;
     }
 
     rollDice() {
-        const roll = Math.floor(Math.random() * 20) + 1;
-        document.getElementById('dice-result').textContent = roll;
+        // Prevent multiple rolls per turn
+        if (this.diceRolledThisTurn) {
+            return;
+        }
         
-        const effect = this.getRiftEffect(roll);
-        document.getElementById('rift-effect-title').textContent = effect.name;
-        document.getElementById('rift-effect-description').textContent = effect.description;
+        const diceDisplay = document.getElementById('dice-result');
+        const diceContainer = document.querySelector('.dice-display');
+        const rollButton = document.getElementById('roll-dice');
         
-        // Apply the effect
-        this.applyRiftEffect(effect, roll);
+        // Disable roll button and mark as rolled
+        rollButton.disabled = true;
+        this.diceRolledThisTurn = true;
+        
+        // Add rolling animation
+        diceContainer.classList.add('dice-rolling');
+        
+        // Show random numbers during animation
+        let animationCount = 0;
+        const animationInterval = setInterval(() => {
+            const randomNum = Math.floor(Math.random() * 20) + 1;
+            diceDisplay.textContent = randomNum;
+            animationCount++;
+            
+            if (animationCount >= 10) {
+                clearInterval(animationInterval);
+                
+                // Final result
+                const roll = Math.floor(Math.random() * 20) + 1;
+                diceDisplay.textContent = roll;
+                diceContainer.classList.remove('dice-rolling');
+                
+                const effect = this.getRiftEffect(roll);
+                document.getElementById('rift-effect-title').textContent = effect.name;
+                document.getElementById('rift-effect-description').textContent = effect.description;
+                
+                this.addToGameLog(`D20 rolled: ${roll} - ${effect.name}`, 'effect');
+                this.applyRiftEffect(effect, roll);
+            }
+        }, 150);
     }
 
     getRiftEffect(roll) {
@@ -563,8 +636,8 @@ class ChessGame {
                     this.applyNecromancerTrap(riftRow, riftCol, activatingPiece);
                     break;
                 case 2: // Archer's Trick Shot
-                    this.applyArcherTrickShot(riftRow, riftCol);
-                    break;
+                    this.showArcherDirectionChoice(riftRow, riftCol);
+                    return; // Don't close modal yet
                 case 3: // Sandworm
                     this.applySandworm(riftRow, riftCol);
                     break;
@@ -587,14 +660,14 @@ class ChessGame {
                     this.applyFieldEffect('sandstorm');
                     break;
                 case 10: // Dragon's Breath
-                    this.applyDragonBreath(riftRow, riftCol);
-                    break;
+                    this.showDragonDirectionChoice(riftRow, riftCol);
+                    return; // Don't close modal yet
                 case 11: // Jack Frost's Mischief
                     this.applyFieldEffect('jack_frost_mischief');
                     break;
                 case 12: // Portal in the Rift
-                    this.applyPortalInRift(riftRow, riftCol, activatingPiece);
-                    break;
+                    this.showPortalChoice(riftRow, riftCol, activatingPiece);
+                    return; // Don't close modal yet
                 case 13: // Catapult Roulette
                     this.applyCatapultRoulette();
                     break;
@@ -608,8 +681,8 @@ class ChessGame {
                     this.applyTimeDistortion(riftRow, riftCol);
                     break;
                 case 17: // Crossroad Demon's Deal
-                    this.applyCrossroadDemonDeal(riftRow, riftCol, activatingPiece);
-                    break;
+                    this.showCrossroadDemonChoice(riftRow, riftCol, activatingPiece);
+                    return; // Don't close modal yet
                 case 18: // Fairy Fountain
                     this.applyFairyFountain(riftRow, riftCol, activatingPiece);
                     break;
@@ -637,27 +710,355 @@ class ChessGame {
         this.updateCapturedPieces();
         this.updateFieldEffects();
         
-        // Close modal after a delay
-        setTimeout(() => {
-            this.closeModal();
-            this.switchPlayer();
-        }, 3000);
+        // Don't auto-close modal - let player choose when to close
+        // this.closeModal() and this.switchPlayer() will be called when player clicks "Close"
     }
 
     closeModal() {
         document.getElementById('rift-effects-modal').style.display = 'none';
+        this.switchPlayer();
+    }
+
+    // Game Log and Chat Functions
+    addToGameLog(message, type = 'system') {
+        const timestamp = new Date().toLocaleTimeString();
+        this.gameLog.push({ message, type, timestamp });
+        this.updateGameLog();
+    }
+
+    updateGameLog() {
+        const logContent = document.getElementById('game-log-content');
+        logContent.innerHTML = '';
+        
+        this.gameLog.slice(-20).forEach(entry => {
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry ${entry.type}`;
+            logEntry.textContent = `[${entry.timestamp}] ${entry.message}`;
+            logContent.appendChild(logEntry);
+        });
+        
+        logContent.scrollTop = logContent.scrollHeight;
+    }
+
+    sendChatMessage() {
+        const chatInput = document.getElementById('chat-input');
+        const message = chatInput.value.trim();
+        
+        if (message) {
+            this.chatMessages.push({
+                message,
+                player: this.currentPlayer,
+                timestamp: new Date().toLocaleTimeString()
+            });
+            this.updateChatMessages();
+            chatInput.value = '';
+        }
+    }
+
+    updateChatMessages() {
+        const chatMessages = document.getElementById('chat-messages');
+        chatMessages.innerHTML = '';
+        
+        this.chatMessages.slice(-10).forEach(msg => {
+            const chatMessage = document.createElement('div');
+            chatMessage.className = `chat-message ${msg.player === this.currentPlayer ? 'own' : 'opponent'}`;
+            chatMessage.textContent = `[${msg.timestamp}] ${msg.player}: ${msg.message}`;
+            chatMessages.appendChild(chatMessage);
+        });
+        
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    // Enhanced piece removal with animation
+    removePieceWithAnimation(row, col, delay = 0) {
+        setTimeout(() => {
+            const square = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+            if (square && square.firstChild) {
+                square.firstChild.classList.add('piece-removing');
+                setTimeout(() => {
+                    this.board[row][col] = null;
+                    this.renderBoard();
+                }, 1500);
+            } else {
+                this.board[row][col] = null;
+                this.renderBoard();
+            }
+        }, delay);
+    }
+
+    // Choice-based rift effects
+    showCrossroadDemonChoice(riftRow, riftCol, activatingPiece) {
+        const optionsDiv = document.getElementById('rift-effect-options');
+        optionsDiv.innerHTML = `
+            <div class="effect-choices">
+                <button class="effect-choice decline" onclick="game.acceptCrossroadDemonDeal(${riftRow}, ${riftCol}, '${activatingPiece.color}', false)">
+                    Decline Deal
+                </button>
+                <button class="effect-choice accept" onclick="game.acceptCrossroadDemonDeal(${riftRow}, ${riftCol}, '${activatingPiece.color}', true)">
+                    Accept Deal
+                </button>
+            </div>
+        `;
+        this.addToGameLog(`Crossroad Demon's Deal activated! Choose to accept or decline.`, 'effect');
+    }
+
+    acceptCrossroadDemonDeal(riftRow, riftCol, color, accepted) {
+        if (!accepted) {
+            this.addToGameLog(`${color} declined Crossroad Demon's Deal.`, 'effect');
+            this.closeModal();
+            return;
+        }
+
+        // Remove activating piece
+        this.removePieceWithAnimation(riftRow, riftCol);
+        this.capturedPieces[color].push(this.lastMovedPiece.piece);
+        
+        // Roll D20 for additional pieces to remove
+        const additionalRoll = Math.floor(Math.random() * 20) + 1;
+        const piecesToRemove = additionalRoll % 2 === 0 ? 2 : 1;
+        
+        this.addToGameLog(`Crossroad Demon's Deal accepted! Rolling for additional pieces... (${additionalRoll})`, 'effect');
+        
+        // Remove additional pieces with animation
+        let removed = 0;
+        for (let row = 0; row < 8 && removed < piecesToRemove; row++) {
+            for (let col = 0; col < 8 && removed < piecesToRemove; col++) {
+                if (this.board[row][col] && this.board[row][col].color === this.currentPlayer && 
+                    this.board[row][col].type !== 'king') {
+                    this.capturedPieces[this.currentPlayer].push(this.board[row][col]);
+                    this.removePieceWithAnimation(row, col, removed * 500);
+                    removed++;
+                }
+            }
+        }
+
+        // Revive a captured piece
+        const capturedNonPawns = this.capturedPieces[this.currentPlayer].filter(p => p.type !== 'pawn');
+        if (capturedNonPawns.length > 0) {
+            const randomPiece = capturedNonPawns[Math.floor(Math.random() * capturedNonPawns.length)];
+            this.board[riftRow][riftCol] = randomPiece;
+            this.capturedPieces[this.currentPlayer] = this.capturedPieces[this.currentPlayer].filter(p => p !== randomPiece);
+            this.addToGameLog(`${randomPiece.type} revived on rift!`, 'effect');
+        }
+
+        setTimeout(() => {
+            this.closeModal();
+        }, 2000);
+    }
+
+    showPortalChoice(riftRow, riftCol, activatingPiece) {
+        const availableRifts = this.rifts.filter(rift => 
+            rift.row !== riftRow || rift.col !== riftCol
+        );
+        
+        if (availableRifts.length === 0) {
+            this.addToGameLog('No other rifts available for teleportation!', 'effect');
+            this.closeModal();
+            return;
+        }
+
+        const optionsDiv = document.getElementById('rift-effect-options');
+        let buttonsHtml = '<div class="effect-choices">';
+        
+        availableRifts.forEach((rift, index) => {
+            const coords = String.fromCharCode(97 + rift.col) + (8 - rift.row);
+            buttonsHtml += `
+                <button class="effect-choice" onclick="game.teleportToRift(${riftRow}, ${riftCol}, ${rift.row}, ${rift.col}, '${activatingPiece.color}')">
+                    Teleport to ${coords.toUpperCase()}
+                </button>
+            `;
+        });
+        
+        buttonsHtml += '</div>';
+        optionsDiv.innerHTML = buttonsHtml;
+        this.addToGameLog(`Portal in the Rift activated! Choose destination rift.`, 'effect');
+    }
+
+    teleportToRift(fromRow, fromCol, toRow, toCol, color) {
+        const piece = this.board[fromRow][fromCol];
+        
+        // Remove piece from original location
+        this.removePieceWithAnimation(fromRow, fromCol);
+        
+        // If destination is occupied, remove that piece
+        if (this.board[toRow][toCol]) {
+            this.capturedPieces[this.board[toRow][toCol].color].push(this.board[toRow][toCol]);
+            this.removePieceWithAnimation(toRow, toCol, 500);
+        }
+        
+        // Place piece at destination
+        setTimeout(() => {
+            this.board[toRow][toCol] = piece;
+            this.renderBoard();
+            this.addToGameLog(`Piece teleported to ${String.fromCharCode(97 + toCol)}${8 - toRow}!`, 'effect');
+        }, 1000);
+
+        setTimeout(() => {
+            this.closeModal();
+        }, 2000);
+    }
+
+    showArcherDirectionChoice(riftRow, riftCol) {
+        const directions = [
+            { name: 'North', dr: -1, dc: 0 },
+            { name: 'Northeast', dr: -1, dc: 1 },
+            { name: 'East', dr: 0, dc: 1 },
+            { name: 'Southeast', dr: 1, dc: 1 },
+            { name: 'South', dr: 1, dc: 0 },
+            { name: 'Southwest', dr: 1, dc: -1 },
+            { name: 'West', dr: 0, dc: -1 },
+            { name: 'Northwest', dr: -1, dc: -1 }
+        ];
+
+        const optionsDiv = document.getElementById('rift-effect-options');
+        let buttonsHtml = '<div class="effect-choices">';
+        
+        directions.forEach((dir, index) => {
+            buttonsHtml += `
+                <button class="effect-choice" onclick="game.executeArcherShot(${riftRow}, ${riftCol}, ${dir.dr}, ${dir.dc})">
+                    ${dir.name}
+                </button>
+            `;
+        });
+        
+        buttonsHtml += '</div>';
+        optionsDiv.innerHTML = buttonsHtml;
+        this.addToGameLog(`Archer's Trick Shot activated! Choose direction.`, 'effect');
+    }
+
+    executeArcherShot(riftRow, riftCol, dr, dc) {
+        const directions = [
+            { dr: dr, dc: dc },
+            { dr: dr - dc, dc: dr + dc }, // 90 degrees
+            { dr: -dr, dc: -dc }, // 180 degrees
+            { dr: dc, dc: -dr } // 270 degrees
+        ];
+
+        let piecesRemoved = 0;
+        
+        directions.forEach((dir, index) => {
+            for (let distance = 1; distance <= 3; distance++) {
+                const targetRow = riftRow + (dir.dr * distance);
+                const targetCol = riftCol + (dir.dc * distance);
+                
+                if (targetRow >= 0 && targetRow < 8 && targetCol >= 0 && targetCol < 8) {
+                    if (this.board[targetRow][targetCol]) {
+                        this.capturedPieces[this.board[targetRow][targetCol].color].push(this.board[targetRow][targetCol]);
+                        this.removePieceWithAnimation(targetRow, targetCol, piecesRemoved * 300);
+                        piecesRemoved++;
+                        break; // Only remove first piece in each direction
+                    }
+                }
+            }
+        });
+
+        this.addToGameLog(`Archer's Trick Shot fired! ${piecesRemoved} pieces removed.`, 'effect');
+        
+        setTimeout(() => {
+            this.closeModal();
+        }, 2000);
+    }
+
+    showDragonDirectionChoice(riftRow, riftCol) {
+        const directions = [
+            { name: 'North', dr: -1, dc: 0 },
+            { name: 'Northeast', dr: -1, dc: 1 },
+            { name: 'East', dr: 0, dc: 1 },
+            { name: 'Southeast', dr: 1, dc: 1 },
+            { name: 'South', dr: 1, dc: 0 },
+            { name: 'Southwest', dr: 1, dc: -1 },
+            { name: 'West', dr: 0, dc: -1 },
+            { name: 'Northwest', dr: -1, dc: -1 }
+        ];
+
+        const optionsDiv = document.getElementById('rift-effect-options');
+        let buttonsHtml = '<div class="effect-choices">';
+        
+        directions.forEach((dir, index) => {
+            buttonsHtml += `
+                <button class="effect-choice" onclick="game.executeDragonBreath(${riftRow}, ${riftCol}, ${dir.dr}, ${dir.dc})">
+                    ${dir.name}
+                </button>
+            `;
+        });
+        
+        buttonsHtml += '</div>';
+        optionsDiv.innerHTML = buttonsHtml;
+        this.addToGameLog(`Dragon's Breath activated! Choose direction.`, 'effect');
+    }
+
+    executeDragonBreath(riftRow, riftCol, dr, dc) {
+        let piecesRemoved = 0;
+        
+        for (let distance = 1; distance <= 3; distance++) {
+            const targetRow = riftRow + (dr * distance);
+            const targetCol = riftCol + (dc * distance);
+            
+            if (targetRow >= 0 && targetRow < 8 && targetCol >= 0 && targetCol < 8) {
+                if (this.board[targetRow][targetCol] && this.board[targetRow][targetCol].color !== this.currentPlayer) {
+                    this.capturedPieces[this.board[targetRow][targetCol].color].push(this.board[targetRow][targetCol]);
+                    this.removePieceWithAnimation(targetRow, targetCol, piecesRemoved * 400);
+                    piecesRemoved++;
+                }
+            }
+        }
+
+        this.addToGameLog(`Dragon's Breath fired! ${piecesRemoved} enemy pieces removed.`, 'effect');
+        
+        setTimeout(() => {
+            this.closeModal();
+        }, 2000);
+    }
+
+    // Settings Functions
+    toggleSettingsPanel() {
+        const panel = document.getElementById('settings-panel');
+        panel.classList.toggle('show');
+    }
+
+    toggleDarkMode() {
+        this.darkMode = !this.darkMode;
+        const body = document.body;
+        const toggle = document.getElementById('dark-mode-toggle');
+        
+        if (this.darkMode) {
+            body.classList.add('dark-mode');
+            toggle.classList.add('active');
+        } else {
+            body.classList.remove('dark-mode');
+            toggle.classList.remove('active');
+        }
+        
+        this.saveSettings();
+    }
+
+    loadSettings() {
+        const savedDarkMode = localStorage.getItem('chessRiftsDarkMode');
+        if (savedDarkMode === 'true') {
+            this.darkMode = true;
+            document.body.classList.add('dark-mode');
+            document.getElementById('dark-mode-toggle').classList.add('active');
+        }
+    }
+
+    saveSettings() {
+        localStorage.setItem('chessRiftsDarkMode', this.darkMode.toString());
     }
 
     // Individual Rift Effect Implementations
     applyNecromancerTrap(riftRow, riftCol, activatingPiece) {
-        // Remove activating piece
-        this.board[riftRow][riftCol] = null;
+        // Remove activating piece with animation
+        this.removePieceWithAnimation(riftRow, riftCol);
         
         // Place opponent's captured piece if available
         const opponentColor = activatingPiece.color === 'white' ? 'black' : 'white';
         if (this.capturedPieces[opponentColor].length > 0) {
             const pieceToResurrect = this.capturedPieces[opponentColor].pop();
-            this.board[riftRow][riftCol] = pieceToResurrect;
+            setTimeout(() => {
+                this.board[riftRow][riftCol] = pieceToResurrect;
+                this.renderBoard();
+                this.addToGameLog(`Necromancer's Trap: ${pieceToResurrect.type} resurrected!`, 'effect');
+            }, 1500);
             this.updateCapturedPieces();
         }
     }
@@ -684,7 +1085,8 @@ class ChessGame {
     }
 
     applySandworm(riftRow, riftCol) {
-        // Remove all pieces within 1 square of the rift
+        // Remove all pieces within 1 square of the rift with animation
+        let delay = 0;
         for (let rowOffset = -1; rowOffset <= 1; rowOffset++) {
             for (let colOffset = -1; colOffset <= 1; colOffset++) {
                 const targetRow = riftRow + rowOffset;
@@ -693,18 +1095,20 @@ class ChessGame {
                 if (this.isInBounds(targetRow, targetCol) && this.board[targetRow][targetCol]) {
                     const piece = this.board[targetRow][targetCol];
                     this.capturedPieces[piece.color].push(piece);
-                    this.board[targetRow][targetCol] = null;
+                    this.removePieceWithAnimation(targetRow, targetCol, delay);
+                    delay += 200;
                 }
             }
         }
+        this.addToGameLog(`Sandworm devours all nearby pieces!`, 'effect');
     }
 
     applyHonorableSacrifice(riftRow, riftCol, activatingPiece) {
-        // Remove activating piece
-        this.board[riftRow][riftCol] = null;
+        // Remove activating piece with animation
+        this.removePieceWithAnimation(riftRow, riftCol);
         this.capturedPieces[activatingPiece.color].push(activatingPiece);
         
-        // Remove any enemy piece within 1 square
+        // Remove any enemy piece within 1 square with animation
         const directions = [[-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [1, 0], [1, 1]];
         for (const [rowOffset, colOffset] of directions) {
             const targetRow = riftRow + rowOffset;
@@ -714,7 +1118,8 @@ class ChessGame {
                 const piece = this.board[targetRow][targetCol];
                 if (piece.color !== this.currentPlayer) {
                     this.capturedPieces[piece.color].push(piece);
-                    this.board[targetRow][targetCol] = null;
+                    this.removePieceWithAnimation(targetRow, targetCol, 500);
+                    this.addToGameLog(`Honorable Sacrifice: Enemy piece removed!`, 'effect');
                     break; // Only remove one piece
                 }
             }
@@ -722,8 +1127,8 @@ class ChessGame {
     }
 
     applyDemotion(riftRow, riftCol, activatingPiece) {
-        // Remove activating piece
-        this.board[riftRow][riftCol] = null;
+        // Remove activating piece with animation
+        this.removePieceWithAnimation(riftRow, riftCol);
         this.capturedPieces[activatingPiece.color].push(activatingPiece);
         
         // Place captured pawn if available and piece was not a pawn
@@ -732,8 +1137,14 @@ class ChessGame {
             if (capturedPawns.length > 0) {
                 const pawnIndex = this.capturedPieces[activatingPiece.color].findIndex(p => p.type === 'pawn');
                 const pawn = this.capturedPieces[activatingPiece.color].splice(pawnIndex, 1)[0];
-                this.board[riftRow][riftCol] = pawn;
+                setTimeout(() => {
+                    this.board[riftRow][riftCol] = pawn;
+                    this.renderBoard();
+                    this.addToGameLog(`Demotion: ${activatingPiece.type} demoted to pawn!`, 'effect');
+                }, 1500);
             }
+        } else {
+            this.addToGameLog(`Demotion: Pawn cannot be demoted further.`, 'effect');
         }
     }
 
@@ -881,19 +1292,24 @@ class ChessGame {
     }
 
     applyFieldEffect(effectName) {
-        // Toggle field effect
-        const effectIndex = this.activeFieldEffects.indexOf(effectName);
-        if (effectIndex > -1) {
-            this.activeFieldEffects.splice(effectIndex, 1);
-        } else {
+        // Remove any existing field effects
+        this.activeFieldEffects = [];
+        
+        // Add the new field effect
+        if (effectName !== 'blank') {
             this.activeFieldEffects.push(effectName);
+            this.addToGameLog(`Field effect activated: ${effectName.replace(/_/g, ' ')}`, 'effect');
+        } else {
+            this.addToGameLog(`Field effect activated: Blank (Pawns may capture sideways)`, 'effect');
         }
     }
 
     switchPlayer() {
         this.currentPlayer = this.currentPlayer === 'white' ? 'black' : 'white';
         this.riftActivatedThisTurn = false;
+        this.diceRolledThisTurn = false;
         this.updateUI();
+        this.addToGameLog(`${this.currentPlayer}'s turn`, 'system');
         
         // Check for win conditions
         if (this.isCheckmate(this.currentPlayer)) {
@@ -908,8 +1324,10 @@ class ChessGame {
 
     endGame(winner) {
         this.gamePhase = 'ended';
-        document.getElementById('victory-message').textContent = `${winner.charAt(0).toUpperCase() + winner.slice(1)} wins!`;
+        const winnerText = winner.charAt(0).toUpperCase() + winner.slice(1);
+        document.getElementById('victory-message').textContent = `${winnerText} wins!`;
         document.getElementById('victory-modal').style.display = 'flex';
+        this.addToGameLog(`🎉 ${winnerText} wins the game! 🎉`, 'system');
     }
 
     updateUI() {
@@ -935,9 +1353,40 @@ class ChessGame {
 
     updateFieldEffects() {
         const effectsList = document.getElementById('field-effects-list');
-        effectsList.innerHTML = this.activeFieldEffects.map(effect => 
-            `<div class="effect-item">${effect.replace(/_/g, ' ')}</div>`
-        ).join('');
+        effectsList.innerHTML = '';
+        
+        this.activeFieldEffects.forEach(effect => {
+            const effectElement = document.createElement('div');
+            effectElement.className = 'field-effect-item';
+            effectElement.textContent = effect.replace(/_/g, ' ');
+            effectElement.addEventListener('click', () => this.showFieldEffectDetails(effect));
+            effectsList.appendChild(effectElement);
+        });
+    }
+
+    showFieldEffectDetails(effectName) {
+        const effectDescriptions = {
+            'famine': 'Pawns cannot move while this effect is active.',
+            'holiday_rejuvenation': 'Pawns may advance two spaces forward. Castles, Bishops, and Queens may jump over one friendly piece. Knights move in a "3 + 1" pattern.',
+            'sandstorm': 'Pawns cannot move. Knights move only 1 square. Castles, Bishops, Queens max range: 3 squares. Kings cannot move unless in check.',
+            'jack_frost_mischief': 'After moving a piece, roll a D20: Odd = no effect. Even = the piece slides 1 extra square forward.',
+            'eerie_fog_turmoil': 'At the start of your turn, roll a D20: 3–20 = proceed normally. 1–2 = turn skipped.',
+            'blank': 'Pawns may capture sideways.'
+        };
+
+        const description = effectDescriptions[effectName] || 'Unknown field effect.';
+        
+        // Show in modal - DISPLAY ONLY, no rolling allowed
+        document.getElementById('rift-effect-title').textContent = `Field Effect: ${effectName.replace(/_/g, ' ')}`;
+        document.getElementById('rift-effect-description').textContent = description;
+        document.getElementById('rift-effect-options').innerHTML = '';
+        
+        // Hide dice roll section for field effect display
+        document.querySelector('.dice-roll').style.display = 'none';
+        
+        document.getElementById('rift-effects-modal').style.display = 'flex';
+        
+        this.addToGameLog(`Field effect "${effectName.replace(/_/g, ' ')}" viewed: ${description}`, 'effect');
     }
 
     resign() {
@@ -955,6 +1404,7 @@ class ChessGame {
         this.activeFieldEffects = [];
         this.frozenPieces.clear();
         this.riftActivatedThisTurn = false;
+        this.diceRolledThisTurn = false;
         this.initializeBoard();
         this.renderBoard();
         this.updateUI();
