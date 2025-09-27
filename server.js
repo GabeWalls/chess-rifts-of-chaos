@@ -212,6 +212,44 @@ io.on('connection', (socket) => {
     }
   });
 
+  // Handle resignation
+  socket.on('resign', (data) => {
+    const { roomCode, playerName, winner, loser } = data;
+    const room = rooms.get(roomCode);
+    
+    if (room && room.gamePhase === 'playing') {
+      room.gamePhase = 'finished';
+      
+      console.log(`Player ${playerName} resigned in room ${roomCode}`);
+      
+      // Broadcast resignation to all players in room
+      io.to(roomCode).emit('player-resigned', {
+        playerName,
+        winner,
+        loser
+      });
+    }
+  });
+
+  // Handle game end
+  socket.on('game-ended', (data) => {
+    const { roomCode, winner, loser, reason } = data;
+    const room = rooms.get(roomCode);
+    
+    if (room && room.gamePhase === 'playing') {
+      room.gamePhase = 'finished';
+      
+      console.log(`Game ended in room ${roomCode}: ${winner} wins by ${reason}`);
+      
+      // Broadcast game end to all players in room
+      io.to(roomCode).emit('game-ended', {
+        winner,
+        loser,
+        reason
+      });
+    }
+  });
+
   // Handle disconnection
   socket.on('disconnect', () => {
     const playerData = players.get(socket.id);

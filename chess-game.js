@@ -172,6 +172,14 @@ class ChessGame {
         if (this.rifts.length === 4) {
             document.getElementById('start-game').disabled = false;
         }
+        
+        // In multiplayer, sync rifts with other players
+        if (this.isMultiplayer && this.socket) {
+            this.socket.emit('sync-rifts', {
+                roomCode: this.roomCode,
+                rifts: this.rifts
+            });
+        }
     }
 
     generateRandomRifts() {
@@ -219,6 +227,14 @@ class ChessGame {
         this.renderBoard();
         this.updateRiftCounter();
         document.getElementById('start-game').disabled = this.rifts.length !== 4;
+        
+        // In multiplayer, sync rifts with other players
+        if (this.isMultiplayer && this.socket) {
+            this.socket.emit('sync-rifts', {
+                roomCode: this.roomCode,
+                rifts: this.rifts
+            });
+        }
     }
 
     isRift(row, col) {
@@ -542,6 +558,17 @@ class ChessGame {
             this.updateCapturedPieces();
             this.renderBoard();
             this.addToGameLog(`${this.currentPlayer} captured the enemy king!`, 'system');
+            
+            // In multiplayer, notify server of victory
+            if (this.isMultiplayer && this.socket) {
+                this.socket.emit('game-ended', {
+                    roomCode: this.roomCode,
+                    winner: this.currentPlayer,
+                    loser: capturedPiece.color,
+                    reason: 'king_captured'
+                });
+            }
+            
             this.endGame(this.currentPlayer);
             return;
         }
@@ -1414,7 +1441,19 @@ class ChessGame {
         
         // Check for win conditions
         if (this.isCheckmate(this.currentPlayer)) {
-            this.endGame(this.currentPlayer === 'white' ? 'black' : 'white');
+            const winner = this.currentPlayer === 'white' ? 'black' : 'white';
+            
+            // In multiplayer, notify server of checkmate victory
+            if (this.isMultiplayer && this.socket) {
+                this.socket.emit('game-ended', {
+                    roomCode: this.roomCode,
+                    winner: winner,
+                    loser: this.currentPlayer,
+                    reason: 'checkmate'
+                });
+            }
+            
+            this.endGame(winner);
         }
     }
 
@@ -1507,7 +1546,19 @@ class ChessGame {
 
     resign() {
         if (confirm('Are you sure you want to resign?')) {
-            this.endGame(this.currentPlayer === 'white' ? 'black' : 'white');
+            const winner = this.currentPlayer === 'white' ? 'black' : 'white';
+            
+            // In multiplayer, notify server of resignation
+            if (this.isMultiplayer && this.socket) {
+                this.socket.emit('resign', {
+                    roomCode: this.roomCode,
+                    playerName: this.playerName,
+                    winner: winner,
+                    loser: this.currentPlayer
+                });
+            }
+            
+            this.endGame(winner);
         }
     }
 
@@ -1634,6 +1685,14 @@ class ChessGame {
 
         this.socket.on('rifts-synced', (data) => {
             this.handleRiftsSynced(data);
+        });
+
+        this.socket.on('game-ended', (data) => {
+            this.handleGameEnded(data);
+        });
+
+        this.socket.on('player-resigned', (data) => {
+            this.handlePlayerResigned(data);
         });
 
         if (this.roomCode && this.playerName) {
@@ -1768,6 +1827,32 @@ class ChessGame {
         }
         
         console.log(`Rifts synced: ${JSON.stringify(this.rifts)}`);
+    }
+
+    handleGameEnded(data) {
+        const { winner, loser, reason } = data;
+        let reasonText = '';
+        
+        switch(reason) {
+            case 'king_captured':
+                reasonText = 'King captured';
+                break;
+            case 'checkmate':
+                reasonText = 'Checkmate';
+                break;
+            default:
+                reasonText = reason;
+        }
+        
+        this.addToGameLog(`🎉 ${winner.charAt(0).toUpperCase() + winner.slice(1)} wins by ${reasonText}! 🎉`, 'system');
+        this.endGame(winner);
+    }
+
+    handlePlayerResigned(data) {
+        const { playerName, winner, loser } = data;
+        this.addToGameLog(`${playerName} (${loser}) resigned!`, 'system');
+        this.addToGameLog(`🎉 ${winner.charAt(0).toUpperCase() + winner.slice(1)} wins by resignation! 🎉`, 'system');
+        this.endGame(winner);
     }
 
     leaveRoom() {
