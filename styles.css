@@ -810,6 +810,105 @@ body.dark-mode .effect-choice.accept {
     background: linear-gradient(135deg, #38a169 0%, #2f855a 100%);
 }
 
+/* Multiplayer Controls */
+.multiplayer-controls {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    z-index: 1000;
+}
+
+.multiplayer-controls .btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.multiplayer-controls .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+/* Room Modal */
+.room-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+}
+
+.room-inputs {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.room-inputs input {
+    padding: 12px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    font-size: 1rem;
+    text-align: center;
+    text-transform: uppercase;
+}
+
+.room-inputs input:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.room-info {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 10px;
+    margin: 20px 0;
+}
+
+.players-list, .spectators-list {
+    margin: 10px 0;
+}
+
+.players-list h5, .spectators-list h5 {
+    margin: 5px 0;
+    color: #333;
+}
+
+.player-item, .spectator-item {
+    padding: 5px 10px;
+    margin: 5px 0;
+    background: white;
+    border-radius: 5px;
+    border-left: 4px solid #667eea;
+}
+
+.coin-flip-result {
+    background: #e8f4fd;
+    padding: 15px;
+    border-radius: 8px;
+    text-align: center;
+    margin: 15px 0;
+}
+
+.coin-flip-result p {
+    margin: 0;
+    font-weight: bold;
+    color: #1e40af;
+}
+
 /* Settings Menu */
 .settings-menu {
     position: fixed;

@@ -16,6 +16,14 @@ class ChessGame {
         this.chatMessages = [];
         this.darkMode = false;
         
+        // Multiplayer properties
+        this.socket = null;
+        this.roomCode = null;
+        this.playerName = null;
+        this.playerColor = null;
+        this.isMultiplayer = false;
+        this.isSpectator = false;
+        
         this.initializeBoard();
         this.setupEventListeners();
         this.renderBoard();
@@ -64,6 +72,12 @@ class ChessGame {
         // Settings controls
         document.getElementById('settings-btn').addEventListener('click', () => this.toggleSettingsPanel());
         document.getElementById('dark-mode-toggle').addEventListener('click', () => this.toggleDarkMode());
+        
+        // Multiplayer controls
+        document.getElementById('multiplayer-btn').addEventListener('click', () => this.showMultiplayerModal());
+        document.getElementById('join-room-btn').addEventListener('click', () => this.joinRoom());
+        document.getElementById('create-room-btn').addEventListener('click', () => this.createRoom());
+        document.getElementById('leave-room-btn').addEventListener('click', () => this.leaveRoom());
         
         // Load saved settings
         this.loadSettings();
@@ -212,9 +226,28 @@ class ChessGame {
         this.renderBoard();
         this.addToGameLog('Game started!', 'system');
         this.addToGameLog(`Rifts placed at: ${this.rifts.map(r => String.fromCharCode(97 + r.col) + (8 - r.row)).join(', ')}`, 'system');
+        
+        // In multiplayer, notify server that game started
+        if (this.isMultiplayer && this.socket) {
+            this.socket.emit('start-game', {
+                roomCode: this.roomCode,
+                gameState: {
+                    board: this.board,
+                    currentPlayer: this.currentPlayer,
+                    capturedPieces: this.capturedPieces,
+                    activeFieldEffects: this.activeFieldEffects,
+                    rifts: this.rifts
+                }
+            });
+        }
     }
 
     handleGameMove(row, col) {
+        // In multiplayer spectator mode, don't allow moves
+        if (this.isMultiplayer && this.isSpectator) {
+            return;
+        }
+        
         const square = this.board[row][col];
         const squareElement = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
         
@@ -482,6 +515,13 @@ class ChessGame {
     }
 
     makeMove(fromRow, fromCol, toRow, toCol) {
+        // In multiplayer, only allow moves for the current player's color
+        if (this.isMultiplayer && !this.isSpectator) {
+            if (this.currentPlayer !== this.playerColor) {
+                return;
+            }
+        }
+        
         const piece = this.board[fromRow][fromCol];
         const capturedPiece = this.board[toRow][toCol];
         
@@ -515,6 +555,28 @@ class ChessGame {
         
         // Store the moving piece and destination for rift effects
         this.lastMovedPiece = { piece, fromRow, fromCol, toRow, toCol };
+        
+        // In multiplayer, send move to server
+        if (this.isMultiplayer && this.socket) {
+            const move = {
+                fromRow, fromCol, toRow, toCol,
+                piece: piece.type,
+                from: fromCoords,
+                to: toCoords,
+                playerName: this.playerName,
+                gameState: {
+                    board: this.board,
+                    currentPlayer: this.currentPlayer,
+                    capturedPieces: this.capturedPieces,
+                    activeFieldEffects: this.activeFieldEffects
+                }
+            };
+            
+            this.socket.emit('make-move', {
+                roomCode: this.roomCode,
+                move: move
+            });
+        }
         
         // Check for rift activation
         if (this.isRift(toRow, toCol) && !this.riftActivatedThisTurn) {
@@ -625,6 +687,14 @@ class ChessGame {
         const riftRow = this.lastMovedPiece.toRow;
         const riftCol = this.lastMovedPiece.toCol;
         const activatingPiece = this.lastMovedPiece.piece;
+        
+        // In multiplayer, send rift effect to server
+        if (this.isMultiplayer && this.socket) {
+            this.socket.emit('rift-effect', {
+                roomCode: this.roomCode,
+                effect: { ...effect, roll: roll, riftRow, riftCol, activatingPiece }
+            });
+        }
         
         // Store current game state for potential reversals
         const previousBoard = JSON.parse(JSON.stringify(this.board));
@@ -1331,11 +1401,26 @@ class ChessGame {
     }
 
     updateUI() {
-        document.getElementById('current-player').textContent = this.currentPlayer.charAt(0).toUpperCase() + this.currentPlayer.slice(1);
+        // Update current player display with name in multiplayer
+        if (this.isMultiplayer && this.playerName) {
+            const playerDisplay = this.currentPlayer.charAt(0).toUpperCase() + this.currentPlayer.slice(1);
+            document.getElementById('current-player').textContent = `${playerDisplay} (${this.playerName})`;
+        } else {
+            document.getElementById('current-player').textContent = this.currentPlayer.charAt(0).toUpperCase() + this.currentPlayer.slice(1);
+        }
+        
         document.getElementById('game-phase').textContent = this.gamePhase === 'setup' ? 'Setup - Place Rifts' : 'Playing';
         
         document.getElementById('setup-controls').style.display = this.gamePhase === 'setup' ? 'block' : 'none';
         document.getElementById('game-controls-panel').style.display = this.gamePhase === 'playing' ? 'block' : 'none';
+        
+        // Hide multiplayer button when in multiplayer mode
+        const multiplayerBtn = document.getElementById('multiplayer-btn');
+        if (this.isMultiplayer) {
+            multiplayerBtn.style.display = 'none';
+        } else {
+            multiplayerBtn.style.display = 'block';
+        }
     }
 
     updateCapturedPieces() {
@@ -1411,6 +1496,187 @@ class ChessGame {
         this.updateCapturedPieces();
         this.updateFieldEffects();
         this.clearHighlights();
+    }
+
+    // Multiplayer functions
+    showMultiplayerModal() {
+        document.getElementById('room-modal').style.display = 'flex';
+    }
+
+    createRoom() {
+        const playerName = document.getElementById('player-name-input').value.trim();
+        if (!playerName) {
+            alert('Please enter your name');
+            return;
+        }
+
+        this.playerName = playerName;
+        this.connectToServer();
+        
+        // Generate a random room code for display
+        const roomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+        document.getElementById('room-code-input').value = roomCode;
+        this.joinRoom();
+    }
+
+    joinRoom() {
+        const roomCode = document.getElementById('room-code-input').value.trim().toUpperCase();
+        const playerName = document.getElementById('player-name-input').value.trim();
+        
+        if (!roomCode || !playerName) {
+            alert('Please enter both room code and your name');
+            return;
+        }
+
+        this.roomCode = roomCode;
+        this.playerName = playerName;
+        
+        if (!this.socket) {
+            this.connectToServer();
+        } else {
+            this.socket.emit('join-room', { roomCode, playerName });
+        }
+    }
+
+    connectToServer() {
+        this.socket = io();
+        
+        this.socket.on('room-updated', (data) => {
+            this.updateRoomInfo(data);
+        });
+
+        this.socket.on('room-full', () => {
+            alert('Room is full!');
+        });
+
+        this.socket.on('game-started', (data) => {
+            this.handleGameStarted(data);
+        });
+
+        this.socket.on('move-made', (data) => {
+            this.handleMoveMade(data);
+        });
+
+        this.socket.on('rift-effect-applied', (data) => {
+            this.handleRiftEffect(data);
+        });
+
+        if (this.roomCode && this.playerName) {
+            this.socket.emit('join-room', { roomCode: this.roomCode, playerName: this.playerName });
+        }
+    }
+
+    updateRoomInfo(data) {
+        const { players, spectators, gamePhase, coinFlipResult } = data;
+        
+        // Update room info display
+        document.getElementById('current-room-code').textContent = this.roomCode;
+        document.getElementById('room-info').style.display = 'block';
+        
+        // Update players list
+        const playersList = document.getElementById('players-list');
+        playersList.innerHTML = '';
+        players.forEach(player => {
+            const playerDiv = document.createElement('div');
+            playerDiv.className = 'player-item';
+            playerDiv.textContent = `${player.name} (${player.color || 'waiting...'})`;
+            playersList.appendChild(playerDiv);
+            
+            // Set our color if we're this player
+            if (player.name === this.playerName) {
+                this.playerColor = player.color;
+                this.isMultiplayer = true;
+                this.isSpectator = false;
+            }
+        });
+        
+        // Update spectators list
+        const spectatorsList = document.getElementById('spectators-list');
+        spectatorsList.innerHTML = '';
+        spectators.forEach(spectator => {
+            const spectatorDiv = document.createElement('div');
+            spectatorDiv.className = 'spectator-item';
+            spectatorDiv.textContent = spectator.name;
+            spectatorsList.appendChild(spectatorDiv);
+            
+            // Set spectator mode if we're this spectator
+            if (spectator.name === this.playerName) {
+                this.isMultiplayer = true;
+                this.isSpectator = true;
+            }
+        });
+        
+        // Show coin flip result
+        if (coinFlipResult !== null) {
+            document.getElementById('coin-flip-result').style.display = 'block';
+            const coinFlipText = coinFlipResult ? 'White goes first' : 'Black goes first';
+            document.getElementById('coin-flip-text').textContent = coinFlipText;
+        }
+        
+        // Show leave room button
+        document.getElementById('leave-room-btn').style.display = 'block';
+        
+        // Update game phase
+        if (gamePhase === 'setup' && this.isMultiplayer && !this.isSpectator) {
+            this.gamePhase = 'setup';
+            this.updateUI();
+        }
+    }
+
+    handleGameStarted(data) {
+        const { gameState, currentPlayer } = data;
+        this.board = gameState.board;
+        this.currentPlayer = currentPlayer;
+        this.gamePhase = 'playing';
+        this.renderBoard();
+        this.updateUI();
+        this.addToGameLog('Game started!', 'system');
+    }
+
+    handleMoveMade(data) {
+        const { move, currentPlayer, gameState } = data;
+        this.board = gameState.board;
+        this.currentPlayer = currentPlayer;
+        this.capturedPieces = gameState.capturedPieces;
+        this.activeFieldEffects = gameState.activeFieldEffects;
+        this.renderBoard();
+        this.updateUI();
+        this.updateCapturedPieces();
+        this.updateFieldEffects();
+        this.addToGameLog(`${move.playerName} moved ${move.piece} from ${move.from} to ${move.to}`, 'move');
+    }
+
+    handleRiftEffect(data) {
+        const { effect, gameState } = data;
+        this.board = gameState.board;
+        this.capturedPieces = gameState.capturedPieces;
+        this.activeFieldEffects = gameState.activeFieldEffects;
+        this.renderBoard();
+        this.updateUI();
+        this.updateCapturedPieces();
+        this.updateFieldEffects();
+        this.addToGameLog(`Rift effect: ${effect.name}`, 'effect');
+    }
+
+    leaveRoom() {
+        if (this.socket) {
+            this.socket.disconnect();
+            this.socket = null;
+        }
+        
+        this.roomCode = null;
+        this.playerName = null;
+        this.playerColor = null;
+        this.isMultiplayer = false;
+        this.isSpectator = false;
+        
+        // Hide room modal
+        document.getElementById('room-modal').style.display = 'none';
+        document.getElementById('room-info').style.display = 'none';
+        document.getElementById('leave-room-btn').style.display = 'none';
+        
+        // Reset to single player
+        this.newGame();
     }
 }
 

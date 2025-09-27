@@ -1,85 +1,104 @@
-# Chess: Rifts of Chaos ♟️
+# Chess: Rifts of Chaos
 
-A chaotic twist on classic chess where mysterious rifts alter the battlefield with unpredictable effects!
+A chaotic twist on classic chess where rifts alter the battlefield with magical effects!
 
-## How to Play
+## 🎮 Features
 
-### Setup Phase
-1. **Place Rifts**: Before the game starts, you need to place 4 rifts on the board
-   - Rifts can only be placed on rows 3, 4, 5, or 6 (rows 3-6)
-   - No two rifts can share the same row or column
-   - Click on squares to place rifts, or use the "Generate Random Rifts" button
-   - Click on placed rifts to remove them
+- **Classic Chess Mechanics** - Standard chess rules with piece movement
+- **Rift Effects** - 21 different magical effects that trigger when pieces land on rifts
+- **Multiplayer Support** - Play with friends online in real-time
+- **Room System** - Join games with 6-character room codes
+- **Spectator Mode** - Watch games with up to 2 spectators
+- **Dark Mode** - Toggle between light and dark themes
+- **Game Log** - Track all moves and effects
+- **Chat System** - Communicate with other players
 
-2. **Start Game**: Once 4 rifts are placed, click "Start Game" to begin
+## 🚀 How to Play
+
+### Local Development
+
+1. Clone the repository
+2. Install dependencies: `npm install`
+3. Start the server: `npm start`
+4. Open `http://localhost:3000` in your browser
+
+### Online Play
+
+Visit the live game at: [https://gabewalls.github.io/chess-rifts-of-chaos/](https://gabewalls.github.io/chess-rifts-of-chaos/)
+
+## 🎯 Game Rules
+
+### Setup
+1. Place 4 rifts on rows 3, 4, 5, or 6
+2. No two rifts can share the same row or column
+3. Players are assigned colors via coin flip
 
 ### Gameplay
-- Play standard chess rules with one major difference: **rifts**
-- When a piece moves onto a rift square, roll a D20 to determine the effect
-- Each rift effect can dramatically change the game state
-- Rifts are marked with swirling, colorful animations
+- Standard chess rules apply
+- When a piece lands on a rift, roll a D20
+- The corresponding rift effect is triggered
+- Effects can be beneficial, harmful, or neutral
 
 ### Rift Effects
-The game includes 21 different rift effects, each triggered by rolling a D20:
+- **Special Effects**: Trigger once, then expire
+- **Field Effects**: Alter gameplay rules globally until replaced
+- **Player Choices**: Some effects allow player decisions
 
-#### Special Effects (One-time)
-- **Necromancer's Trap** (☆): Remove your piece, place opponent's captured piece on rift
-- **Archer's Trick Shot** (☆☆☆☆☆): Remove enemy pieces in 3 directions
-- **Sandworm** (☆☆☆): Remove all pieces within 1 square of the rift
-- **Dragon's Breath** (☆☆☆☆): Remove any piece up to 3 squares away
-- **Portal in the Rift** (☆☆☆☆): Teleport to another rift
-- **Spring of Revival** (☆☆☆☆☆): Resurrect a captured piece
-- And many more!
+## 🌐 Multiplayer
 
-#### Field Effects (Ongoing)
-- **Famine** (☆☆): Pawns cannot move
-- **Sandstorm** (☆☆): Severe movement restrictions
-- **Holiday's Rejuvenation** (☆☆☆☆): Enhanced movement abilities
-- **Time Distortion** (☆☆☆): Freeze pieces in a radius
-- **Eerie Fog's Turmoil** (☆☆): Random turn skipping
+### Creating a Game
+1. Click "🎮 Multiplayer"
+2. Enter your name
+3. Click "Create New Room"
+4. Share the room code with friends
 
-### Game Features
-- **Beautiful UI**: Modern, responsive design with smooth animations
-- **Visual Feedback**: Clear indication of possible moves, captures, and rift effects
-- **Captured Pieces Tracker**: See all captured pieces for both players
-- **Active Effects Display**: Track ongoing field effects
-- **Dice Rolling**: Built-in D20 rolling system for rift effects
-- **Game State Management**: Proper turn management and win conditions
+### Joining a Game
+1. Click "🎮 Multiplayer"
+2. Enter your name and room code
+3. Click "Join Room"
 
-### Controls
-- **Mouse**: Click to select pieces and make moves
-- **Setup**: Click squares to place/remove rifts
-- **Game**: Click pieces to select, click destination squares to move
-- **Rift Effects**: Roll dice when prompted, follow effect instructions
+### Room Capacity
+- **2 Players** - Active chess players
+- **2 Spectators** - View-only observers
+- **Total**: 4 people per room
 
-### Victory Conditions
-- Standard chess win: Checkmate your opponent's king
-- Special win: If a rift effect removes a king from play, that player immediately loses
+## 🛠️ Technical Details
 
-## Technical Details
+- **Frontend**: HTML5, CSS3, JavaScript (ES6+)
+- **Backend**: Node.js, Express, Socket.io
+- **Real-time**: WebSocket connections for multiplayer
+- **Hosting**: GitHub Pages + Custom server
 
-### Files
-- `index.html` - Main game interface
-- `styles.css` - Styling and animations
-- `chess-game.js` - Game logic and rift system
-- `README.md` - This file
+## 📱 Browser Support
 
-### Browser Compatibility
-- Modern browsers with ES6 support
-- Responsive design works on desktop and mobile
-- No external dependencies required
+- Chrome (recommended)
+- Firefox
+- Safari
+- Edge
 
-### Game Rules Implementation
-- Full standard chess movement rules
-- All 21 rift effects with proper ratings and descriptions
-- Field effect system with proper stacking rules
-- Rift placement validation
-- Turn-based gameplay with proper state management
+## 🎨 Customization
 
-## Getting Started
-1. Open `index.html` in your web browser
-2. Place 4 rifts on the board (rows 3-6, no shared rows/columns)
-3. Click "Start Game"
-4. Play chess normally, but watch out for those rifts!
+The game supports:
+- Dark/Light mode toggle
+- Responsive design for mobile devices
+- Customizable rift animations
+- Adjustable game log and chat
 
-Enjoy the chaos! 🎲⚡
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Submit a pull request
+
+## 📄 License
+
+This project is licensed under the MIT License.
+
+## 🎉 Credits
+
+Created by GabeWalls - A chaotic chess experience for friends to enjoy together!
+
+---
+
+**Note**: For the best multiplayer experience, ensure all players have a stable internet connection.
