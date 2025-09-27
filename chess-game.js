@@ -1540,7 +1540,7 @@ class ChessGame {
 
         connectToServer() {
             // Use Railway URL in production, localhost in development
-            const serverUrl = window.location.hostname === 'localhost' ? 'http://localhost:3000' : 'https://chess-rifts-of-chaos-production.up.railway.app';
+            const serverUrl = window.location.hostname === 'localhost' ? 'http://localhost:3000' : 'https://web-production-4da5.up.railway.app';
             this.socket = io(serverUrl);
         
         this.socket.on('room-updated', (data) => {

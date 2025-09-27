@@ -25,7 +25,7 @@ A chaotic twist on classic chess where rifts alter the battlefield with magical 
 ### Online Play
 
 **Frontend**: [https://gabewalls.github.io/chess-rifts-of-chaos/](https://gabewalls.github.io/chess-rifts-of-chaos/)  
-**Backend**: [https://chess-rifts-of-chaos-production.up.railway.app/](https://chess-rifts-of-chaos-production.up.railway.app/)
+**Backend**: [https://web-production-4da5.up.railway.app/](https://web-production-4da5.up.railway.app/)
 
 *Note: The game requires both frontend and backend to be running for multiplayer functionality.*
 
