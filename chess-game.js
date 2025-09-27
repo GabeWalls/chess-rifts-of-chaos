@@ -232,6 +232,7 @@ class ChessGame {
         if (this.isMultiplayer && this.socket) {
             this.socket.emit('start-game', {
                 roomCode: this.roomCode,
+                playerName: this.playerName,
                 gameState: {
                     board: this.board,
                     currentPlayer: this.currentPlayer,
@@ -570,7 +571,8 @@ class ChessGame {
                     board: this.board,
                     currentPlayer: this.currentPlayer,
                     capturedPieces: this.capturedPieces,
-                    activeFieldEffects: this.activeFieldEffects
+                    activeFieldEffects: this.activeFieldEffects,
+                    rifts: this.rifts
                 }
             };
             
@@ -694,7 +696,14 @@ class ChessGame {
         if (this.isMultiplayer && this.socket) {
             this.socket.emit('rift-effect', {
                 roomCode: this.roomCode,
-                effect: { ...effect, roll: roll, riftRow, riftCol, activatingPiece }
+                effect: { ...effect, roll: roll, riftRow, riftCol, activatingPiece },
+                gameState: {
+                    board: this.board,
+                    currentPlayer: this.currentPlayer,
+                    capturedPieces: this.capturedPieces,
+                    activeFieldEffects: this.activeFieldEffects,
+                    rifts: this.rifts
+                }
             });
         }
         
@@ -1689,14 +1698,15 @@ class ChessGame {
     }
 
     handleGameStarted(data) {
-        const { gameState, currentPlayer } = data;
+        const { gameState, currentPlayer, rifts } = data;
         this.board = gameState.board;
         this.currentPlayer = currentPlayer;
         this.gamePhase = 'playing';
+        this.rifts = rifts || gameState.rifts; // Use server-synced rifts
         this.renderBoard();
         this.updateUI();
         this.addToGameLog('Game started!', 'system');
-        console.log(`Game started! Current player: ${currentPlayer}, My color: ${this.playerColor}`);
+        console.log(`Game started! Current player: ${currentPlayer}, My color: ${this.playerColor}, Rifts: ${JSON.stringify(this.rifts)}`);
     }
 
     handleMoveMade(data) {
@@ -1705,6 +1715,7 @@ class ChessGame {
         this.currentPlayer = currentPlayer;
         this.capturedPieces = gameState.capturedPieces;
         this.activeFieldEffects = gameState.activeFieldEffects;
+        this.rifts = gameState.rifts; // Sync rifts
         this.renderBoard();
         this.updateUI();
         this.updateCapturedPieces();
@@ -1718,6 +1729,7 @@ class ChessGame {
         this.board = gameState.board;
         this.capturedPieces = gameState.capturedPieces;
         this.activeFieldEffects = gameState.activeFieldEffects;
+        this.rifts = gameState.rifts; // Sync rifts
         this.renderBoard();
         this.updateUI();
         this.updateCapturedPieces();

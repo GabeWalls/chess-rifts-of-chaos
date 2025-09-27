@@ -119,12 +119,18 @@ io.on('connection', (socket) => {
     const room = rooms.get(roomCode);
     
     if (room && room.gamePhase === 'setup') {
+      // Store the game state on the server
       room.gameState = gameState;
       room.gamePhase = 'playing';
+      room.currentPlayer = 'white'; // White always starts
       
+      console.log(`Game started in room ${roomCode} by ${data.playerName || 'unknown'}`);
+      
+      // Broadcast game start to all players in room
       io.to(roomCode).emit('game-started', {
         gameState: room.gameState,
-        currentPlayer: room.currentPlayer
+        currentPlayer: room.currentPlayer,
+        rifts: gameState.rifts
       });
     }
   });
@@ -133,14 +139,18 @@ io.on('connection', (socket) => {
   socket.on('make-move', (data) => {
     const { roomCode, move } = data;
     const room = rooms.get(roomCode);
-    const player = players.get(socket.id);
+    const playerData = players.get(socket.id);
     
-    if (room && player && room.gamePhase === 'playing') {
+    if (room && playerData && room.gamePhase === 'playing') {
+      const player = playerData.player;
+      
       // Validate it's the player's turn
       if (player.color === room.currentPlayer) {
-        // Update game state
+        // Update game state on server
         room.gameState = move.gameState;
         room.currentPlayer = room.currentPlayer === 'white' ? 'black' : 'white';
+        
+        console.log(`Move made in room ${roomCode}: ${move.playerName} moved ${move.piece} from ${move.from} to ${move.to}`);
         
         // Broadcast move to all players in room
         io.to(roomCode).emit('move-made', {
@@ -148,16 +158,23 @@ io.on('connection', (socket) => {
           currentPlayer: room.currentPlayer,
           gameState: room.gameState
         });
+      } else {
+        console.log(`Invalid move attempt: ${player.name} (${player.color}) tried to move on ${room.currentPlayer}'s turn`);
       }
     }
   });
 
   // Handle rift effects
   socket.on('rift-effect', (data) => {
-    const { roomCode, effect } = data;
+    const { roomCode, effect, gameState } = data;
     const room = rooms.get(roomCode);
     
     if (room && room.gamePhase === 'playing') {
+      // Update server game state
+      room.gameState = gameState;
+      
+      console.log(`Rift effect in room ${roomCode}: ${effect.name}`);
+      
       // Broadcast rift effect to all players
       io.to(roomCode).emit('rift-effect-applied', {
         effect: effect,
