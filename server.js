@@ -197,7 +197,7 @@ app.get('/', (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-  console.log(`Chess: Rifts of Chaos server running on port ${PORT}`);
-  console.log(`Open http://localhost:${PORT} to play`);
+server.listen(PORT, '0.0.0.0', () => {
+    console.log(`Chess: Rifts of Chaos server running on port ${PORT}`);
+    console.log(`Open http://localhost:${PORT} to play`);
 });
