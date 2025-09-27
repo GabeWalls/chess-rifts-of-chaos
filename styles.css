@@ -93,6 +93,12 @@ body {
     cursor: pointer;
     transition: all 0.2s ease;
     position: relative;
+    z-index: 1;
+}
+
+/* Chess pieces should appear above rifts */
+.chess-square:not(:empty) {
+    z-index: 15;
 }
 
 .chess-square.light {
@@ -163,7 +169,7 @@ body.dark-mode .chess-square.rift {
     content: '🌀';
     position: absolute;
     font-size: 1.5rem;
-    z-index: 10;
+    z-index: 5;
     text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
     animation: rift-swirl 4s linear infinite;
 }
@@ -178,7 +184,7 @@ body.dark-mode .chess-square.rift::before {
     content: '🌀';
     position: absolute;
     font-size: 1.5rem;
-    z-index: 10;
+    z-index: 5;
     text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
     animation: rift-swirl 4s linear infinite;
 }
