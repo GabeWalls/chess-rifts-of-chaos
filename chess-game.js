@@ -75,6 +75,7 @@ class ChessGame {
         
         // Multiplayer controls
         document.getElementById('multiplayer-btn').addEventListener('click', () => this.showMultiplayerModal());
+        document.getElementById('close-room-modal').addEventListener('click', () => this.closeMultiplayerModal());
         document.getElementById('join-room-btn').addEventListener('click', () => this.joinRoom());
         document.getElementById('create-room-btn').addEventListener('click', () => this.createRoom());
         document.getElementById('leave-room-btn').addEventListener('click', () => this.leaveRoom());
@@ -1503,6 +1504,40 @@ class ChessGame {
         document.getElementById('room-modal').style.display = 'flex';
     }
 
+    closeMultiplayerModal() {
+        document.getElementById('room-modal').style.display = 'none';
+    }
+
+    updateMultiplayerStatus(players, spectators) {
+        const multiplayerStatus = document.getElementById('multiplayer-status');
+        const roomPlayersDisplay = document.getElementById('room-players-display');
+        const roomSpectatorsDisplay = document.getElementById('room-spectators-display');
+        
+        if (this.isMultiplayer) {
+            multiplayerStatus.style.display = 'block';
+            
+            // Update players display
+            roomPlayersDisplay.innerHTML = '';
+            players.forEach(player => {
+                const playerDiv = document.createElement('div');
+                playerDiv.className = 'room-player-item';
+                playerDiv.textContent = `${player.name} (${player.color || 'waiting...'})`;
+                roomPlayersDisplay.appendChild(playerDiv);
+            });
+            
+            // Update spectators display
+            roomSpectatorsDisplay.innerHTML = '';
+            spectators.forEach(spectator => {
+                const spectatorDiv = document.createElement('div');
+                spectatorDiv.className = 'room-spectator-item';
+                spectatorDiv.textContent = `${spectator.name} (spectator)`;
+                roomSpectatorsDisplay.appendChild(spectatorDiv);
+            });
+        } else {
+            multiplayerStatus.style.display = 'none';
+        }
+    }
+
     createRoom() {
         const playerName = document.getElementById('player-name-input').value.trim();
         if (!playerName) {
@@ -1613,6 +1648,15 @@ class ChessGame {
             document.getElementById('coin-flip-result').style.display = 'block';
             const coinFlipText = coinFlipResult ? 'White goes first' : 'Black goes first';
             document.getElementById('coin-flip-text').textContent = coinFlipText;
+            
+            // Auto-close room modal after coin flip and start game phase
+            if (gamePhase === 'setup') {
+                setTimeout(() => {
+                    this.closeMultiplayerModal();
+                    this.gamePhase = 'setup';
+                    this.updateUI();
+                }, 2000); // Close after 2 seconds
+            }
         }
         
         // Show leave room button
@@ -1623,6 +1667,9 @@ class ChessGame {
             this.gamePhase = 'setup';
             this.updateUI();
         }
+        
+        // Update multiplayer status display
+        this.updateMultiplayerStatus(players, spectators);
     }
 
     handleGameStarted(data) {
@@ -1676,6 +1723,7 @@ class ChessGame {
         document.getElementById('room-modal').style.display = 'none';
         document.getElementById('room-info').style.display = 'none';
         document.getElementById('leave-room-btn').style.display = 'none';
+        document.getElementById('multiplayer-status').style.display = 'none';
         
         // Reset to single player
         this.newGame();

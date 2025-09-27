@@ -51,6 +51,13 @@
 
                 <div class="game-controls-panel" id="game-controls-panel" style="display: none;">
                     <h3>Game Controls</h3>
+                    
+                    <!-- Multiplayer Status -->
+                    <div id="multiplayer-status" class="multiplayer-status" style="display: none;">
+                        <h4>Players in Room</h4>
+                        <div id="room-players-display" class="room-players-display"></div>
+                        <div id="room-spectators-display" class="room-spectators-display"></div>
+                    </div>
                     <div class="captured-pieces">
                         <h4>Captured Pieces</h4>
                         <div class="captured-white">
@@ -113,7 +120,10 @@
         <!-- Multiplayer Room Modal -->
         <div class="room-modal" id="room-modal" style="display: none;">
             <div class="modal-content">
-                <h3>Join Multiplayer Game</h3>
+                <div class="modal-header">
+                    <h3>Join Multiplayer Game</h3>
+                    <button class="close-btn" id="close-room-modal">&times;</button>
+                </div>
                 <div class="room-inputs">
                     <input type="text" id="room-code-input" placeholder="Enter room code (e.g., ABC123)" maxlength="6">
                     <input type="text" id="player-name-input" placeholder="Enter your name" maxlength="20">
