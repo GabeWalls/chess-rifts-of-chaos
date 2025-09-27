@@ -166,6 +166,18 @@ io.on('connection', (socket) => {
     }
   });
 
+  // Handle chat messages
+  socket.on('chat-message', (data) => {
+    const { roomCode, message } = data;
+    const room = rooms.get(roomCode);
+    
+    if (room) {
+      // Broadcast chat message to all players in room
+      io.to(roomCode).emit('chat-message', { message });
+      console.log(`Chat in room ${roomCode}: ${message.player}: ${message.message}`);
+    }
+  });
+
   // Handle disconnection
   socket.on('disconnect', () => {
     const playerData = players.get(socket.id);

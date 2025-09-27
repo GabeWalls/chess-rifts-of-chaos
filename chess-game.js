@@ -519,6 +519,7 @@ class ChessGame {
         // In multiplayer, only allow moves for the current player's color
         if (this.isMultiplayer && !this.isSpectator) {
             if (this.currentPlayer !== this.playerColor) {
+                console.log(`Not your turn! Current: ${this.currentPlayer}, Your color: ${this.playerColor}`);
                 return;
             }
         }
@@ -816,13 +817,23 @@ class ChessGame {
         const message = chatInput.value.trim();
         
         if (message) {
-            this.chatMessages.push({
+            const chatMessage = {
                 message,
-                player: this.currentPlayer,
+                player: this.playerName || this.currentPlayer,
                 timestamp: new Date().toLocaleTimeString()
-            });
+            };
+            
+            this.chatMessages.push(chatMessage);
             this.updateChatMessages();
             chatInput.value = '';
+            
+            // Send chat message to server in multiplayer
+            if (this.isMultiplayer && this.socket) {
+                this.socket.emit('chat-message', {
+                    roomCode: this.roomCode,
+                    message: chatMessage
+                });
+            }
         }
     }
 
@@ -1598,6 +1609,10 @@ class ChessGame {
             this.handleRiftEffect(data);
         });
 
+        this.socket.on('chat-message', (data) => {
+            this.handleChatMessage(data);
+        });
+
         if (this.roomCode && this.playerName) {
             this.socket.emit('join-room', { roomCode: this.roomCode, playerName: this.playerName });
         }
@@ -1666,6 +1681,7 @@ class ChessGame {
         if (gamePhase === 'setup' && this.isMultiplayer && !this.isSpectator) {
             this.gamePhase = 'setup';
             this.updateUI();
+            console.log(`Game phase updated to: ${this.gamePhase}, Current player: ${this.currentPlayer}, My color: ${this.playerColor}`);
         }
         
         // Update multiplayer status display
@@ -1680,6 +1696,7 @@ class ChessGame {
         this.renderBoard();
         this.updateUI();
         this.addToGameLog('Game started!', 'system');
+        console.log(`Game started! Current player: ${currentPlayer}, My color: ${this.playerColor}`);
     }
 
     handleMoveMade(data) {
@@ -1693,6 +1710,7 @@ class ChessGame {
         this.updateCapturedPieces();
         this.updateFieldEffects();
         this.addToGameLog(`${move.playerName} moved ${move.piece} from ${move.from} to ${move.to}`, 'move');
+        console.log(`Move received: ${move.playerName} moved ${move.piece} from ${move.from} to ${move.to}, Current player: ${currentPlayer}`);
     }
 
     handleRiftEffect(data) {
@@ -1705,6 +1723,12 @@ class ChessGame {
         this.updateCapturedPieces();
         this.updateFieldEffects();
         this.addToGameLog(`Rift effect: ${effect.name}`, 'effect');
+    }
+
+    handleChatMessage(data) {
+        const { message } = data;
+        this.chatMessages.push(message);
+        this.updateChatMessages();
     }
 
     leaveRoom() {
