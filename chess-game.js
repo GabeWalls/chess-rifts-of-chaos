@@ -204,6 +204,14 @@ class ChessGame {
         if (this.rifts.length === 4) {
             document.getElementById('start-game').disabled = false;
         }
+        
+        // In multiplayer, sync rifts with other players
+        if (this.isMultiplayer && this.socket) {
+            this.socket.emit('sync-rifts', {
+                roomCode: this.roomCode,
+                rifts: this.rifts
+            });
+        }
     }
 
     removeRift(row, col) {
@@ -832,17 +840,19 @@ class ChessGame {
                 timestamp: new Date().toLocaleTimeString()
             };
             
-            this.chatMessages.push(chatMessage);
-            this.updateChatMessages();
-            chatInput.value = '';
-            
             // Send chat message to server in multiplayer
             if (this.isMultiplayer && this.socket) {
                 this.socket.emit('chat-message', {
                     roomCode: this.roomCode,
                     message: chatMessage
                 });
+            } else {
+                // Single player - add directly
+                this.chatMessages.push(chatMessage);
+                this.updateChatMessages();
             }
+            
+            chatInput.value = '';
         }
     }
 
@@ -1622,6 +1632,10 @@ class ChessGame {
             this.handleChatMessage(data);
         });
 
+        this.socket.on('rifts-synced', (data) => {
+            this.handleRiftsSynced(data);
+        });
+
         if (this.roomCode && this.playerName) {
             this.socket.emit('join-room', { roomCode: this.roomCode, playerName: this.playerName });
         }
@@ -1741,6 +1755,19 @@ class ChessGame {
         const { message } = data;
         this.chatMessages.push(message);
         this.updateChatMessages();
+    }
+
+    handleRiftsSynced(data) {
+        const { rifts } = data;
+        this.rifts = rifts;
+        this.renderBoard();
+        this.updateRiftCounter();
+        
+        if (this.rifts.length === 4) {
+            document.getElementById('start-game').disabled = false;
+        }
+        
+        console.log(`Rifts synced: ${JSON.stringify(this.rifts)}`);
     }
 
     leaveRoom() {

@@ -35,7 +35,8 @@ function createRoom(roomCode) {
     gameState: null,
     currentPlayer: 'white',
     gamePhase: 'waiting', // 'waiting', 'setup', 'playing', 'finished'
-    coinFlipResult: null
+    coinFlipResult: null,
+    rifts: []
   };
   rooms.set(roomCode, room);
   return room;
@@ -192,6 +193,22 @@ io.on('connection', (socket) => {
       // Broadcast chat message to all players in room
       io.to(roomCode).emit('chat-message', { message });
       console.log(`Chat in room ${roomCode}: ${message.player}: ${message.message}`);
+    }
+  });
+
+  // Handle rift synchronization
+  socket.on('sync-rifts', (data) => {
+    const { roomCode, rifts } = data;
+    const room = rooms.get(roomCode);
+    
+    if (room && room.gamePhase === 'setup') {
+      // Store rifts on server
+      room.rifts = rifts;
+      
+      console.log(`Rifts synced in room ${roomCode}: ${JSON.stringify(rifts)}`);
+      
+      // Broadcast rifts to all players in room
+      io.to(roomCode).emit('rifts-synced', { rifts });
     }
   });
 
