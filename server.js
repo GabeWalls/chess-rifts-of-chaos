@@ -27,8 +27,7 @@ function generateRoomCode() {
 }
 
 // Create a new room
-function createRoom() {
-  const roomCode = generateRoomCode();
+function createRoom(roomCode) {
   const room = {
     code: roomCode,
     players: [],
@@ -45,7 +44,7 @@ function createRoom() {
 // Get or create room
 function getRoom(roomCode) {
   if (!rooms.has(roomCode)) {
-    return createRoom();
+    return createRoom(roomCode);
   }
   return rooms.get(roomCode);
 }
@@ -57,7 +56,17 @@ io.on('connection', (socket) => {
   // Join room
   socket.on('join-room', (data) => {
     const { roomCode, playerName } = data;
+    console.log(`Player ${playerName} attempting to join room ${roomCode}`);
+    
     const room = getRoom(roomCode);
+    console.log(`Room ${roomCode} has ${room.players.length} players, ${room.spectators.length} spectators`);
+    
+    // Check if player is already in this room
+    const existingPlayer = Array.from(players.values()).find(p => p.roomCode === roomCode && p.player.id === socket.id);
+    if (existingPlayer) {
+      console.log(`Player ${playerName} already in room ${roomCode}`);
+      return;
+    }
     
     // Check if room is full
     if (room.players.length >= 2 && room.spectators.length >= 2) {
@@ -75,8 +84,10 @@ io.on('connection', (socket) => {
 
     if (player.role === 'player') {
       room.players.push(player);
+      console.log(`Added ${playerName} as player. Room now has ${room.players.length} players`);
     } else {
       room.spectators.push(player);
+      console.log(`Added ${playerName} as spectator. Room now has ${room.spectators.length} spectators`);
     }
 
     players.set(socket.id, { roomCode, player });
