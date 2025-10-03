@@ -36,7 +36,8 @@ function createRoom(roomCode) {
     currentPlayer: 'white',
     gamePhase: 'waiting', // 'waiting', 'setup', 'playing', 'finished'
     coinFlipResult: null,
-    rifts: []
+    rifts: [],
+    hostId: null // Track who created the room
   };
   rooms.set(roomCode, room);
   return room;
@@ -80,8 +81,16 @@ io.on('connection', (socket) => {
       id: socket.id,
       name: playerName,
       color: null,
-      role: room.players.length < 2 ? 'player' : 'spectator'
+      role: room.players.length < 2 ? 'player' : 'spectator',
+      isHost: room.hostId === null // First player becomes host
     };
+
+    // Set host if this is the first player
+    if (room.hostId === null) {
+      room.hostId = socket.id;
+      player.isHost = true;
+      console.log(`${playerName} is now the host of room ${roomCode}`);
+    }
 
     if (player.role === 'player') {
       room.players.push(player);
@@ -94,14 +103,8 @@ io.on('connection', (socket) => {
     players.set(socket.id, { roomCode, player });
     socket.join(roomCode);
 
-    // Assign colors if we have 2 players
-    if (room.players.length === 2 && !room.coinFlipResult) {
-      // Coin flip to determine colors
-      room.coinFlipResult = Math.random() < 0.5;
-      room.players[0].color = room.coinFlipResult ? 'white' : 'black';
-      room.players[1].color = room.coinFlipResult ? 'black' : 'white';
-      room.gamePhase = 'setup';
-    }
+    // Don't auto-assign colors or start game - wait for host to start
+    // Colors will be assigned when host starts the game
 
     // Notify all players in room
     io.to(roomCode).emit('room-updated', {
@@ -112,6 +115,31 @@ io.on('connection', (socket) => {
     });
 
     console.log(`Player ${playerName} joined room ${roomCode} as ${player.role}`);
+  });
+
+  // Host starts game (assigns colors and starts)
+  socket.on('host-start-game', (data) => {
+    const { roomCode } = data;
+    const room = rooms.get(roomCode);
+    const playerData = players.get(socket.id);
+    
+    if (room && playerData && playerData.player.isHost && room.gamePhase === 'waiting') {
+      // Assign colors via coin flip
+      room.coinFlipResult = Math.random() < 0.5;
+      room.players[0].color = room.coinFlipResult ? 'white' : 'black';
+      room.players[1].color = room.coinFlipResult ? 'black' : 'white';
+      room.gamePhase = 'setup';
+      
+      console.log(`Host started game in room ${roomCode}. Colors assigned.`);
+      
+      // Notify all players in room
+      io.to(roomCode).emit('room-updated', {
+        players: room.players,
+        spectators: room.spectators,
+        gamePhase: room.gamePhase,
+        coinFlipResult: room.coinFlipResult
+      });
+    }
   });
 
   // Start game (after rift setup)

@@ -12,6 +12,7 @@ class ChessGame {
         this.frozenPieces = new Set();
         this.riftActivatedThisTurn = false;
         this.diceRolledThisTurn = false;
+        this.kingMovedThisTurn = { white: false, black: false };
         this.gameLog = [];
         this.chatMessages = [];
         this.darkMode = false;
@@ -98,6 +99,13 @@ class ChessGame {
         const boardElement = document.getElementById('chess-board');
         boardElement.innerHTML = '';
         
+        // Add sandstorm effect to board if active
+        if (this.activeFieldEffects.includes('sandstorm')) {
+            boardElement.classList.add('sandstorm-effect');
+        } else {
+            boardElement.classList.remove('sandstorm-effect');
+        }
+        
         for (let row = 0; row < 8; row++) {
             for (let col = 0; col < 8; col++) {
                 const square = document.createElement('div');
@@ -121,6 +129,11 @@ class ChessGame {
                     const pieceSymbol = this.getPieceSymbol(piece);
                     square.textContent = pieceSymbol;
                     square.dataset.piece = `${piece.color}-${piece.type}`;
+                    
+                    // Add conqueror king class if king has double move ability
+                    if (piece.type === 'king' && this.kingAbilities[piece.color]?.doubleMove) {
+                        square.classList.add('conqueror-king');
+                    }
                 }
                 
                 square.addEventListener('click', () => this.handleSquareClick(row, col));
@@ -459,6 +472,10 @@ class ChessGame {
         
         if (this.activeFieldEffects.includes('sandstorm')) {
             if (piece.type === 'pawn') return []; // Pawns cannot move
+            if (piece.type === 'king') {
+                // Kings cannot move unless in check (simplified - for now just restrict movement)
+                return []; // Simplified implementation - in full version would check for check
+            }
             if (piece.type === 'knight') {
                 // Knights move only 1 square
                 const moves = [];
@@ -592,6 +609,11 @@ class ChessGame {
         this.board[fromRow][fromCol] = null;
         piece.hasMoved = true;
         
+        // Track king moves for Conqueror's Tale
+        if (piece.type === 'king') {
+            this.kingMovedThisTurn[piece.color] = true;
+        }
+        
         // Log the move
         const fromCoords = String.fromCharCode(97 + fromCol) + (8 - fromRow);
         const toCoords = String.fromCharCode(97 + toCol) + (8 - toRow);
@@ -630,7 +652,15 @@ class ChessGame {
             this.riftActivatedThisTurn = true;
         } else {
             this.renderBoard();
-            this.switchPlayer();
+            
+            // Check if king can move again with Conqueror's Tale
+            const piece = this.board[toRow][toCol];
+            if (piece && piece.type === 'king' && this.kingAbilities[piece.color]?.doubleMove && this.kingMovedThisTurn[piece.color]) {
+                // King has already moved once, can move again
+                this.addToGameLog(`${piece.color} king can move again!`, 'system');
+            } else {
+                this.switchPlayer();
+            }
         }
     }
 
@@ -1119,6 +1149,14 @@ class ChessGame {
         
         buttonsHtml += '</div>';
         optionsDiv.innerHTML = buttonsHtml;
+        
+        // Ensure board is visible
+        const boardElement = document.getElementById('chess-board');
+        if (boardElement) {
+            boardElement.style.display = 'grid';
+            boardElement.style.visibility = 'visible';
+        }
+        
         this.addToGameLog(`Dragon's Breath activated! Choose direction.`, 'effect');
     }
 
@@ -1132,6 +1170,7 @@ class ChessGame {
             if (targetRow >= 0 && targetRow < 8 && targetCol >= 0 && targetCol < 8) {
                 if (this.board[targetRow][targetCol] && this.board[targetRow][targetCol].color !== this.currentPlayer) {
                     this.capturedPieces[this.board[targetRow][targetCol].color].push(this.board[targetRow][targetCol]);
+                    this.board[targetRow][targetCol] = null; // Remove piece immediately
                     this.removePieceWithAnimation(targetRow, targetCol, piecesRemoved * 400);
                     piecesRemoved++;
                 }
@@ -1139,6 +1178,10 @@ class ChessGame {
         }
 
         this.addToGameLog(`Dragon's Breath fired! ${piecesRemoved} enemy pieces removed.`, 'effect');
+        
+        // Update captured pieces and board
+        this.updateCapturedPieces();
+        this.renderBoard();
         
         setTimeout(() => {
             this.closeModal();
@@ -1461,6 +1504,7 @@ class ChessGame {
         this.currentPlayer = this.currentPlayer === 'white' ? 'black' : 'white';
         this.riftActivatedThisTurn = false;
         this.diceRolledThisTurn = false;
+        this.kingMovedThisTurn = { white: false, black: false }; // Reset king move tracking
         this.updateUI();
         this.addToGameLog(`${this.currentPlayer}'s turn`, 'system');
         
@@ -1793,6 +1837,12 @@ class ChessGame {
             console.log(`Game phase updated to: ${this.gamePhase}, Current player: ${this.currentPlayer}, My color: ${this.playerColor}`);
         }
         
+        // Check if current player is host and show host controls
+        const currentPlayerData = players.find(p => p.name === this.playerName);
+        if (currentPlayerData && currentPlayerData.isHost && gamePhase === 'waiting') {
+            this.showHostControls();
+        }
+        
         // Update multiplayer status display
         this.updateMultiplayerStatus(players, spectators);
         
@@ -1893,6 +1943,32 @@ class ChessGame {
         // Find the player whose color matches the current player
         const currentPlayerData = this.roomPlayers.find(player => player.color === this.currentPlayer);
         return currentPlayerData ? currentPlayerData.name : 'Unknown';
+    }
+
+    showHostControls() {
+        // Add host start game button to room modal
+        const roomInfo = document.getElementById('room-info');
+        const existingHostControls = document.getElementById('host-controls');
+        
+        if (!existingHostControls) {
+            const hostControls = document.createElement('div');
+            hostControls.id = 'host-controls';
+            hostControls.innerHTML = `
+                <div style="margin-top: 20px; padding: 15px; background: #e8f5e8; border-radius: 8px; border: 2px solid #4caf50;">
+                    <h4 style="color: #2e7d32; margin: 0 0 10px 0;">Host Controls</h4>
+                    <p style="margin: 0 0 10px 0; color: #2e7d32;">You are the host. Start the game when ready.</p>
+                    <button id="host-start-game-btn" class="btn primary" style="background: #4caf50; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">
+                        Start Game
+                    </button>
+                </div>
+            `;
+            roomInfo.appendChild(hostControls);
+            
+            // Add event listener for host start game button
+            document.getElementById('host-start-game-btn').addEventListener('click', () => {
+                this.socket.emit('host-start-game', { roomCode: this.roomCode });
+            });
+        }
     }
 
     leaveRoom() {
