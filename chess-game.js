@@ -23,6 +23,7 @@ class ChessGame {
         this.playerColor = null;
         this.isMultiplayer = false;
         this.isSpectator = false;
+        this.roomPlayers = []; // Store all players in the room
         
         this.initializeBoard();
         this.setupEventListeners();
@@ -109,13 +110,13 @@ class ChessGame {
                     square.classList.add('rift');
                 }
                 
-                // Add frozen class if piece is frozen
-                if (this.frozenPieces.has(`${row}-${col}`)) {
-                    square.classList.add('frozen-piece');
-                }
-                
                 // Add piece if present
                 const piece = this.board[row][col];
+                
+                // Add frozen class if piece is frozen
+                if (piece && (piece.frozen || this.frozenPieces.has(piece))) {
+                    square.classList.add('frozen-piece');
+                }
                 if (piece) {
                     const pieceSymbol = this.getPieceSymbol(piece);
                     square.textContent = pieceSymbol;
@@ -314,7 +315,7 @@ class ChessGame {
         if (!piece || piece.color !== this.currentPlayer) return false;
         
         // Check if piece is frozen
-        if (this.frozenPieces.has(`${fromRow}-${fromCol}`)) return false;
+        if (piece.frozen || this.frozenPieces.has(piece)) return false;
         
         // Basic bounds check
         if (toRow < 0 || toRow > 7 || toCol < 0 || toCol > 7) return false;
@@ -575,6 +576,12 @@ class ChessGame {
         
         // Handle capture
         if (capturedPiece) {
+            // Remove from frozen pieces if it was frozen
+            if (capturedPiece.frozen || this.frozenPieces.has(capturedPiece)) {
+                this.frozenPieces.delete(capturedPiece);
+                capturedPiece.frozen = false;
+            }
+            
             this.capturedPieces[capturedPiece.color].push(capturedPiece);
             this.updateCapturedPieces();
             this.addToGameLog(`${this.currentPlayer} captured ${capturedPiece.color}'s ${capturedPiece.type}`, 'move');
@@ -1215,6 +1222,8 @@ class ChessGame {
     applySandworm(riftRow, riftCol) {
         // Remove all pieces within 1 square of the rift with animation
         let delay = 0;
+        const piecesToRemove = [];
+        
         for (let rowOffset = -1; rowOffset <= 1; rowOffset++) {
             for (let colOffset = -1; colOffset <= 1; colOffset++) {
                 const targetRow = riftRow + rowOffset;
@@ -1222,19 +1231,27 @@ class ChessGame {
                 
                 if (this.isInBounds(targetRow, targetCol) && this.board[targetRow][targetCol]) {
                     const piece = this.board[targetRow][targetCol];
-                    this.capturedPieces[piece.color].push(piece);
-                    this.removePieceWithAnimation(targetRow, targetCol, delay);
-                    delay += 200;
+                    piecesToRemove.push({ row: targetRow, col: targetCol, piece });
                 }
             }
         }
+        
+        // Remove pieces immediately from board state, then animate
+        piecesToRemove.forEach(({ row, col, piece }) => {
+            this.capturedPieces[piece.color].push(piece);
+            this.board[row][col] = null;
+            this.removePieceWithAnimation(row, col, delay);
+            delay += 200;
+        });
+        
         this.addToGameLog(`Sandworm devours all nearby pieces!`, 'effect');
     }
 
     applyHonorableSacrifice(riftRow, riftCol, activatingPiece) {
-        // Remove activating piece with animation
-        this.removePieceWithAnimation(riftRow, riftCol);
+        // Remove activating piece immediately from board state
+        this.board[riftRow][riftCol] = null;
         this.capturedPieces[activatingPiece.color].push(activatingPiece);
+        this.removePieceWithAnimation(riftRow, riftCol);
         
         // Remove any enemy piece within 1 square with animation
         const directions = [[-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [1, 0], [1, 1]];
@@ -1246,6 +1263,7 @@ class ChessGame {
                 const piece = this.board[targetRow][targetCol];
                 if (piece.color !== this.currentPlayer) {
                     this.capturedPieces[piece.color].push(piece);
+                    this.board[targetRow][targetCol] = null;
                     this.removePieceWithAnimation(targetRow, targetCol, 500);
                     this.addToGameLog(`Honorable Sacrifice: Enemy piece removed!`, 'effect');
                     break; // Only remove one piece
@@ -1351,17 +1369,24 @@ class ChessGame {
         else if (radiusRoll >= 15 && radiusRoll <= 18) radius = 3;
         else if (radiusRoll >= 19) radius = 4;
         
-        // Freeze all pieces within radius
+        // Freeze all pieces within radius by storing their piece objects
         for (let rowOffset = -radius; rowOffset <= radius; rowOffset++) {
             for (let colOffset = -radius; colOffset <= radius; colOffset++) {
                 const targetRow = riftRow + rowOffset;
                 const targetCol = riftCol + colOffset;
                 
                 if (this.isInBounds(targetRow, targetCol) && this.board[targetRow][targetCol]) {
-                    this.frozenPieces.add(`${targetRow}-${targetCol}`);
+                    const piece = this.board[targetRow][targetCol];
+                    // Store piece reference instead of position
+                    if (!piece.frozen) {
+                        piece.frozen = true;
+                        this.frozenPieces.add(piece);
+                    }
                 }
             }
         }
+        
+        this.addToGameLog(`Time Distortion: ${radius} radius - pieces frozen!`, 'effect');
     }
 
     applyCrossroadDemonDeal(riftRow, riftCol, activatingPiece) {
@@ -1474,7 +1499,9 @@ class ChessGame {
         // Update current player display with name in multiplayer
         if (this.isMultiplayer && this.playerName) {
             const playerDisplay = this.currentPlayer.charAt(0).toUpperCase() + this.currentPlayer.slice(1);
-            document.getElementById('current-player').textContent = `${playerDisplay} (${this.playerName})`;
+            // Show the actual player whose turn it is, not just the local player
+            const currentPlayerName = this.getCurrentPlayerName();
+            document.getElementById('current-player').textContent = `${playerDisplay} (${currentPlayerName})`;
         } else {
             document.getElementById('current-player').textContent = this.currentPlayer.charAt(0).toUpperCase() + this.currentPlayer.slice(1);
         }
@@ -1768,6 +1795,9 @@ class ChessGame {
         
         // Update multiplayer status display
         this.updateMultiplayerStatus(players, spectators);
+        
+        // Store room players for name lookup
+        this.roomPlayers = [...players, ...spectators];
     }
 
     handleGameStarted(data) {
@@ -1853,6 +1883,16 @@ class ChessGame {
         this.addToGameLog(`${playerName} (${loser}) resigned!`, 'system');
         this.addToGameLog(`🎉 ${winner.charAt(0).toUpperCase() + winner.slice(1)} wins by resignation! 🎉`, 'system');
         this.endGame(winner);
+    }
+
+    getCurrentPlayerName() {
+        if (!this.isMultiplayer || !this.roomPlayers.length) {
+            return this.playerName || 'Unknown';
+        }
+        
+        // Find the player whose color matches the current player
+        const currentPlayerData = this.roomPlayers.find(player => player.color === this.currentPlayer);
+        return currentPlayerData ? currentPlayerData.name : 'Unknown';
     }
 
     leaveRoom() {
