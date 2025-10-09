@@ -14,10 +14,8 @@ body {
 
 /* Beta Banner */
 .beta-banner {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
+    position: relative;
+    width: 100%;
     background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
     color: white;
     padding: 12px 20px;
@@ -94,15 +92,7 @@ body.dark-mode .beta-banner {
     background: linear-gradient(135deg, #d32f2f 0%, #c62828 100%);
 }
 
-/* Adjust body padding when banner is visible */
-body {
-    padding-top: 0;
-    transition: padding-top 0.3s ease;
-}
-
-body:has(.beta-banner:not(.hidden)) {
-    padding-top: 60px;
-}
+/* No need for body padding adjustment since banner is in document flow */
 
 /* Responsive adjustments for beta banner */
 @media (max-width: 768px) {
