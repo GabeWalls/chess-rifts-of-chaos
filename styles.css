@@ -922,9 +922,15 @@ body.dark-mode .effect-choice.accept {
 /* Multiplayer Controls */
 .multiplayer-controls {
     position: fixed;
-    top: 20px;
+    top: 70px; /* Adjusted to account for banner height */
     left: 20px;
     z-index: 1000;
+    transition: top 0.3s ease;
+}
+
+/* When banner is hidden, move multiplayer back to original position */
+body:has(.beta-banner.hidden) .multiplayer-controls {
+    top: 20px;
 }
 
 /* Modal Header */
@@ -1121,9 +1127,15 @@ body.dark-mode .room-spectator-item {
 /* Settings Menu */
 .settings-menu {
     position: fixed;
-    top: 20px;
+    top: 70px; /* Adjusted to account for banner height */
     right: 20px;
     z-index: 1000;
+    transition: top 0.3s ease;
+}
+
+/* When banner is hidden, move settings back to original position */
+body:has(.beta-banner.hidden) .settings-menu {
+    top: 20px;
 }
 
 .settings-btn {
