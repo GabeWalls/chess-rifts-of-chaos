@@ -30,6 +30,7 @@ class ChessGame {
         this.setupEventListeners();
         this.renderBoard();
         this.updateUI();
+        this.initBetaBanner();
     }
 
     initializeBoard() {
@@ -1221,6 +1222,23 @@ class ChessGame {
 
     saveSettings() {
         localStorage.setItem('chessRiftsDarkMode', this.darkMode.toString());
+    }
+
+    initBetaBanner() {
+        const banner = document.getElementById('beta-banner');
+        const closeBtn = document.getElementById('beta-close');
+        
+        // Check if banner was previously closed
+        const bannerClosed = localStorage.getItem('betaBannerClosed') === 'true';
+        if (bannerClosed) {
+            banner.classList.add('hidden');
+        }
+        
+        // Add close button event listener
+        closeBtn.addEventListener('click', () => {
+            banner.classList.add('hidden');
+            localStorage.setItem('betaBannerClosed', 'true');
+        });
     }
 
     // Individual Rift Effect Implementations
