@@ -288,6 +288,11 @@ body.dark-mode .chess-square.rift {
     100% { transform: rotate(360deg); }
 }
 
+/* Hide rift emoji when square has a piece */
+.chess-square.rift:not(:empty)::before {
+    display: none;
+}
+
 /* Ensure swirl animation works in dark mode */
 body.dark-mode .chess-square.rift::before {
     content: '🌀';
@@ -1335,4 +1340,28 @@ body.dark-mode .dice-display {
     0% { background-position: 0% 50%; }
     50% { background-position: 100% 50%; }
     100% { background-position: 0% 50%; }
+}
+
+/* Dragon's Breath target highlighting */
+.dragon-target {
+    box-shadow: 0 0 20px rgba(255, 69, 0, 0.8), inset 0 0 20px rgba(255, 69, 0, 0.4);
+    cursor: crosshair;
+    animation: dragonPulse 1s ease-in-out infinite;
+}
+
+@keyframes dragonPulse {
+    0%, 100% { box-shadow: 0 0 15px rgba(255, 69, 0, 0.6), inset 0 0 15px rgba(255, 69, 0, 0.3); }
+    50% { box-shadow: 0 0 25px rgba(255, 69, 0, 1), inset 0 0 25px rgba(255, 69, 0, 0.5); }
+}
+
+/* Spring of Revival target highlighting */
+.revival-target {
+    box-shadow: 0 0 20px rgba(76, 175, 80, 0.8), inset 0 0 20px rgba(76, 175, 80, 0.4);
+    cursor: pointer;
+    animation: revivalPulse 1s ease-in-out infinite;
+}
+
+@keyframes revivalPulse {
+    0%, 100% { box-shadow: 0 0 15px rgba(76, 175, 80, 0.6), inset 0 0 15px rgba(76, 175, 80, 0.3); }
+    50% { box-shadow: 0 0 25px rgba(76, 175, 80, 1), inset 0 0 25px rgba(76, 175, 80, 0.5); }
 }

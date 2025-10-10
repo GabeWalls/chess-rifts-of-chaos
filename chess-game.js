@@ -12,7 +12,8 @@ class ChessGame {
         this.frozenPieces = new Set();
         this.riftActivatedThisTurn = false;
         this.diceRolledThisTurn = false;
-        this.kingMovedThisTurn = { white: false, black: false };
+        this.kingMovedThisTurn = { white: 0, black: 0 }; // Track number of king moves (0, 1, or 2)
+        this.kingMovedFirst = false; // Track if king moved first this turn
         this.gameLog = [];
         this.chatMessages = [];
         this.darkMode = false;
@@ -152,11 +153,90 @@ class ChessGame {
     }
 
     handleSquareClick(row, col) {
+        // Handle dragon breath target selection
+        if (this.dragonBreathMode && this.dragonBreathMode.active) {
+            this.handleDragonBreathTarget(row, col);
+            return;
+        }
+        
+        // Handle Spring of Revival piece placement
+        if (this.springOfRevivalMode && this.springOfRevivalMode.active && this.springOfRevivalMode.piece) {
+            this.handleSpringOfRevivalPlacement(row, col);
+            return;
+        }
+        
         if (this.gamePhase === 'setup') {
             this.handleRiftPlacement(row, col);
         } else {
             this.handleGameMove(row, col);
         }
+    }
+
+    handleSpringOfRevivalPlacement(row, col) {
+        const { playerColor, piece } = this.springOfRevivalMode;
+        const startRows = playerColor === 'white' ? [6, 7] : [0, 1];
+        
+        // Validate the target is a valid starting square
+        if (!startRows.includes(row)) {
+            this.addToGameLog(`Invalid placement! Must place on starting rows.`, 'effect');
+            return;
+        }
+        
+        if (this.board[row][col]) {
+            this.addToGameLog(`Invalid placement! Square is occupied.`, 'effect');
+            return;
+        }
+        
+        // Place the piece
+        this.board[row][col] = piece;
+        this.renderBoard();
+        this.updateCapturedPieces();
+        
+        const coords = String.fromCharCode(97 + col) + (8 - row);
+        this.addToGameLog(`Spring of Revival: ${piece.color} ${piece.type} revived at ${coords}!`, 'effect');
+        
+        // Cleanup
+        this.springOfRevivalMode = null;
+        document.querySelectorAll('.revival-target').forEach(square => {
+            square.classList.remove('revival-target');
+        });
+        
+        setTimeout(() => {
+            this.closeModal();
+        }, 1500);
+    }
+
+    handleDragonBreathTarget(row, col) {
+        const { riftRow, riftCol } = this.dragonBreathMode;
+        const targetPiece = this.board[row][col];
+        
+        // Validate the target is an enemy piece
+        if (!targetPiece || targetPiece.color === this.currentPlayer) {
+            this.addToGameLog(`Invalid target! Must select an enemy piece.`, 'effect');
+            return;
+        }
+        
+        // Calculate direction from rift to target
+        const dr = Math.sign(row - riftRow);
+        const dc = Math.sign(col - riftCol);
+        
+        // Validate target is in a straight line
+        const isInLine = (dr === 0 || dc === 0 || Math.abs(dr) === Math.abs(dc));
+        const distance = Math.max(Math.abs(row - riftRow), Math.abs(col - riftCol));
+        
+        if (!isInLine || distance > 3) {
+            this.addToGameLog(`Invalid target! Must be within 3 squares in a straight line.`, 'effect');
+            return;
+        }
+        
+        // Execute dragon breath
+        this.executeDragonBreathOnTarget(riftRow, riftCol, dr, dc);
+        
+        // Cleanup
+        this.dragonBreathMode = null;
+        document.querySelectorAll('.dragon-target').forEach(square => {
+            square.classList.remove('dragon-target');
+        });
     }
 
     handleRiftPlacement(row, col) {
@@ -287,6 +367,24 @@ class ChessGame {
         // In multiplayer spectator mode, don't allow moves
         if (this.isMultiplayer && this.isSpectator) {
             return;
+        }
+        
+        // Handle Foot Soldier's Gambit second move
+        if (this.footSoldierMode && this.footSoldierMode.active) {
+            const { pieceRow, pieceCol } = this.footSoldierMode;
+            const piece = this.board[pieceRow][pieceCol];
+            
+            // Auto-select the foot soldier piece
+            if (this.isValidMove(pieceRow, pieceCol, row, col)) {
+                this.makeMove(pieceRow, pieceCol, row, col);
+                this.footSoldierMode = null;
+                this.selectedSquare = null;
+                this.clearHighlights();
+                return;
+            } else {
+                this.addToGameLog(`Invalid move for Foot Soldier's Gambit!`, 'effect');
+                return;
+            }
         }
         
         const square = this.board[row][col];
@@ -569,6 +667,24 @@ class ChessGame {
         }
         
         const piece = this.board[fromRow][fromCol];
+        
+        // Conqueror's Tale: If king moved first, only king can move
+        if (this.kingMovedFirst && piece.type !== 'king') {
+            this.addToGameLog(`King moved first! Only the king can move this turn.`, 'system');
+            return;
+        }
+        
+        // Conqueror's Tale: If non-king moved, king cannot move
+        if (this.kingMovedThisTurn[this.currentPlayer] > 0 && !this.kingMovedFirst && piece.type === 'king') {
+            this.addToGameLog(`Another piece already moved! King cannot move this turn.`, 'system');
+            return;
+        }
+        
+        // Conqueror's Tale: King can only move twice
+        if (piece.type === 'king' && this.kingAbilities[piece.color]?.doubleMove && this.kingMovedThisTurn[piece.color] >= 2) {
+            this.addToGameLog(`King has already moved twice this turn!`, 'system');
+            return;
+        }
         const capturedPiece = this.board[toRow][toCol];
         
         // Check for king capture first
@@ -612,7 +728,15 @@ class ChessGame {
         
         // Track king moves for Conqueror's Tale
         if (piece.type === 'king') {
-            this.kingMovedThisTurn[piece.color] = true;
+            this.kingMovedThisTurn[piece.color]++;
+            if (this.kingMovedThisTurn[piece.color] === 1) {
+                this.kingMovedFirst = true;
+            }
+        } else {
+            // If a non-king piece moves, king cannot move this turn
+            if (this.kingMovedThisTurn[this.currentPlayer] === 0) {
+                this.kingMovedFirst = false;
+            }
         }
         
         // Log the move
@@ -656,10 +780,16 @@ class ChessGame {
             
             // Check if king can move again with Conqueror's Tale
             const piece = this.board[toRow][toCol];
-            if (piece && piece.type === 'king' && this.kingAbilities[piece.color]?.doubleMove && this.kingMovedThisTurn[piece.color]) {
-                // King has already moved once, can move again
-                this.addToGameLog(`${piece.color} king can move again!`, 'system');
+            if (piece && piece.type === 'king' && this.kingAbilities[piece.color]?.doubleMove && this.kingMovedThisTurn[piece.color] === 1) {
+                // King has moved once and can move again (but only the king)
+                this.addToGameLog(`${piece.color} king can move one more time!`, 'system');
+                // Don't switch player - allow second king move
+            } else if (piece && piece.type === 'king' && this.kingAbilities[piece.color]?.doubleMove && this.kingMovedThisTurn[piece.color] >= 2) {
+                // King has moved twice, turn is over
+                this.addToGameLog(`${piece.color} king has used both moves!`, 'system');
+                this.switchPlayer();
             } else {
+                // Regular piece moved or king without ability
                 this.switchPlayer();
             }
         }
@@ -814,17 +944,17 @@ class ChessGame {
                     this.applyFieldEffect('sandstorm');
                     break;
                 case 10: // Dragon's Breath
-                    this.showDragonDirectionChoice(riftRow, riftCol);
+                    this.showDragonTargetSelection(riftRow, riftCol);
                     return; // Don't close modal yet
                 case 11: // Jack Frost's Mischief
-                    this.applyFieldEffect('jack_frost_mischief');
-                    break;
+                    this.showJackFrostRoll(riftRow, riftCol);
+                    return; // Don't close modal yet
                 case 12: // Portal in the Rift
                     this.showPortalChoice(riftRow, riftCol, activatingPiece);
                     return; // Don't close modal yet
                 case 13: // Catapult Roulette
-                    this.applyCatapultRoulette();
-                    break;
+                    this.showCatapultRouletteDice();
+                    return; // Don't close modal yet
                 case 14: // Conqueror's Tale
                     this.applyConquerorTale(activatingPiece.color);
                     break;
@@ -844,8 +974,8 @@ class ChessGame {
                     this.applyFieldEffect('eerie_fog_turmoil');
                     break;
                 case 20: // Spring of Revival
-                    this.applySpringOfRevival(activatingPiece.color);
-                    break;
+                    this.showSpringOfRevivalChoice(activatingPiece.color);
+                    return; // Don't close modal yet
                 case 21: // Blank
                     this.applyFieldEffect('blank');
                     break;
@@ -1125,43 +1255,49 @@ class ChessGame {
         }, 2000);
     }
 
-    showDragonDirectionChoice(riftRow, riftCol) {
-        const directions = [
-            { name: 'North', dr: -1, dc: 0 },
-            { name: 'Northeast', dr: -1, dc: 1 },
-            { name: 'East', dr: 0, dc: 1 },
-            { name: 'Southeast', dr: 1, dc: 1 },
-            { name: 'South', dr: 1, dc: 0 },
-            { name: 'Southwest', dr: 1, dc: -1 },
-            { name: 'West', dr: 0, dc: -1 },
-            { name: 'Northwest', dr: -1, dc: -1 }
-        ];
-
+    showDragonTargetSelection(riftRow, riftCol) {
         const optionsDiv = document.getElementById('rift-effect-options');
-        let buttonsHtml = '<div class="effect-choices">';
+        optionsDiv.innerHTML = `
+            <div class="effect-choices">
+                <p style="color: #333; margin-bottom: 10px; text-align: center;">
+                    Click on an enemy piece within 3 squares (straight line) from the rift to target it with Dragon's Breath.
+                </p>
+            </div>
+        `;
         
-        directions.forEach((dir, index) => {
-            buttonsHtml += `
-                <button class="effect-choice" onclick="game.executeDragonBreath(${riftRow}, ${riftCol}, ${dir.dr}, ${dir.dc})">
-                    ${dir.name}
-                </button>
-            `;
-        });
+        // Enable dragon breath selection mode
+        this.dragonBreathMode = { active: true, riftRow, riftCol };
         
-        buttonsHtml += '</div>';
-        optionsDiv.innerHTML = buttonsHtml;
+        // Highlight valid targets
+        this.highlightDragonBreathTargets(riftRow, riftCol);
         
-        // Ensure board is visible
-        const boardElement = document.getElementById('chess-board');
-        if (boardElement) {
-            boardElement.style.display = 'grid';
-            boardElement.style.visibility = 'visible';
-        }
-        
-        this.addToGameLog(`Dragon's Breath activated! Choose direction.`, 'effect');
+        this.addToGameLog(`Dragon's Breath activated! Select a target.`, 'effect');
     }
 
-    executeDragonBreath(riftRow, riftCol, dr, dc) {
+    highlightDragonBreathTargets(riftRow, riftCol) {
+        const directions = [
+            [-1, 0], [-1, 1], [0, 1], [1, 1], [1, 0], [1, -1], [0, -1], [-1, -1]
+        ];
+        
+        directions.forEach(([dr, dc]) => {
+            for (let distance = 1; distance <= 3; distance++) {
+                const targetRow = riftRow + (dr * distance);
+                const targetCol = riftCol + (dc * distance);
+                
+                if (targetRow >= 0 && targetRow < 8 && targetCol >= 0 && targetCol < 8) {
+                    const piece = this.board[targetRow][targetCol];
+                    if (piece && piece.color !== this.currentPlayer) {
+                        const square = document.querySelector(`[data-row="${targetRow}"][data-col="${targetCol}"]`);
+                        if (square) {
+                            square.classList.add('dragon-target');
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    executeDragonBreathOnTarget(riftRow, riftCol, dr, dc) {
         let piecesRemoved = 0;
         
         for (let distance = 1; distance <= 3; distance++) {
@@ -1170,9 +1306,11 @@ class ChessGame {
             
             if (targetRow >= 0 && targetRow < 8 && targetCol >= 0 && targetCol < 8) {
                 if (this.board[targetRow][targetCol] && this.board[targetRow][targetCol].color !== this.currentPlayer) {
-                    this.capturedPieces[this.board[targetRow][targetCol].color].push(this.board[targetRow][targetCol]);
+                    const piece = this.board[targetRow][targetCol];
+                    this.capturedPieces[piece.color].push(piece);
                     this.board[targetRow][targetCol] = null; // Remove piece immediately
                     this.removePieceWithAnimation(targetRow, targetCol, piecesRemoved * 400);
+                    this.addToGameLog(`Dragon's Breath removed ${piece.color} ${piece.type}!`, 'effect');
                     piecesRemoved++;
                 }
             }
@@ -1334,9 +1472,10 @@ class ChessGame {
     }
 
     applyDemotion(riftRow, riftCol, activatingPiece) {
-        // Remove activating piece with animation
-        this.removePieceWithAnimation(riftRow, riftCol);
+        // Remove activating piece immediately from board state
+        this.board[riftRow][riftCol] = null;
         this.capturedPieces[activatingPiece.color].push(activatingPiece);
+        this.removePieceWithAnimation(riftRow, riftCol);
         
         // Place captured pawn if available and piece was not a pawn
         if (['rook', 'knight', 'bishop', 'queen'].includes(activatingPiece.type)) {
@@ -1346,9 +1485,12 @@ class ChessGame {
                 const pawn = this.capturedPieces[activatingPiece.color].splice(pawnIndex, 1)[0];
                 setTimeout(() => {
                     this.board[riftRow][riftCol] = pawn;
+                    this.updateCapturedPieces();
                     this.renderBoard();
                     this.addToGameLog(`Demotion: ${activatingPiece.type} demoted to pawn!`, 'effect');
                 }, 1500);
+            } else {
+                this.addToGameLog(`Demotion: No captured pawns to place.`, 'effect');
             }
         } else {
             this.addToGameLog(`Demotion: Pawn cannot be demoted further.`, 'effect');
@@ -1356,9 +1498,22 @@ class ChessGame {
     }
 
     applyFootSoldierGambit(activatingPiece, riftRow, riftCol) {
-        // Mark piece for extra move
-        this.extraMovePiece = { piece: activatingPiece, row: riftRow, col: riftCol };
-        // This would require UI interaction to select the second move
+        // Enable foot soldier mode for second move
+        this.footSoldierMode = { active: true, pieceRow: riftRow, pieceCol: riftCol };
+        
+        const optionsDiv = document.getElementById('rift-effect-options');
+        optionsDiv.innerHTML = `
+            <div class="effect-choices">
+                <p style="color: #333; margin-bottom: 10px; text-align: center;">
+                    Foot Soldier's Gambit! Your piece must move again immediately.
+                </p>
+                <button class="effect-choice" onclick="game.closeModal()">
+                    Continue (select next move)
+                </button>
+            </div>
+        `;
+        
+        this.addToGameLog(`Foot Soldier's Gambit: ${activatingPiece.type} must move again!`, 'effect');
     }
 
     applyDragonBreath(riftRow, riftCol) {
@@ -1400,16 +1555,76 @@ class ChessGame {
         }
     }
 
-    applyCatapultRoulette() {
-        // Roll 2D8 for random position
-        const col = Math.floor(Math.random() * 8);
-        const row = Math.floor(Math.random() * 8);
+    showCatapultRouletteDice() {
+        const optionsDiv = document.getElementById('rift-effect-options');
+        optionsDiv.innerHTML = `
+            <div class="effect-choices">
+                <p style="color: #333; margin-bottom: 10px;">Roll 2D8 to select a random square</p>
+                <div style="display: flex; gap: 20px; justify-content: center; margin: 20px 0;">
+                    <div style="text-align: center;">
+                        <div style="font-size: 3rem; font-weight: bold; color: #667eea;">?</div>
+                        <div>Column (A-H)</div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="font-size: 3rem; font-weight: bold; color: #764ba2;">?</div>
+                        <div>Row (1-8)</div>
+                    </div>
+                </div>
+                <button class="effect-choice" onclick="game.rollCatapultDice()">
+                    Roll Dice
+                </button>
+            </div>
+        `;
         
+        this.addToGameLog(`Catapult Roulette activated! Roll 2D8.`, 'effect');
+    }
+
+    rollCatapultDice() {
+        const col = Math.floor(Math.random() * 8) + 1; // 1-8
+        const row = Math.floor(Math.random() * 8) + 1; // 1-8
+        
+        const colLetter = String.fromCharCode(64 + col); // A-H
+        const targetCol = col - 1; // Convert to 0-indexed
+        const targetRow = 8 - row; // Convert to 0-indexed (row 1 = index 7)
+        
+        // Show the roll results
+        const optionsDiv = document.getElementById('rift-effect-options');
+        optionsDiv.innerHTML = `
+            <div class="effect-choices">
+                <p style="color: #333; margin-bottom: 10px;">Rolled: ${colLetter}${row}</p>
+                <div style="display: flex; gap: 20px; justify-content: center; margin: 20px 0;">
+                    <div style="text-align: center;">
+                        <div style="font-size: 3rem; font-weight: bold; color: #667eea;">${col}</div>
+                        <div>Column (${colLetter})</div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="font-size: 3rem; font-weight: bold; color: #764ba2;">${row}</div>
+                        <div>Row</div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        this.applyCatapultRoulette(targetRow, targetCol, colLetter, row);
+    }
+
+    applyCatapultRoulette(row, col, colLetter, rowNum) {
         if (this.board[row][col]) {
             const piece = this.board[row][col];
             this.capturedPieces[piece.color].push(piece);
             this.board[row][col] = null;
+            this.removePieceWithAnimation(row, col);
+            this.addToGameLog(`Catapult Roulette removed ${piece.color} ${piece.type} at ${colLetter}${rowNum}!`, 'effect');
+        } else {
+            this.addToGameLog(`Catapult Roulette targeted ${colLetter}${rowNum} - no piece there!`, 'effect');
         }
+        
+        this.updateCapturedPieces();
+        this.renderBoard();
+        
+        setTimeout(() => {
+            this.closeModal();
+        }, 2000);
     }
 
     applyConquerorTale(playerColor) {
@@ -1489,20 +1704,140 @@ class ChessGame {
         }
     }
 
-    applySpringOfRevival(playerColor) {
-        // Place captured piece on starting square
-        if (this.capturedPieces[playerColor].length > 0) {
-            const piece = this.capturedPieces[playerColor].pop();
-            const startRow = playerColor === 'white' ? 7 : 0;
-            
-            // Find an empty starting square
+    showSpringOfRevivalChoice(playerColor) {
+        const capturedPieces = this.capturedPieces[playerColor];
+        
+        if (capturedPieces.length === 0) {
+            this.addToGameLog(`Spring of Revival: No captured pieces to revive!`, 'effect');
+            setTimeout(() => this.closeModal(), 1500);
+            return;
+        }
+        
+        const optionsDiv = document.getElementById('rift-effect-options');
+        let buttonsHtml = '<div class="effect-choices"><p style="color: #333; margin-bottom: 10px;">Select a piece to revive:</p>';
+        
+        capturedPieces.forEach((piece, index) => {
+            buttonsHtml += `
+                <button class="effect-choice" onclick="game.revivePiece('${playerColor}', ${index})">
+                    ${this.getPieceSymbol(piece)} ${piece.type}
+                </button>
+            `;
+        });
+        
+        buttonsHtml += '</div>';
+        optionsDiv.innerHTML = buttonsHtml;
+        
+        this.addToGameLog(`Spring of Revival activated! Choose a piece to revive.`, 'effect');
+        this.springOfRevivalMode = { active: true, playerColor };
+    }
+
+    revivePiece(playerColor, pieceIndex) {
+        const piece = this.capturedPieces[playerColor].splice(pieceIndex, 1)[0];
+        
+        const optionsDiv = document.getElementById('rift-effect-options');
+        optionsDiv.innerHTML = `
+            <div class="effect-choices">
+                <p style="color: #333; margin-bottom: 10px;">Click on a starting square (row ${playerColor === 'white' ? '1 or 2' : '7 or 8'}) to place ${piece.type}</p>
+            </div>
+        `;
+        
+        this.springOfRevivalMode = { active: true, playerColor, piece };
+        this.highlightStartingSquares(playerColor);
+    }
+
+    highlightStartingSquares(playerColor) {
+        const startRows = playerColor === 'white' ? [6, 7] : [0, 1]; // Rows 1-2 for white, 7-8 for black
+        
+        startRows.forEach(row => {
             for (let col = 0; col < 8; col++) {
-                if (!this.board[startRow][col]) {
-                    this.board[startRow][col] = piece;
-                    break;
+                if (!this.board[row][col]) {
+                    const square = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+                    if (square) {
+                        square.classList.add('revival-target');
+                    }
                 }
             }
+        });
+    }
+
+    showJackFrostRoll(riftRow, riftCol) {
+        const optionsDiv = document.getElementById('rift-effect-options');
+        optionsDiv.innerHTML = `
+            <div class="effect-choices">
+                <p style="color: #333; margin-bottom: 10px;">Jack Frost's Mischief! Roll D20:</p>
+                <p style="color: #666; font-size: 0.9rem;">Odd = nothing happens, Even = piece slides 1 extra square</p>
+                <div style="margin: 20px 0;">
+                    <div style="font-size: 3rem; font-weight: bold; color: #667eea;">?</div>
+                </div>
+                <button class="effect-choice" onclick="game.rollJackFrost(${riftRow}, ${riftCol})">
+                    Roll D20
+                </button>
+            </div>
+        `;
+        
+        this.addToGameLog(`Jack Frost's Mischief activated!`, 'effect');
+    }
+
+    rollJackFrost(riftRow, riftCol) {
+        const roll = Math.floor(Math.random() * 20) + 1;
+        
+        const optionsDiv = document.getElementById('rift-effect-options');
+        optionsDiv.innerHTML = `
+            <div class="effect-choices">
+                <p style="color: #333; margin-bottom: 10px;">Rolled: ${roll}</p>
+                <div style="margin: 20px 0;">
+                    <div style="font-size: 3rem; font-weight: bold; color: #667eea;">${roll}</div>
+                </div>
+                <p style="color: #666;">${roll % 2 === 0 ? 'Even! Piece slides 1 extra square forward' : 'Odd! Nothing happens'}</p>
+            </div>
+        `;
+        
+        if (roll % 2 === 0) {
+            // Apply Jack Frost field effect
+            this.applyFieldEffect('jack_frost_mischief');
+            this.applyJackFrostSlide(riftRow, riftCol);
+        } else {
+            this.addToGameLog(`Jack Frost's Mischief: Roll was odd - no effect!`, 'effect');
         }
+        
+        setTimeout(() => {
+            this.closeModal();
+        }, 2000);
+    }
+
+    applyJackFrostSlide(riftRow, riftCol) {
+        const piece = this.board[riftRow][riftCol];
+        if (!piece) return;
+        
+        // Determine forward direction based on piece color
+        const direction = piece.color === 'white' ? -1 : 1;
+        const newRow = riftRow + direction;
+        
+        if (newRow >= 0 && newRow < 8) {
+            const targetPiece = this.board[newRow][riftCol];
+            
+            if (targetPiece) {
+                // Collision - freeze both pieces
+                piece.frozen = true;
+                targetPiece.frozen = true;
+                this.frozenPieces.add(piece);
+                this.frozenPieces.add(targetPiece);
+                this.addToGameLog(`Collision! Both pieces frozen!`, 'effect');
+            } else {
+                // Slide piece forward
+                this.board[newRow][riftCol] = piece;
+                this.board[riftRow][riftCol] = null;
+                this.addToGameLog(`Piece slid forward one square!`, 'effect');
+            }
+        } else {
+            // Piece slides off the board
+            this.capturedPieces[piece.color].push(piece);
+            this.board[riftRow][riftCol] = null;
+            this.addToGameLog(`Piece slid off the board!`, 'effect');
+        }
+        
+        this.renderBoard();
+        this.updateCapturedPieces();
     }
 
     applyFieldEffect(effectName) {
@@ -1522,7 +1857,8 @@ class ChessGame {
         this.currentPlayer = this.currentPlayer === 'white' ? 'black' : 'white';
         this.riftActivatedThisTurn = false;
         this.diceRolledThisTurn = false;
-        this.kingMovedThisTurn = { white: false, black: false }; // Reset king move tracking
+        this.kingMovedThisTurn = { white: 0, black: 0 }; // Reset king move tracking
+        this.kingMovedFirst = false; // Reset king moved first flag
         this.updateUI();
         this.addToGameLog(`${this.currentPlayer}'s turn`, 'system');
         
@@ -1661,6 +1997,12 @@ class ChessGame {
         this.frozenPieces.clear();
         this.riftActivatedThisTurn = false;
         this.diceRolledThisTurn = false;
+        this.kingMovedThisTurn = { white: 0, black: 0 };
+        this.kingMovedFirst = false;
+        
+        // Reset king abilities (Conqueror's Tale)
+        this.kingAbilities = { white: {}, black: {} };
+        
         this.initializeBoard();
         this.renderBoard();
         this.updateUI();
