@@ -424,6 +424,7 @@ class ChessGame {
                 // Select different piece of same color
                 this.selectedSquare = [row, col];
                 this.clearHighlights();
+                this.highlightCoordinates(row, col);
                 this.highlightMoves(row, col);
                 return;
             }
@@ -437,6 +438,7 @@ class ChessGame {
         } else if (square && square.color === this.currentPlayer) {
             // Select piece
             this.selectedSquare = [row, col];
+            this.highlightCoordinates(row, col);
             this.highlightMoves(row, col);
         }
     }

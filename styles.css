@@ -178,13 +178,13 @@ body.dark-mode .beta-banner {
     border-radius: 20px;
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
     backdrop-filter: blur(10px);
-    gap: 5px;
+    gap: 10px;
 }
 
 .board-with-side-coords {
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 10px;
 }
 
 .board-coordinates {
@@ -192,7 +192,7 @@ body.dark-mode .beta-banner {
     user-select: none;
 }
 
-.board-coordinates.top-coords {
+.board-coordinates.bottom-coords {
     flex-direction: row;
     gap: 0;
 }
@@ -212,7 +212,7 @@ body.dark-mode .beta-banner {
     transition: all 0.3s ease;
 }
 
-.board-coordinates.top-coords .coord-label {
+.board-coordinates.bottom-coords .coord-label {
     width: 70px;
     height: 30px;
 }
@@ -596,7 +596,7 @@ body.dark-mode .chess-square.rift::before {
         font-size: 2rem;
     }
     
-    .board-coordinates.top-coords .coord-label {
+    .board-coordinates.bottom-coords .coord-label {
         width: 60px;
         height: 25px;
     }
@@ -620,7 +620,7 @@ body.dark-mode .chess-square.rift::before {
         font-size: 1.5rem;
     }
     
-    .board-coordinates.top-coords .coord-label {
+    .board-coordinates.bottom-coords .coord-label {
         width: 40px;
         height: 20px;
     }
