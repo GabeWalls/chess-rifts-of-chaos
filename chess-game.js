@@ -681,7 +681,10 @@ class ChessGame {
         // Clear previous highlights
         this.clearCoordinateHighlights();
         
-        // Highlight row coordinates
+        // Convert internal row (0-7) to chess notation row (8-1)
+        const chessRow = 8 - row;
+        
+        // Highlight row coordinates (chess notation)
         document.querySelectorAll(`.coord-label[data-row="${row}"]`).forEach(label => {
             label.classList.add('highlighted');
         });
