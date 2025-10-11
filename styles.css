@@ -178,6 +178,71 @@ body.dark-mode .beta-banner {
     border-radius: 20px;
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
     backdrop-filter: blur(10px);
+    gap: 5px;
+}
+
+.board-with-side-coords {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.board-coordinates {
+    display: flex;
+    user-select: none;
+}
+
+.board-coordinates.top-coords,
+.board-coordinates.bottom-coords {
+    flex-direction: row;
+    gap: 0;
+}
+
+.board-coordinates.left-coords,
+.board-coordinates.right-coords {
+    flex-direction: column;
+    gap: 0;
+}
+
+.coord-label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 1rem;
+    color: #667eea;
+    transition: all 0.3s ease;
+}
+
+.board-coordinates.top-coords .coord-label,
+.board-coordinates.bottom-coords .coord-label {
+    width: 60px;
+    height: 30px;
+}
+
+.board-coordinates.left-coords .coord-label,
+.board-coordinates.right-coords .coord-label {
+    width: 30px;
+    height: 60px;
+}
+
+.coord-spacer {
+    width: 30px;
+    height: 30px;
+}
+
+.coord-label.highlighted {
+    color: #ffd700;
+    font-size: 1.2rem;
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
+}
+
+body.dark-mode .coord-label {
+    color: #a8b6f5;
+}
+
+body.dark-mode .coord-label.highlighted {
+    color: #ffd700;
 }
 
 .chess-board {
@@ -1364,4 +1429,20 @@ body.dark-mode .dice-display {
 @keyframes revivalPulse {
     0%, 100% { box-shadow: 0 0 15px rgba(76, 175, 80, 0.6), inset 0 0 15px rgba(76, 175, 80, 0.3); }
     50% { box-shadow: 0 0 25px rgba(76, 175, 80, 1), inset 0 0 25px rgba(76, 175, 80, 0.5); }
+}
+
+/* Catapult Roulette hit animation */
+.catapult-hit {
+    animation: catapultBlink 0.4s ease-in-out 5;
+}
+
+@keyframes catapultBlink {
+    0%, 100% { 
+        background-color: inherit;
+        box-shadow: none;
+    }
+    50% { 
+        background-color: rgba(255, 0, 0, 0.7) !important;
+        box-shadow: 0 0 30px rgba(255, 0, 0, 1), inset 0 0 30px rgba(255, 0, 0, 0.5);
+    }
 }

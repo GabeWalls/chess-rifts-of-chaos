@@ -32,6 +32,22 @@ class ChessGame {
         this.renderBoard();
         this.updateUI();
         this.initBetaBanner();
+        
+        // Click outside board to clear highlights
+        document.addEventListener('click', (e) => this.handleOutsideClick(e));
+    }
+
+    handleOutsideClick(e) {
+        // Check if click is outside the chess board
+        const board = document.getElementById('chess-board');
+        if (board && !board.contains(e.target)) {
+            // Check if click is also not on coordinates
+            const isCoordinate = e.target.classList.contains('coord-label') || 
+                                 e.target.closest('.board-coordinates');
+            if (!isCoordinate) {
+                this.clearCoordinateHighlights();
+            }
+        }
     }
 
     initializeBoard() {
@@ -369,6 +385,9 @@ class ChessGame {
             return;
         }
         
+        // Highlight coordinates for this square
+        this.highlightCoordinates(row, col);
+        
         // Handle Foot Soldier's Gambit second move
         if (this.footSoldierMode && this.footSoldierMode.active) {
             const { pieceRow, pieceCol } = this.footSoldierMode;
@@ -654,6 +673,28 @@ class ChessGame {
     clearHighlights() {
         document.querySelectorAll('.chess-square').forEach(square => {
             square.classList.remove('selected', 'possible-move', 'capture-move');
+        });
+        this.clearCoordinateHighlights();
+    }
+
+    highlightCoordinates(row, col) {
+        // Clear previous highlights
+        this.clearCoordinateHighlights();
+        
+        // Highlight row coordinates
+        document.querySelectorAll(`.coord-label[data-row="${row}"]`).forEach(label => {
+            label.classList.add('highlighted');
+        });
+        
+        // Highlight column coordinates
+        document.querySelectorAll(`.coord-label[data-col="${col}"]`).forEach(label => {
+            label.classList.add('highlighted');
+        });
+    }
+
+    clearCoordinateHighlights() {
+        document.querySelectorAll('.coord-label').forEach(label => {
+            label.classList.remove('highlighted');
         });
     }
 
@@ -1609,20 +1650,30 @@ class ChessGame {
     }
 
     applyCatapultRoulette(row, col, colLetter, rowNum) {
+        // Add red blink animation to target square
+        const targetSquare = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+        if (targetSquare) {
+            targetSquare.classList.add('catapult-hit');
+        }
+        
         if (this.board[row][col]) {
             const piece = this.board[row][col];
             this.capturedPieces[piece.color].push(piece);
             this.board[row][col] = null;
             this.removePieceWithAnimation(row, col);
-            this.addToGameLog(`Catapult Roulette removed ${piece.color} ${piece.type} at ${colLetter}${rowNum}!`, 'effect');
+            this.addToGameLog(`Catapult Roulette hit ${colLetter}${rowNum} - removed ${piece.color} ${piece.type}!`, 'effect');
         } else {
-            this.addToGameLog(`Catapult Roulette targeted ${colLetter}${rowNum} - no piece there!`, 'effect');
+            this.addToGameLog(`Catapult Roulette hit ${colLetter}${rowNum} - no piece there!`, 'effect');
         }
         
         this.updateCapturedPieces();
         this.renderBoard();
         
+        // Remove animation class after animation completes
         setTimeout(() => {
+            if (targetSquare) {
+                targetSquare.classList.remove('catapult-hit');
+            }
             this.closeModal();
         }, 2000);
     }
@@ -2355,6 +2406,8 @@ class ChessGame {
 }
 
 // Initialize the game when the page loads
+let game; // Global game instance
 document.addEventListener('DOMContentLoaded', () => {
-    new ChessGame();
+    game = new ChessGame();
+    window.game = game; // Expose globally for onclick handlers
 });
