@@ -1417,7 +1417,22 @@ body.dark-mode .dice-display {
     box-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
 }
 
+.fairy-fountain-pawn {
+    position: relative;
+    background: linear-gradient(45deg, #ff69b4, #ffb6c1, #ff69b4);
+    background-size: 200% 200%;
+    animation: pinkAura 2s ease-in-out infinite;
+    border-radius: 50%;
+    box-shadow: 0 0 20px rgba(255, 105, 180, 0.8);
+}
+
 @keyframes goldAura {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+@keyframes pinkAura {
     0% { background-position: 0% 50%; }
     50% { background-position: 100% 50%; }
     100% { background-position: 0% 50%; }

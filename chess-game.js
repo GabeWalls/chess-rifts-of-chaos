@@ -152,6 +152,11 @@ class ChessGame {
                     if (piece.type === 'king' && this.kingAbilities[piece.color]?.doubleMove) {
                         square.classList.add('conqueror-king');
                     }
+                    
+                    // Add fairy fountain class if pawn has fairy fountain ability
+                    if (piece.type === 'pawn' && piece.fairyFountain) {
+                        square.classList.add('fairy-fountain-pawn');
+                    }
                 }
                 
                 square.addEventListener('click', () => this.handleSquareClick(row, col));
@@ -495,6 +500,30 @@ class ChessGame {
         const direction = piece.color === 'white' ? -1 : 1;
         const startRow = piece.color === 'white' ? 6 : 1;
         
+        // Fairy Fountain special movement
+        if (piece.fairyFountain) {
+            // Forward 2 spaces
+            const doubleRow = row + 2 * direction;
+            if (this.isInBounds(doubleRow, col) && !this.board[row + direction][col] && !this.board[doubleRow][col]) {
+                moves.push([doubleRow, col]);
+            }
+            
+            // Diagonal moves (1 space left/right + 2 forward)
+            for (const colOffset of [-1, 1]) {
+                const newRow = row + 2 * direction;
+                const newCol = col + colOffset;
+                if (this.isInBounds(newRow, newCol)) {
+                    // Can move to empty square or capture
+                    if (!this.board[newRow][newCol] || this.board[newRow][newCol].color !== piece.color) {
+                        moves.push([newRow, newCol]);
+                    }
+                }
+            }
+            
+            return moves;
+        }
+        
+        // Regular pawn movement
         // Forward moves
         if (this.isInBounds(row + direction, col) && !this.board[row + direction][col]) {
             moves.push([row + direction, col]);
@@ -856,6 +885,7 @@ class ChessGame {
 
     showRiftEffectsModal() {
         document.getElementById('rift-effects-modal').style.display = 'flex';
+        document.getElementById('rift-effect-title').textContent = 'Rift Effect';
         document.getElementById('dice-result').textContent = '?';
         document.getElementById('rift-effect-description').textContent = 'Roll the dice to determine the rift effect!';
         document.getElementById('rift-effect-options').innerHTML = '';
@@ -963,8 +993,8 @@ class ChessGame {
         try {
             switch (roll) {
                 case 1: // Necromancer's Trap
-                    this.applyNecromancerTrap(riftRow, riftCol, activatingPiece);
-                    break;
+                    this.showNecromancerTrapChoice(riftRow, riftCol, activatingPiece);
+                    return; // Don't close modal yet
                 case 2: // Archer's Trick Shot
                     this.showArcherDirectionChoice(riftRow, riftCol);
                     return; // Don't close modal yet
@@ -1014,7 +1044,12 @@ class ChessGame {
                     this.showCrossroadDemonChoice(riftRow, riftCol, activatingPiece);
                     return; // Don't close modal yet
                 case 18: // Fairy Fountain
-                    this.applyFairyFountain(riftRow, riftCol, activatingPiece);
+                    if (activatingPiece.type === 'pawn') {
+                        this.applyFairyFountain(riftRow, riftCol, activatingPiece);
+                    } else {
+                        this.addToGameLog(`Fairy Fountain: Only pawns can receive this blessing!`, 'effect');
+                        this.switchPlayer();
+                    }
                     break;
                 case 19: // Eerie Fog's Turmoil
                     this.applyFieldEffect('eerie_fog_turmoil');
@@ -1426,21 +1461,45 @@ class ChessGame {
     }
 
     // Individual Rift Effect Implementations
-    applyNecromancerTrap(riftRow, riftCol, activatingPiece) {
-        // Remove activating piece with animation
+    showNecromancerTrapChoice(riftRow, riftCol, activatingPiece) {
+        const opponentColor = activatingPiece.color === 'white' ? 'black' : 'white';
+        const capturedPieces = this.capturedPieces[opponentColor];
+        
+        if (capturedPieces.length === 0) {
+            this.addToGameLog(`Necromancer's Trap: No enemy pieces to resurrect!`, 'effect');
+            setTimeout(() => this.closeModal(), 1500);
+            return;
+        }
+        
+        const optionsDiv = document.getElementById('rift-effect-options');
+        let buttonsHtml = '<div class="effect-choices"><p style="color: #333; margin-bottom: 10px;">Select an enemy piece to resurrect:</p>';
+        
+        capturedPieces.forEach((piece, index) => {
+            buttonsHtml += `
+                <button class="effect-choice" onclick="game.resurrectEnemyPiece(${riftRow}, ${riftCol}, '${opponentColor}', ${index})">
+                    ${this.getPieceSymbol(piece)} ${piece.color} ${piece.type}
+                </button>
+            `;
+        });
+        
+        buttonsHtml += '</div>';
+        optionsDiv.innerHTML = buttonsHtml;
+        
+        this.addToGameLog(`Necromancer's Trap activated! Choose an enemy piece to resurrect.`, 'effect');
+    }
+
+    resurrectEnemyPiece(riftRow, riftCol, opponentColor, pieceIndex) {
+        // Remove activating piece immediately
+        const pieceToResurrect = this.capturedPieces[opponentColor].splice(pieceIndex, 1)[0];
         this.removePieceWithAnimation(riftRow, riftCol);
         
-        // Place opponent's captured piece if available
-        const opponentColor = activatingPiece.color === 'white' ? 'black' : 'white';
-        if (this.capturedPieces[opponentColor].length > 0) {
-            const pieceToResurrect = this.capturedPieces[opponentColor].pop();
-            setTimeout(() => {
-                this.board[riftRow][riftCol] = pieceToResurrect;
-                this.renderBoard();
-                this.addToGameLog(`Necromancer's Trap: ${pieceToResurrect.type} resurrected!`, 'effect');
-            }, 1500);
+        setTimeout(() => {
+            this.board[riftRow][riftCol] = pieceToResurrect;
             this.updateCapturedPieces();
-        }
+            this.renderBoard();
+            this.addToGameLog(`Necromancer's Trap: ${pieceToResurrect.color} ${pieceToResurrect.type} resurrected!`, 'effect');
+            this.closeModal();
+        }, 1500);
     }
 
     applyArcherTrickShot(riftRow, riftCol) {
@@ -1754,10 +1813,9 @@ class ChessGame {
     }
 
     applyFairyFountain(riftRow, riftCol, activatingPiece) {
-        // Only affects pawns - give them enhanced movement
-        if (activatingPiece.type === 'pawn') {
-            activatingPiece.fairyFountain = true;
-        }
+        // Give pawn enhanced movement abilities
+        activatingPiece.fairyFountain = true;
+        this.addToGameLog(`Fairy Fountain: ${activatingPiece.color} pawn gains enhanced movement!`, 'effect');
     }
 
     showSpringOfRevivalChoice(playerColor) {
