@@ -2157,30 +2157,71 @@ class ChessGame {
     }
 
     rollJackFrost(riftRow, riftCol) {
-        const roll = Math.floor(Math.random() * 20) + 1;
+        const finalRoll = Math.floor(Math.random() * 20) + 1;
         
         const optionsDiv = document.getElementById('rift-effect-options');
         optionsDiv.innerHTML = `
             <div class="effect-choices">
-                <p style="color: #333; margin-bottom: 10px;">Rolled: ${roll}</p>
+                <p style="color: #333; margin-bottom: 10px;">Rolling...</p>
                 <div style="margin: 20px 0;">
-                    <div style="font-size: 3rem; font-weight: bold; color: #667eea;">${roll}</div>
+                    <div id="dice-result" class="dice-roll-number">?</div>
                 </div>
-                <p style="color: #666;">${roll % 2 === 0 ? 'Even! Piece slides 1 extra square forward' : 'Odd! Nothing happens'}</p>
+                <p style="color: #666;">
+                    &nbsp;
+                </p>
             </div>
         `;
         
-        if (roll % 2 === 0) {
-            // Apply Jack Frost field effect
-            this.applyFieldEffect('jack_frost_mischief');
-            this.applyJackFrostSlide(riftRow, riftCol);
-        } else {
-            this.addToGameLog(`Jack Frost's Mischief: Roll was odd - no effect!`, 'effect');
-        }
+        this.animateDiceRoll('dice-result', finalRoll, () => {
+            const resultText = document.querySelector('.effect-choices p:last-child');
+            if (resultText) {
+                resultText.textContent = finalRoll % 2 === 0 ? 'Even! Piece slides 1 extra square forward' : 'Odd! Nothing happens';
+            }
+            
+            if (finalRoll % 2 === 0) {
+                // Apply Jack Frost field effect
+                this.applyFieldEffect('jack_frost_mischief');
+                this.applyJackFrostSlide(riftRow, riftCol);
+            } else {
+                this.addToGameLog(`Jack Frost's Mischief: Roll was odd - no effect!`, 'effect');
+            }
+            
+            setTimeout(() => {
+                this.closeModal();
+            }, 2000);
+        });
+    }
+
+    animateDiceRoll(elementId, finalNumber, callback) {
+        const element = document.getElementById(elementId);
+        if (!element) return;
         
-        setTimeout(() => {
-            this.closeModal();
-        }, 2000);
+        let counter = 0;
+        const totalFrames = 30; // Number of frames in animation
+        
+        const animate = () => {
+            counter++;
+            
+            // Calculate delay - starts fast, slows down exponentially
+            const progress = counter / totalFrames;
+            const delay = 30 + (progress * progress * 200); // Exponential slowdown
+            
+            // Show random number
+            const randomNum = Math.floor(Math.random() * 20) + 1;
+            element.textContent = randomNum;
+            
+            if (counter < totalFrames) {
+                setTimeout(animate, delay);
+            } else {
+                // Show final number
+                element.textContent = finalNumber;
+                if (callback) {
+                    setTimeout(callback, 500);
+                }
+            }
+        };
+        
+        animate();
     }
 
     showEerieFogRoll(playerColor) {
@@ -2202,34 +2243,41 @@ class ChessGame {
     }
 
     rollEerieFog(playerColor) {
-        const roll = Math.floor(Math.random() * 20) + 1;
+        const finalRoll = Math.floor(Math.random() * 20) + 1;
         
         const optionsDiv = document.getElementById('rift-effect-options');
         optionsDiv.innerHTML = `
             <div class="effect-choices">
-                <p style="color: #333; margin-bottom: 10px;">Eerie Fog's Turmoil Result:</p>
+                <p style="color: #333; margin-bottom: 10px;">Rolling...</p>
                 <div style="margin: 20px 0;">
-                    <div style="font-size: 3rem; font-weight: bold; color: #667eea;">${roll}</div>
+                    <div id="eerie-fog-result" class="dice-roll-number">?</div>
                 </div>
                 <p style="color: #666; font-size: 0.9rem;">
-                    ${roll >= 3 ? 'Continue playing normally!' : 'Your next turn will be skipped!'}
+                    &nbsp;
                 </p>
             </div>
         `;
         
-        if (roll >= 3) {
-            // Roll 3-20: play normally, no field effect
-            this.addToGameLog(`Eerie Fog's Turmoil: Rolled ${roll} - continue playing normally!`, 'effect');
-        } else {
-            // Roll 1-2: skip next turn
-            this.applyFieldEffect('eerie_fog_turmoil');
-            this.eerieFogSkipPlayer = playerColor;
-            this.addToGameLog(`Eerie Fog's Turmoil: Rolled ${roll} - ${playerColor} will skip next turn!`, 'effect');
-        }
-        
-        setTimeout(() => {
-            this.closeModal();
-        }, 3000);
+        this.animateDiceRoll('eerie-fog-result', finalRoll, () => {
+            const resultText = document.querySelector('.effect-choices p:last-child');
+            if (resultText) {
+                resultText.textContent = finalRoll >= 3 ? 'Continue playing normally!' : 'Your next turn will be skipped!';
+            }
+            
+            if (finalRoll >= 3) {
+                // Roll 3-20: play normally, no field effect
+                this.addToGameLog(`Eerie Fog's Turmoil: Rolled ${finalRoll} - continue playing normally!`, 'effect');
+            } else {
+                // Roll 1-2: skip next turn
+                this.applyFieldEffect('eerie_fog_turmoil');
+                this.eerieFogSkipPlayer = playerColor;
+                this.addToGameLog(`Eerie Fog's Turmoil: Rolled ${finalRoll} - ${playerColor} will skip next turn!`, 'effect');
+            }
+            
+            setTimeout(() => {
+                this.closeModal();
+            }, 3000);
+        });
     }
 
     applyJackFrostSlide(riftRow, riftCol) {

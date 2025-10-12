@@ -1568,6 +1568,19 @@ body.dark-mode .dice-display {
     }
 }
 
+/* D20 Dice Roll Animation */
+.dice-roll-number {
+    font-size: 3rem;
+    font-weight: bold;
+    color: #667eea;
+    min-width: 80px;
+    min-height: 80px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    /* Fixed size - no enlargement during animation */
+}
+
 /* Catapult Roulette hit animation */
 .catapult-hit {
     animation: catapultBlink 0.4s ease-in-out 5;
