@@ -1550,6 +1550,24 @@ body.dark-mode .dice-display {
     50% { box-shadow: 0 0 25px rgba(76, 175, 80, 1), inset 0 0 25px rgba(76, 175, 80, 0.5); }
 }
 
+/* Portal in the Rift target highlighting */
+.portal-target {
+    box-shadow: 0 0 20px rgba(0, 150, 255, 0.9), inset 0 0 20px rgba(0, 150, 255, 0.5);
+    cursor: pointer;
+    animation: portalPulse 1s ease-in-out infinite;
+}
+
+@keyframes portalPulse {
+    0%, 100% { 
+        box-shadow: 0 0 15px rgba(0, 150, 255, 0.7), inset 0 0 15px rgba(0, 150, 255, 0.4);
+        transform: scale(1);
+    }
+    50% { 
+        box-shadow: 0 0 30px rgba(0, 150, 255, 1), inset 0 0 30px rgba(0, 150, 255, 0.6);
+        transform: scale(1.05);
+    }
+}
+
 /* Catapult Roulette hit animation */
 .catapult-hit {
     animation: catapultBlink 0.4s ease-in-out 5;

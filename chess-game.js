@@ -175,6 +175,12 @@ class ChessGame {
     }
 
     handleSquareClick(row, col) {
+        // Handle portal rift selection
+        if (this.portalMode && this.portalMode.active) {
+            this.handlePortalRiftClick(row, col);
+            return;
+        }
+        
         // Handle archer shot target selection
         if (this.archerShotMode && this.archerShotMode.active) {
             this.handleArcherTarget(row, col);
@@ -192,6 +198,56 @@ class ChessGame {
         } else {
             this.handleGameMove(row, col);
         }
+    }
+
+    handlePortalRiftClick(row, col) {
+        const { fromRow, fromCol } = this.portalMode;
+        
+        // Check if this is a valid rift target
+        const isValidRift = this.rifts.some(rift => 
+            rift.row === row && rift.col === col && (rift.row !== fromRow || rift.col !== fromCol)
+        );
+        
+        if (!isValidRift) {
+            this.addToGameLog(`Invalid target! Click on a blue highlighted rift.`, 'effect');
+            return;
+        }
+        
+        // Execute teleportation
+        this.executePortalTeleport(fromRow, fromCol, row, col);
+        
+        // Cleanup
+        this.portalMode = null;
+        document.querySelectorAll('.portal-target').forEach(square => {
+            square.classList.remove('portal-target');
+        });
+    }
+
+    executePortalTeleport(fromRow, fromCol, toRow, toCol) {
+        const piece = this.board[fromRow][fromCol];
+        
+        // Remove piece from original location
+        this.board[fromRow][fromCol] = null;
+        this.removePieceWithAnimation(fromRow, fromCol);
+        
+        // If destination is occupied, remove that piece
+        if (this.board[toRow][toCol]) {
+            this.capturedPieces[this.board[toRow][toCol].color].push(this.board[toRow][toCol]);
+            this.removePieceWithAnimation(toRow, toCol, 500);
+        }
+        
+        // Place piece at destination
+        setTimeout(() => {
+            this.board[toRow][toCol] = piece;
+            this.renderBoard();
+            this.updateCapturedPieces();
+            const coords = String.fromCharCode(65 + toCol) + (8 - toRow);
+            this.addToGameLog(`Piece teleported to ${coords}!`, 'effect');
+        }, 1000);
+
+        setTimeout(() => {
+            this.closeModal();
+        }, 2000);
     }
 
     handleArcherTarget(row, col) {
@@ -461,7 +517,10 @@ class ChessGame {
                     this.footSoldierMode = null;
                     this.selectedSquare = null;
                     this.clearHighlights();
-                    this.addToGameLog(`Foot Soldier's Gambit: ${piece.type} moved!`, 'effect');
+                    this.clearCoordinateHighlights();
+                    this.addToGameLog(`Foot Soldier's Gambit: ${piece.type} completed second move!`, 'effect');
+                    // Now switch players after the second move is complete
+                    this.switchPlayer();
                     return;
                 } else {
                     this.addToGameLog(`Invalid move for Foot Soldier's Gambit!`, 'effect');
@@ -1073,10 +1132,15 @@ class ChessGame {
                     break;
                 case 5: // Demotion
                     const capturedPawns = this.capturedPieces[activatingPiece.color].filter(p => p.type === 'pawn');
-                    if (capturedPawns.length > 0) {
+                    // Must have captured pawns AND activating piece must not be a pawn
+                    if (capturedPawns.length > 0 && activatingPiece.type !== 'pawn') {
                         this.applyDemotion(riftRow, riftCol, activatingPiece);
                     } else {
-                        this.addToGameLog(`Demotion: No captured pawns available!`, 'effect');
+                        if (activatingPiece.type === 'pawn') {
+                            this.addToGameLog(`Demotion: Pawns cannot be demoted!`, 'effect');
+                        } else {
+                            this.addToGameLog(`Demotion: No captured pawns available!`, 'effect');
+                        }
                         this.switchPlayer();
                     }
                     break;
@@ -1134,11 +1198,13 @@ class ChessGame {
                     this.showEerieFogRoll(activatingPiece.color);
                     return; // Don't close modal yet
                 case 20: // Spring of Revival
-                    if (this.capturedPieces[activatingPiece.color].length > 0) {
+                    // Check if player has any captured pieces of their own color
+                    const playerCapturedPieces = this.capturedPieces[activatingPiece.color];
+                    if (playerCapturedPieces && playerCapturedPieces.length > 0) {
                         this.showSpringOfRevivalChoice(activatingPiece.color);
                         return; // Don't close modal yet
                     } else {
-                        this.addToGameLog(`Spring of Revival: No captured pieces to revive!`, 'effect');
+                        this.addToGameLog(`Spring of Revival: You have no captured pieces to revive!`, 'effect');
                         this.switchPlayer();
                     }
                     break;
@@ -1320,20 +1386,43 @@ class ChessGame {
         }
 
         const optionsDiv = document.getElementById('rift-effect-options');
-        let buttonsHtml = '<div class="effect-choices">';
-        
-        availableRifts.forEach((rift, index) => {
-            const coords = String.fromCharCode(97 + rift.col) + (8 - rift.row);
-            buttonsHtml += `
-                <button class="effect-choice" onclick="game.teleportToRift(${riftRow}, ${riftCol}, ${rift.row}, ${rift.col}, '${activatingPiece.color}')">
-                    Teleport to ${coords.toUpperCase()}
+        optionsDiv.innerHTML = `
+            <div class="effect-choices">
+                <p style="color: #333; margin-bottom: 10px; text-align: center;">
+                    Portal in the Rift! Click on a rift on the board to teleport your piece there.
+                </p>
+                <button class="effect-choice" onclick="game.cancelPortalSelection()">
+                    Close
                 </button>
-            `;
-        });
+            </div>
+        `;
         
-        buttonsHtml += '</div>';
-        optionsDiv.innerHTML = buttonsHtml;
-        this.addToGameLog(`Portal in the Rift activated! Choose destination rift.`, 'effect');
+        // Enable portal selection mode
+        this.portalMode = { active: true, fromRow: riftRow, fromCol: riftCol, piece: activatingPiece };
+        
+        // Highlight available rifts in blue
+        this.highlightPortalRifts(riftRow, riftCol);
+        
+        this.addToGameLog(`Portal in the Rift activated! Click on a blue highlighted rift to teleport.`, 'effect');
+    }
+
+    highlightPortalRifts(excludeRow, excludeCol) {
+        this.rifts.forEach(rift => {
+            if (rift.row !== excludeRow || rift.col !== excludeCol) {
+                const square = document.querySelector(`[data-row="${rift.row}"][data-col="${rift.col}"]`);
+                if (square) {
+                    square.classList.add('portal-target');
+                }
+            }
+        });
+    }
+
+    cancelPortalSelection() {
+        this.portalMode = null;
+        document.querySelectorAll('.portal-target').forEach(square => {
+            square.classList.remove('portal-target');
+        });
+        this.closeModal();
     }
 
     teleportToRift(fromRow, fromCol, toRow, toCol, color) {
@@ -1776,13 +1865,19 @@ class ChessGame {
                 <p style="color: #333; margin-bottom: 10px; text-align: center;">
                     Foot Soldier's Gambit! Your piece must move again immediately.
                 </p>
-                <button class="effect-choice" onclick="game.closeModal()">
+                <button class="effect-choice" onclick="game.closeFootSoldierModal()">
                     Continue (select next move)
                 </button>
             </div>
         `;
         
         this.addToGameLog(`Foot Soldier's Gambit: ${activatingPiece.type} must move again!`, 'effect');
+    }
+
+    closeFootSoldierModal() {
+        document.getElementById('rift-effects-modal').style.display = 'none';
+        // DO NOT switch player - they need to move the piece again
+        this.addToGameLog(`Click on your ${this.board[this.footSoldierMode.pieceRow][this.footSoldierMode.pieceCol].type} to select it for the second move.`, 'effect');
     }
 
     applyDragonBreath(riftRow, riftCol) {
