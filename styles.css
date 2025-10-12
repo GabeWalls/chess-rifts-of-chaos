@@ -1417,6 +1417,12 @@ body.dark-mode .dice-display {
     box-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
 }
 
+/* Ensure gold aura stays gold in dark mode */
+body.dark-mode .conqueror-king {
+    background: linear-gradient(45deg, #ffd700, #ffed4e, #ffd700);
+    box-shadow: 0 0 25px rgba(255, 215, 0, 1);
+}
+
 .fairy-fountain-pawn {
     position: relative;
     background: linear-gradient(45deg, #ff69b4, #ffb6c1, #ff69b4);
@@ -1424,6 +1430,12 @@ body.dark-mode .dice-display {
     animation: pinkAura 2s ease-in-out infinite;
     border-radius: 50%;
     box-shadow: 0 0 20px rgba(255, 105, 180, 0.8);
+}
+
+/* Ensure pink aura stays pink in dark mode */
+body.dark-mode .fairy-fountain-pawn {
+    background: linear-gradient(45deg, #ff69b4, #ffb6c1, #ff69b4);
+    box-shadow: 0 0 25px rgba(255, 105, 180, 1);
 }
 
 @keyframes goldAura {
