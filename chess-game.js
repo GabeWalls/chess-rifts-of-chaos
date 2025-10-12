@@ -14,6 +14,7 @@ class ChessGame {
         this.diceRolledThisTurn = false;
         this.kingMovedThisTurn = { white: 0, black: 0 }; // Track number of king moves (0, 1, or 2)
         this.kingMovedFirst = false; // Track if king moved first this turn
+        this.playerHasMoved = { white: false, black: false }; // Track if each player has moved at least once
         this.gameLog = [];
         this.chatMessages = [];
         this.darkMode = false;
@@ -864,6 +865,9 @@ class ChessGame {
         this.board[fromRow][fromCol] = null;
         piece.hasMoved = true;
         
+        // Track that this player has made a move
+        this.playerHasMoved[this.currentPlayer] = true;
+        
         // Track king moves for Conqueror's Tale
         if (piece.type === 'king') {
             this.kingMovedThisTurn[piece.color]++;
@@ -1086,7 +1090,13 @@ class ChessGame {
                     this.applyFieldEffect('holiday_rejuvenation');
                     break;
                 case 9: // Sandstorm
-                    this.applyFieldEffect('sandstorm');
+                    // Check if both players have moved at least once
+                    if (this.playerHasMoved.white && this.playerHasMoved.black) {
+                        this.applyFieldEffect('sandstorm');
+                    } else {
+                        this.addToGameLog(`Sandstorm: Both players must move at least once first!`, 'effect');
+                        this.switchPlayer();
+                    }
                     break;
                 case 10: // Dragon's Breath
                     this.showDragonDirectionChoice(riftRow, riftCol);
@@ -2177,12 +2187,36 @@ class ChessGame {
         if (effectName !== 'blank') {
             this.activeFieldEffects.push(effectName);
             this.addToGameLog(`Field effect activated: ${this.formatEffectName(effectName)}`, 'effect');
+            
+            // Show sandstorm overlay if sandstorm is active
+            if (effectName === 'sandstorm') {
+                this.showSandstormOverlay();
+            }
         } else {
             this.addToGameLog(`Field effect activated: Blank (Pawns may capture sideways)`, 'effect');
         }
     }
 
+    showSandstormOverlay() {
+        const overlay = document.getElementById('sandstorm-overlay');
+        if (overlay) {
+            overlay.classList.add('active');
+        }
+    }
+
+    hideSandstormOverlay() {
+        const overlay = document.getElementById('sandstorm-overlay');
+        if (overlay) {
+            overlay.classList.remove('active');
+        }
+    }
+
     clearFieldEffects() {
+        // Hide sandstorm overlay if it was active
+        if (this.activeFieldEffects.includes('sandstorm')) {
+            this.hideSandstormOverlay();
+        }
+        
         // Clear frozen pieces that were frozen by field effects (not by Medusa's Gaze)
         this.frozenPieces.forEach(piece => {
             if (piece.frozen && piece.frozenByFieldEffect) {
@@ -2348,6 +2382,7 @@ class ChessGame {
         this.riftActivatedThisTurn = false;
         this.diceRolledThisTurn = false;
         this.kingMovedThisTurn = { white: 0, black: 0 };
+        this.playerHasMoved = { white: false, black: false };
         this.kingMovedFirst = false;
         
         // Reset king abilities (Conqueror's Tale)
