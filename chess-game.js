@@ -180,6 +180,12 @@ class ChessGame {
             return;
         }
         
+        // Handle archer shot target selection
+        if (this.archerShotMode && this.archerShotMode.active) {
+            this.handleArcherTarget(row, col);
+            return;
+        }
+        
         // Handle Spring of Revival piece placement
         if (this.springOfRevivalMode && this.springOfRevivalMode.active && this.springOfRevivalMode.piece) {
             this.handleSpringOfRevivalPlacement(row, col);
@@ -191,6 +197,51 @@ class ChessGame {
         } else {
             this.handleGameMove(row, col);
         }
+    }
+
+    handleArcherTarget(row, col) {
+        const { riftRow, riftCol } = this.archerShotMode;
+        const targetPiece = this.board[row][col];
+        
+        // Validate the target is a piece
+        if (!targetPiece) {
+            this.addToGameLog(`Invalid target! Must select a piece.`, 'effect');
+            return;
+        }
+        
+        // Validate target is within 3 squares in a straight line
+        const dr = Math.sign(row - riftRow);
+        const dc = Math.sign(col - riftCol);
+        const distance = Math.max(Math.abs(row - riftRow), Math.abs(col - riftCol));
+        
+        if (distance > 3 || (dr === 0 && dc === 0)) {
+            this.addToGameLog(`Invalid target! Must be within 3 squares in a straight line.`, 'effect');
+            return;
+        }
+        
+        // Execute archer shot
+        this.executeArcherShotOnTarget(riftRow, riftCol, row, col);
+        
+        // Cleanup
+        this.archerShotMode = null;
+        document.querySelectorAll('.archer-target').forEach(square => {
+            square.classList.remove('archer-target');
+        });
+    }
+
+    executeArcherShotOnTarget(riftRow, riftCol, targetRow, targetCol) {
+        const piece = this.board[targetRow][targetCol];
+        this.capturedPieces[piece.color].push(piece);
+        this.board[targetRow][targetCol] = null;
+        this.removePieceWithAnimation(targetRow, targetCol);
+        this.addToGameLog(`Archer's Trick Shot removed ${piece.color} ${piece.type}!`, 'effect');
+        
+        this.updateCapturedPieces();
+        this.renderBoard();
+        
+        setTimeout(() => {
+            this.closeModal();
+        }, 1500);
     }
 
     handleSpringOfRevivalPlacement(row, col) {
@@ -996,7 +1047,7 @@ class ChessGame {
                     this.showNecromancerTrapChoice(riftRow, riftCol, activatingPiece);
                     return; // Don't close modal yet
                 case 2: // Archer's Trick Shot
-                    this.showArcherDirectionChoice(riftRow, riftCol);
+                    this.showArcherTargetSelection(riftRow, riftCol);
                     return; // Don't close modal yet
                 case 3: // Sandworm
                     this.applySandworm(riftRow, riftCol);
@@ -1005,7 +1056,13 @@ class ChessGame {
                     this.applyHonorableSacrifice(riftRow, riftCol, activatingPiece);
                     break;
                 case 5: // Demotion
-                    this.applyDemotion(riftRow, riftCol, activatingPiece);
+                    const capturedPawns = this.capturedPieces[activatingPiece.color].filter(p => p.type === 'pawn');
+                    if (capturedPawns.length > 0) {
+                        this.applyDemotion(riftRow, riftCol, activatingPiece);
+                    } else {
+                        this.addToGameLog(`Demotion: No captured pawns available!`, 'effect');
+                        this.switchPlayer();
+                    }
                     break;
                 case 6: // Foot Soldier's Gambit
                     this.applyFootSoldierGambit(activatingPiece, riftRow, riftCol);
@@ -1055,8 +1112,14 @@ class ChessGame {
                     this.applyFieldEffect('eerie_fog_turmoil');
                     break;
                 case 20: // Spring of Revival
-                    this.showSpringOfRevivalChoice(activatingPiece.color);
-                    return; // Don't close modal yet
+                    if (this.capturedPieces[activatingPiece.color].length > 0) {
+                        this.showSpringOfRevivalChoice(activatingPiece.color);
+                        return; // Don't close modal yet
+                    } else {
+                        this.addToGameLog(`Spring of Revival: No captured pieces to revive!`, 'effect');
+                        this.switchPlayer();
+                    }
+                    break;
                 case 21: // Blank
                     this.applyFieldEffect('blank');
                     break;
@@ -1275,32 +1338,57 @@ class ChessGame {
         }, 2000);
     }
 
-    showArcherDirectionChoice(riftRow, riftCol) {
-        const directions = [
-            { name: 'North', dr: -1, dc: 0 },
-            { name: 'Northeast', dr: -1, dc: 1 },
-            { name: 'East', dr: 0, dc: 1 },
-            { name: 'Southeast', dr: 1, dc: 1 },
-            { name: 'South', dr: 1, dc: 0 },
-            { name: 'Southwest', dr: 1, dc: -1 },
-            { name: 'West', dr: 0, dc: -1 },
-            { name: 'Northwest', dr: -1, dc: -1 }
-        ];
-
+    showArcherTargetSelection(riftRow, riftCol) {
         const optionsDiv = document.getElementById('rift-effect-options');
-        let buttonsHtml = '<div class="effect-choices">';
-        
-        directions.forEach((dir, index) => {
-            buttonsHtml += `
-                <button class="effect-choice" onclick="game.executeArcherShot(${riftRow}, ${riftCol}, ${dir.dr}, ${dir.dc})">
-                    ${dir.name}
+        optionsDiv.innerHTML = `
+            <div class="effect-choices">
+                <p style="color: #333; margin-bottom: 10px; text-align: center;">
+                    Click on any piece within 3 squares (in any direction) from the rift to target it with Archer's Trick Shot.
+                </p>
+                <button class="effect-choice" onclick="game.cancelArcherShot()">
+                    Cancel (No Valid Targets)
                 </button>
-            `;
-        });
+            </div>
+        `;
         
-        buttonsHtml += '</div>';
-        optionsDiv.innerHTML = buttonsHtml;
-        this.addToGameLog(`Archer's Trick Shot activated! Choose direction.`, 'effect');
+        // Enable archer shot selection mode
+        this.archerShotMode = { active: true, riftRow, riftCol };
+        
+        // Highlight valid targets
+        this.highlightArcherTargets(riftRow, riftCol);
+        
+        this.addToGameLog(`Archer's Trick Shot activated! Select a target.`, 'effect');
+    }
+
+    highlightArcherTargets(riftRow, riftCol) {
+        const directions = [
+            [-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [1, 0], [1, 1]
+        ];
+        
+        directions.forEach(([dr, dc]) => {
+            for (let distance = 1; distance <= 3; distance++) {
+                const targetRow = riftRow + (dr * distance);
+                const targetCol = riftCol + (dc * distance);
+                
+                if (targetRow >= 0 && targetRow < 8 && targetCol >= 0 && targetCol < 8) {
+                    const piece = this.board[targetRow][targetCol];
+                    if (piece) {
+                        const square = document.querySelector(`[data-row="${targetRow}"][data-col="${targetCol}"]`);
+                        if (square) {
+                            square.classList.add('archer-target');
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    cancelArcherShot() {
+        this.archerShotMode = null;
+        document.querySelectorAll('.archer-target').forEach(square => {
+            square.classList.remove('archer-target');
+        });
+        this.closeModal();
     }
 
     executeArcherShot(riftRow, riftCol, dr, dc) {
@@ -1954,6 +2042,13 @@ class ChessGame {
         this.updateCapturedPieces();
     }
 
+    formatEffectName(effectName) {
+        return effectName.replace(/_/g, ' ')
+                        .split(' ')
+                        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+                        .join(' ');
+    }
+
     applyFieldEffect(effectName) {
         // Remove any existing field effects
         this.activeFieldEffects = [];
@@ -1961,7 +2056,7 @@ class ChessGame {
         // Add the new field effect
         if (effectName !== 'blank') {
             this.activeFieldEffects.push(effectName);
-            this.addToGameLog(`Field effect activated: ${effectName.replace(/_/g, ' ')}`, 'effect');
+            this.addToGameLog(`Field effect activated: ${this.formatEffectName(effectName)}`, 'effect');
         } else {
             this.addToGameLog(`Field effect activated: Blank (Pawns may capture sideways)`, 'effect');
         }
@@ -2052,7 +2147,7 @@ class ChessGame {
         this.activeFieldEffects.forEach(effect => {
             const effectElement = document.createElement('div');
             effectElement.className = 'field-effect-item';
-            effectElement.textContent = effect.replace(/_/g, ' ');
+            effectElement.textContent = this.formatEffectName(effect);
             effectElement.addEventListener('click', () => this.showFieldEffectDetails(effect));
             effectsList.appendChild(effectElement);
         });
@@ -2071,7 +2166,7 @@ class ChessGame {
         const description = effectDescriptions[effectName] || 'Unknown field effect.';
         
         // Show in modal - DISPLAY ONLY, no rolling allowed
-        document.getElementById('rift-effect-title').textContent = `Field Effect: ${effectName.replace(/_/g, ' ')}`;
+        document.getElementById('rift-effect-title').textContent = `Field Effect: ${this.formatEffectName(effectName)}`;
         document.getElementById('rift-effect-description').textContent = description;
         document.getElementById('rift-effect-options').innerHTML = '';
         

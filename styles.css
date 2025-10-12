@@ -1450,6 +1450,18 @@ body.dark-mode .dice-display {
     50% { box-shadow: 0 0 25px rgba(255, 69, 0, 1), inset 0 0 25px rgba(255, 69, 0, 0.5); }
 }
 
+/* Archer's Trick Shot target highlighting */
+.archer-target {
+    box-shadow: 0 0 20px rgba(0, 128, 255, 0.8), inset 0 0 20px rgba(0, 128, 255, 0.4);
+    cursor: crosshair;
+    animation: archerPulse 1s ease-in-out infinite;
+}
+
+@keyframes archerPulse {
+    0%, 100% { box-shadow: 0 0 15px rgba(0, 128, 255, 0.6), inset 0 0 15px rgba(0, 128, 255, 0.3); }
+    50% { box-shadow: 0 0 25px rgba(0, 128, 255, 1), inset 0 0 25px rgba(0, 128, 255, 0.5); }
+}
+
 /* Spring of Revival target highlighting */
 .revival-target {
     box-shadow: 0 0 20px rgba(76, 175, 80, 0.8), inset 0 0 20px rgba(76, 175, 80, 0.4);
