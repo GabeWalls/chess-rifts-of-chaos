@@ -174,12 +174,6 @@ class ChessGame {
     }
 
     handleSquareClick(row, col) {
-        // Handle dragon breath target selection
-        if (this.dragonBreathMode && this.dragonBreathMode.active) {
-            this.handleDragonBreathTarget(row, col);
-            return;
-        }
-        
         // Handle archer shot target selection
         if (this.archerShotMode && this.archerShotMode.active) {
             this.handleArcherTarget(row, col);
@@ -449,17 +443,35 @@ class ChessGame {
             const { pieceRow, pieceCol } = this.footSoldierMode;
             const piece = this.board[pieceRow][pieceCol];
             
-            // Auto-select the foot soldier piece
-            if (this.isValidMove(pieceRow, pieceCol, row, col)) {
-                this.makeMove(pieceRow, pieceCol, row, col);
-                this.footSoldierMode = null;
-                this.selectedSquare = null;
+            // If clicking on the foot soldier piece, select it and show moves
+            if (row === pieceRow && col === pieceCol) {
+                this.selectedSquare = [row, col];
                 this.clearHighlights();
-                return;
-            } else {
-                this.addToGameLog(`Invalid move for Foot Soldier's Gambit!`, 'effect');
+                this.highlightCoordinates(row, col);
+                this.highlightMoves(row, col);
+                this.addToGameLog(`Foot Soldier's Gambit: Select where to move ${piece.type}.`, 'effect');
                 return;
             }
+            
+            // If a square is already selected and clicking on a valid move
+            if (this.selectedSquare && this.selectedSquare[0] === pieceRow && this.selectedSquare[1] === pieceCol) {
+                if (this.isValidMove(pieceRow, pieceCol, row, col)) {
+                    this.makeMove(pieceRow, pieceCol, row, col);
+                    this.footSoldierMode = null;
+                    this.selectedSquare = null;
+                    this.clearHighlights();
+                    this.addToGameLog(`Foot Soldier's Gambit: ${piece.type} moved!`, 'effect');
+                    return;
+                } else {
+                    this.addToGameLog(`Invalid move for Foot Soldier's Gambit!`, 'effect');
+                    return;
+                }
+            }
+            
+            // If clicking elsewhere, clear selection
+            this.selectedSquare = null;
+            this.clearHighlights();
+            return;
         }
         
         const square = this.board[row][col];
@@ -1077,7 +1089,7 @@ class ChessGame {
                     this.applyFieldEffect('sandstorm');
                     break;
                 case 10: // Dragon's Breath
-                    this.showDragonTargetSelection(riftRow, riftCol);
+                    this.showDragonDirectionChoice(riftRow, riftCol);
                     return; // Don't close modal yet
                 case 11: // Jack Frost's Mischief
                     this.showJackFrostRoll(riftRow, riftCol);
@@ -1095,7 +1107,7 @@ class ChessGame {
                     this.applyMedusaGaze(riftRow, riftCol);
                     break;
                 case 16: // Time Distortion/Stasis
-                    this.applyTimeDistortion(riftRow, riftCol);
+                    this.applyTimeDistortionFieldEffect(riftRow, riftCol);
                     break;
                 case 17: // Crossroad Demon's Deal
                     this.showCrossroadDemonChoice(riftRow, riftCol, activatingPiece);
@@ -1109,8 +1121,8 @@ class ChessGame {
                     }
                     break;
                 case 19: // Eerie Fog's Turmoil
-                    this.applyFieldEffect('eerie_fog_turmoil');
-                    break;
+                    this.showEerieFogRoll(activatingPiece.color);
+                    return; // Don't close modal yet
                 case 20: // Spring of Revival
                     if (this.capturedPieces[activatingPiece.color].length > 0) {
                         this.showSpringOfRevivalChoice(activatingPiece.color);
@@ -1424,46 +1436,100 @@ class ChessGame {
         }, 2000);
     }
 
-    showDragonTargetSelection(riftRow, riftCol) {
-        const optionsDiv = document.getElementById('rift-effect-options');
-        optionsDiv.innerHTML = `
-            <div class="effect-choices">
-                <p style="color: #333; margin-bottom: 10px; text-align: center;">
-                    Click on an enemy piece within 3 squares (straight line) from the rift to target it with Dragon's Breath.
-                </p>
-            </div>
-        `;
-        
-        // Enable dragon breath selection mode
-        this.dragonBreathMode = { active: true, riftRow, riftCol };
-        
-        // Highlight valid targets
-        this.highlightDragonBreathTargets(riftRow, riftCol);
-        
-        this.addToGameLog(`Dragon's Breath activated! Select a target.`, 'effect');
-    }
-
-    highlightDragonBreathTargets(riftRow, riftCol) {
+    showDragonDirectionChoice(riftRow, riftCol) {
         const directions = [
-            [-1, 0], [-1, 1], [0, 1], [1, 1], [1, 0], [1, -1], [0, -1], [-1, -1]
+            { name: 'North', dr: -1, dc: 0 },
+            { name: 'Northeast', dr: -1, dc: 1 },
+            { name: 'East', dr: 0, dc: 1 },
+            { name: 'Southeast', dr: 1, dc: 1 },
+            { name: 'South', dr: 1, dc: 0 },
+            { name: 'Southwest', dr: 1, dc: -1 },
+            { name: 'West', dr: 0, dc: -1 },
+            { name: 'Northwest', dr: -1, dc: -1 }
         ];
+
+        const optionsDiv = document.getElementById('rift-effect-options');
+        let buttonsHtml = '<div class="effect-choices"><p style="color: #333; margin-bottom: 10px;">Choose a direction with enemy pieces:</p>';
         
-        directions.forEach(([dr, dc]) => {
-            for (let distance = 1; distance <= 3; distance++) {
-                const targetRow = riftRow + (dr * distance);
-                const targetCol = riftCol + (dc * distance);
-                
-                if (targetRow >= 0 && targetRow < 8 && targetCol >= 0 && targetCol < 8) {
-                    const piece = this.board[targetRow][targetCol];
-                    if (piece && piece.color !== this.currentPlayer) {
-                        const square = document.querySelector(`[data-row="${targetRow}"][data-col="${targetCol}"]`);
-                        if (square) {
-                            square.classList.add('dragon-target');
-                        }
-                    }
-                }
+        let hasValidDirections = false;
+        directions.forEach((dir, index) => {
+            // Check if this direction has enemy pieces
+            const hasEnemyInDirection = this.hasEnemyInDirection(riftRow, riftCol, dir.dr, dir.dc);
+            if (hasEnemyInDirection) {
+                hasValidDirections = true;
+                buttonsHtml += `
+                    <button class="effect-choice" onclick="game.executeDragonBreath(${riftRow}, ${riftCol}, ${dir.dr}, ${dir.dc})">
+                        ${dir.name}
+                    </button>
+                `;
             }
         });
+        
+        if (!hasValidDirections) {
+            buttonsHtml += '<p style="color: #666; text-align: center; margin: 20px 0;">No enemy pieces in any direction!</p>';
+        }
+        
+        buttonsHtml += `
+            <button class="effect-choice" onclick="game.closeModal()">
+                Cancel
+            </button>
+        </div>`;
+        
+        optionsDiv.innerHTML = buttonsHtml;
+        this.addToGameLog(`Dragon's Breath activated! Choose direction.`, 'effect');
+    }
+
+    hasEnemyInDirection(riftRow, riftCol, dr, dc) {
+        for (let distance = 1; distance <= 3; distance++) {
+            const targetRow = riftRow + (dr * distance);
+            const targetCol = riftCol + (dc * distance);
+            
+            if (targetRow >= 0 && targetRow < 8 && targetCol >= 0 && targetCol < 8) {
+                const piece = this.board[targetRow][targetCol];
+                if (piece && piece.color !== this.currentPlayer) {
+                    return true;
+                }
+                // If there's a friendly piece blocking, stop checking this direction
+                if (piece && piece.color === this.currentPlayer) {
+                    break;
+                }
+            }
+        }
+        return false;
+    }
+
+    executeDragonBreath(riftRow, riftCol, dr, dc) {
+        let piecesRemoved = 0;
+        
+        for (let distance = 1; distance <= 3; distance++) {
+            const targetRow = riftRow + (dr * distance);
+            const targetCol = riftCol + (dc * distance);
+            
+            if (targetRow >= 0 && targetRow < 8 && targetCol >= 0 && targetCol < 8) {
+                const piece = this.board[targetRow][targetCol];
+                
+                // Stop at first piece (friendly or enemy)
+                if (piece) {
+                    if (piece.color !== this.currentPlayer) {
+                        this.capturedPieces[piece.color].push(piece);
+                        this.board[targetRow][targetCol] = null;
+                        this.removePieceWithAnimation(targetRow, targetCol, piecesRemoved * 400);
+                        this.addToGameLog(`Dragon's Breath removed ${piece.color} ${piece.type}!`, 'effect');
+                        piecesRemoved++;
+                    }
+                    break; // Stop at first piece in this direction
+                }
+            }
+        }
+
+        this.addToGameLog(`Dragon's Breath fired! ${piecesRemoved} enemy pieces removed.`, 'effect');
+        
+        this.updateCapturedPieces();
+        this.renderBoard();
+        
+        setTimeout(() => {
+            this.closeModal();
+        }, 2000);
     }
 
     executeDragonBreathOnTarget(riftRow, riftCol, dr, dc) {
@@ -1840,7 +1906,7 @@ class ChessGame {
         this.frozenPieces.add(`${riftRow}-${riftCol}`);
     }
 
-    applyTimeDistortion(riftRow, riftCol) {
+    applyTimeDistortionFieldEffect(riftRow, riftCol) {
         // Roll for radius
         const radiusRoll = Math.floor(Math.random() * 20) + 1;
         let radius = 1;
@@ -1848,7 +1914,10 @@ class ChessGame {
         else if (radiusRoll >= 15 && radiusRoll <= 18) radius = 3;
         else if (radiusRoll >= 19) radius = 4;
         
-        // Freeze all pieces within radius by storing their piece objects
+        // Clear any existing field effects first
+        this.clearFieldEffects();
+        
+        // Freeze all pieces within radius
         for (let rowOffset = -radius; rowOffset <= radius; rowOffset++) {
             for (let colOffset = -radius; colOffset <= radius; colOffset++) {
                 const targetRow = riftRow + rowOffset;
@@ -1856,15 +1925,17 @@ class ChessGame {
                 
                 if (this.isInBounds(targetRow, targetCol) && this.board[targetRow][targetCol]) {
                     const piece = this.board[targetRow][targetCol];
-                    // Store piece reference instead of position
                     if (!piece.frozen) {
                         piece.frozen = true;
+                        piece.frozenByFieldEffect = true;
                         this.frozenPieces.add(piece);
                     }
                 }
             }
         }
         
+        // Set as active field effect
+        this.activeFieldEffects.push('time_distortion');
         this.addToGameLog(`Time Distortion: ${radius} radius - pieces frozen!`, 'effect');
     }
 
@@ -2007,6 +2078,55 @@ class ChessGame {
         }, 2000);
     }
 
+    showEerieFogRoll(playerColor) {
+        const optionsDiv = document.getElementById('rift-effect-options');
+        optionsDiv.innerHTML = `
+            <div class="effect-choices">
+                <p style="color: #333; margin-bottom: 10px;">Eerie Fog's Turmoil! Roll D20:</p>
+                <p style="color: #666; font-size: 0.9rem;">3-20 = play normally, 1-2 = skip next turn</p>
+                <div style="margin: 20px 0;">
+                    <div style="font-size: 3rem; font-weight: bold; color: #667eea;">?</div>
+                </div>
+                <button class="effect-choice" onclick="game.rollEerieFog('${playerColor}')">
+                    Roll D20
+                </button>
+            </div>
+        `;
+        
+        this.addToGameLog(`Eerie Fog's Turmoil activated!`, 'effect');
+    }
+
+    rollEerieFog(playerColor) {
+        const roll = Math.floor(Math.random() * 20) + 1;
+        
+        const optionsDiv = document.getElementById('rift-effect-options');
+        optionsDiv.innerHTML = `
+            <div class="effect-choices">
+                <p style="color: #333; margin-bottom: 10px;">Eerie Fog's Turmoil Result:</p>
+                <div style="margin: 20px 0;">
+                    <div style="font-size: 3rem; font-weight: bold; color: #667eea;">${roll}</div>
+                </div>
+                <p style="color: #666; font-size: 0.9rem;">
+                    ${roll >= 3 ? 'Continue playing normally!' : 'Your next turn will be skipped!'}
+                </p>
+            </div>
+        `;
+        
+        if (roll >= 3) {
+            // Roll 3-20: play normally, no field effect
+            this.addToGameLog(`Eerie Fog's Turmoil: Rolled ${roll} - continue playing normally!`, 'effect');
+        } else {
+            // Roll 1-2: skip next turn
+            this.applyFieldEffect('eerie_fog_turmoil');
+            this.eerieFogSkipPlayer = playerColor;
+            this.addToGameLog(`Eerie Fog's Turmoil: Rolled ${roll} - ${playerColor} will skip next turn!`, 'effect');
+        }
+        
+        setTimeout(() => {
+            this.closeModal();
+        }, 3000);
+    }
+
     applyJackFrostSlide(riftRow, riftCol) {
         const piece = this.board[riftRow][riftCol];
         if (!piece) return;
@@ -2050,8 +2170,8 @@ class ChessGame {
     }
 
     applyFieldEffect(effectName) {
-        // Remove any existing field effects
-        this.activeFieldEffects = [];
+        // Remove any existing field effects and clear frozen pieces from field effects
+        this.clearFieldEffects();
         
         // Add the new field effect
         if (effectName !== 'blank') {
@@ -2062,7 +2182,28 @@ class ChessGame {
         }
     }
 
+    clearFieldEffects() {
+        // Clear frozen pieces that were frozen by field effects (not by Medusa's Gaze)
+        this.frozenPieces.forEach(piece => {
+            if (piece.frozen && piece.frozenByFieldEffect) {
+                piece.frozen = false;
+                piece.frozenByFieldEffect = false;
+            }
+        });
+        this.frozenPieces.clear();
+        
+        // Clear active field effects
+        this.activeFieldEffects = [];
+    }
+
     switchPlayer() {
+        // Check for Eerie Fog turn skip
+        if (this.activeFieldEffects.includes('eerie_fog_turmoil') && this.eerieFogSkipPlayer === this.currentPlayer) {
+            this.addToGameLog(`${this.currentPlayer} skips turn due to Eerie Fog's Turmoil!`, 'effect');
+            this.clearFieldEffects(); // Clear the field effect after skipping
+            this.eerieFogSkipPlayer = null;
+        }
+        
         this.currentPlayer = this.currentPlayer === 'white' ? 'black' : 'white';
         this.riftActivatedThisTurn = false;
         this.diceRolledThisTurn = false;
