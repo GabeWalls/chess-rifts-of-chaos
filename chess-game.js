@@ -251,12 +251,19 @@ class ChessGame {
     }
 
     handleArcherTarget(row, col) {
-        const { riftRow, riftCol } = this.archerShotMode;
+        const { riftRow, riftCol, playerColor } = this.archerShotMode;
         const targetPiece = this.board[row][col];
+        const opponentColor = playerColor === 'white' ? 'black' : 'white';
         
         // Validate the target is a piece
         if (!targetPiece) {
-            this.addToGameLog(`Invalid target! Must select a piece.`, 'effect');
+            this.addToGameLog(`Invalid target! Must select an enemy piece.`, 'effect');
+            return;
+        }
+        
+        // Validate target is an OPPONENT piece
+        if (targetPiece.color !== opponentColor) {
+            this.addToGameLog(`Invalid target! Must select an ENEMY piece, not your own!`, 'effect');
             return;
         }
         
@@ -1119,10 +1126,17 @@ class ChessGame {
         try {
             switch (roll) {
                 case 1: // Necromancer's Trap
-                    this.showNecromancerTrapChoice(riftRow, riftCol, activatingPiece);
-                    return; // Don't close modal yet
+                    const opponentColor = activatingPiece.color === 'white' ? 'black' : 'white';
+                    if (this.capturedPieces[opponentColor].length > 0) {
+                        this.showNecromancerTrapChoice(riftRow, riftCol, activatingPiece);
+                        return; // Don't close modal yet
+                    } else {
+                        this.addToGameLog(`Necromancer's Trap: Opponent has no captured pieces to resurrect!`, 'effect');
+                        this.switchPlayer();
+                    }
+                    break;
                 case 2: // Archer's Trick Shot
-                    this.showArcherTargetSelection(riftRow, riftCol);
+                    this.showArcherTargetSelection(riftRow, riftCol, activatingPiece.color);
                     return; // Don't close modal yet
                 case 3: // Sandworm
                     this.applySandworm(riftRow, riftCol);
@@ -1449,32 +1463,39 @@ class ChessGame {
         }, 2000);
     }
 
-    showArcherTargetSelection(riftRow, riftCol) {
+    showArcherTargetSelection(riftRow, riftCol, playerColor) {
         const optionsDiv = document.getElementById('rift-effect-options');
         optionsDiv.innerHTML = `
             <div class="effect-choices">
                 <p style="color: #333; margin-bottom: 10px; text-align: center;">
-                    Click on any piece within 3 squares (in any direction) from the rift to target it with Archer's Trick Shot.
+                    Click on an ENEMY piece within 3 squares to target it with Archer's Trick Shot. Close this window to see the board.
                 </p>
-                <button class="effect-choice" onclick="game.cancelArcherShot()">
-                    Cancel (No Valid Targets)
+                <button class="effect-choice" onclick="game.closeArcherModal()">
+                    Close (View Board)
                 </button>
             </div>
         `;
         
         // Enable archer shot selection mode
-        this.archerShotMode = { active: true, riftRow, riftCol };
+        this.archerShotMode = { active: true, riftRow, riftCol, playerColor };
         
-        // Highlight valid targets
-        this.highlightArcherTargets(riftRow, riftCol);
+        // Highlight valid targets (opponent pieces only)
+        this.highlightArcherTargets(riftRow, riftCol, playerColor);
         
-        this.addToGameLog(`Archer's Trick Shot activated! Select a target.`, 'effect');
+        this.addToGameLog(`Archer's Trick Shot activated! Select an enemy target.`, 'effect');
     }
 
-    highlightArcherTargets(riftRow, riftCol) {
+    closeArcherModal() {
+        document.getElementById('rift-effects-modal').style.display = 'none';
+        // Don't switch players - they need to select a target
+    }
+
+    highlightArcherTargets(riftRow, riftCol, playerColor) {
         const directions = [
             [-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [1, 0], [1, 1]
         ];
+        
+        const opponentColor = playerColor === 'white' ? 'black' : 'white';
         
         directions.forEach(([dr, dc]) => {
             for (let distance = 1; distance <= 3; distance++) {
@@ -1483,7 +1504,8 @@ class ChessGame {
                 
                 if (targetRow >= 0 && targetRow < 8 && targetCol >= 0 && targetCol < 8) {
                     const piece = this.board[targetRow][targetCol];
-                    if (piece) {
+                    // Only highlight OPPONENT pieces
+                    if (piece && piece.color === opponentColor) {
                         const square = document.querySelector(`[data-row="${targetRow}"][data-col="${targetCol}"]`);
                         if (square) {
                             square.classList.add('archer-target');
