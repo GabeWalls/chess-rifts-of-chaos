@@ -1608,3 +1608,234 @@ body.dark-mode .fairy-fountain-pawn {
         box-shadow: 0 0 30px rgba(255, 0, 0, 1), inset 0 0 30px rgba(255, 0, 0, 0.5);
     }
 }
+
+/* Clickable Setting Item */
+.setting-item.clickable {
+    cursor: pointer;
+    padding: 10px;
+    margin: -10px -10px 5px -10px;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.setting-item.clickable:hover {
+    background: rgba(102, 126, 234, 0.1);
+    transform: translateX(3px);
+}
+
+body.dark-mode .setting-item.clickable:hover {
+    background: rgba(102, 126, 234, 0.2);
+}
+
+.setting-item.clickable span {
+    font-weight: 500;
+    display: block;
+    width: 100%;
+}
+
+/* Rules Modal */
+.rules-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 3000;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.rules-modal .modal-content {
+    background: white;
+    border-radius: 15px;
+    max-width: 900px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 50px rgba(0, 0, 0, 0.5);
+}
+
+body.dark-mode .rules-modal .modal-content {
+    background: #1a202c;
+    color: #e2e8f0;
+}
+
+.rules-modal .modal-header {
+    position: sticky;
+    top: 0;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 20px 25px;
+    border-radius: 15px 15px 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 10;
+}
+
+body.dark-mode .rules-modal .modal-header {
+    background: linear-gradient(135deg, #4c51bf 0%, #553c9a 100%);
+}
+
+.rules-modal .modal-header h2 {
+    margin: 0;
+    font-size: 1.8rem;
+}
+
+.rules-body {
+    padding: 30px;
+}
+
+.rules-section {
+    margin-bottom: 30px;
+    padding-bottom: 25px;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+body.dark-mode .rules-section {
+    border-bottom-color: #2d3748;
+}
+
+.rules-section:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.rules-section h3 {
+    color: #667eea;
+    margin-bottom: 15px;
+    font-size: 1.4rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+body.dark-mode .rules-section h3 {
+    color: #818cf8;
+}
+
+.rules-section p {
+    line-height: 1.8;
+    margin-bottom: 15px;
+    color: #333;
+}
+
+body.dark-mode .rules-section p {
+    color: #cbd5e0;
+}
+
+.rules-section ul, .rules-section ol {
+    margin-left: 25px;
+    margin-bottom: 15px;
+}
+
+.rules-section li {
+    margin-bottom: 10px;
+    line-height: 1.6;
+    color: #333;
+}
+
+body.dark-mode .rules-section li {
+    color: #cbd5e0;
+}
+
+.rules-section strong {
+    color: #667eea;
+    font-weight: 600;
+}
+
+body.dark-mode .rules-section strong {
+    color: #818cf8;
+}
+
+.rules-note {
+    background: #f0f9ff;
+    border-left: 4px solid #667eea;
+    padding: 12px 15px;
+    margin: 15px 0;
+    border-radius: 5px;
+    font-style: italic;
+}
+
+body.dark-mode .rules-note {
+    background: #1e3a5f;
+    border-left-color: #818cf8;
+}
+
+/* Rift Effects List */
+.rift-effects-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.effect-item {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    border-left: 4px solid #667eea;
+    line-height: 1.6;
+    color: #333;
+}
+
+body.dark-mode .effect-item {
+    background: #2d3748;
+    color: #cbd5e0;
+    border-left-color: #818cf8;
+}
+
+.effect-item strong {
+    display: block;
+    margin-bottom: 5px;
+    color: #667eea;
+    font-size: 1.05rem;
+}
+
+body.dark-mode .effect-item strong {
+    color: #818cf8;
+}
+
+.effect-req {
+    display: block;
+    margin-top: 8px;
+    font-size: 0.9rem;
+    color: #e63946;
+    font-style: italic;
+    font-weight: 500;
+}
+
+body.dark-mode .effect-req {
+    color: #fc8181;
+}
+
+.effect-item em {
+    color: #9333ea;
+    font-weight: 500;
+}
+
+body.dark-mode .effect-item em {
+    color: #c084fc;
+}
+
+/* Responsive Rules Modal */
+@media (max-width: 768px) {
+    .rules-modal .modal-header h2 {
+        font-size: 1.4rem;
+    }
+    
+    .rules-body {
+        padding: 20px;
+    }
+    
+    .rules-section h3 {
+        font-size: 1.2rem;
+    }
+    
+    .effect-item {
+        padding: 12px;
+    }
+}

@@ -14,7 +14,7 @@
     <div class="beta-banner" id="beta-banner">
         <div class="beta-banner-content">
             <span class="beta-badge">BETA</span>
-            <span class="beta-message">This game is currently in beta testing. If you experience any issues, please document them and report to the developer.</span>
+            <span class="beta-message">This game is currently in beta testing. New to the game? Check out the Rules in the Settings menu (⚙️ → Rules). If you experience any issues, please document them and report to the developer.</span>
             <button class="beta-close" id="beta-close" aria-label="Close banner">&times;</button>
         </div>
     </div>
@@ -26,6 +26,9 @@
             <div class="setting-item">
                 <span>Dark Mode</span>
                 <div class="toggle-switch" id="dark-mode-toggle"></div>
+            </div>
+            <div class="setting-item clickable" id="rules-btn">
+                <span>📖 Rules</span>
             </div>
         </div>
     </div>
@@ -187,6 +190,163 @@
                     </div>
                 </div>
                 <button id="leave-room-btn" class="btn danger" style="display: none;">Leave Room</button>
+            </div>
+        </div>
+
+        <!-- Rules Modal -->
+        <div class="rules-modal" id="rules-modal" style="display: none;">
+            <div class="modal-content rules-content">
+                <div class="modal-header">
+                    <h2>📖 Chess: Rifts of Chaos - Game Rules</h2>
+                    <button class="close-btn" id="close-rules-modal">&times;</button>
+                </div>
+                <div class="rules-body">
+                    <section class="rules-section">
+                        <h3>🎯 Game Objective</h3>
+                        <p>The goal is to <strong>checkmate your opponent's king</strong>, just like traditional chess. However, mystical rifts scattered across the board will trigger powerful and unpredictable effects that can dramatically change the game!</p>
+                    </section>
+
+                    <section class="rules-section">
+                        <h3>⚙️ Setup Phase</h3>
+                        <ol>
+                            <li><strong>Place 4 Rifts:</strong> Both players place 4 rifts on the board (rows 3-6 only).</li>
+                            <li><strong>Placement Rules:</strong> No two rifts can share the same row or column.</li>
+                            <li><strong>Random Option:</strong> Use "Generate Random Rifts" for quick setup.</li>
+                            <li><strong>Multiplayer:</strong> The host controls when the game starts after rifts are placed.</li>
+                        </ol>
+                    </section>
+
+                    <section class="rules-section">
+                        <h3>♟️ Basic Gameplay</h3>
+                        <ul>
+                            <li><strong>Standard Chess Rules:</strong> All pieces move according to traditional chess rules.</li>
+                            <li><strong>Taking Turns:</strong> White moves first, then players alternate turns.</li>
+                            <li><strong>Capturing:</strong> Captured pieces are removed and stored (some rift effects use them!).</li>
+                            <li><strong>Winning:</strong> Checkmate the enemy king or force your opponent to resign.</li>
+                        </ul>
+                    </section>
+
+                    <section class="rules-section">
+                        <h3>🌀 Rift Mechanics</h3>
+                        <p><strong>When any piece lands on a rift</strong>, that rift is activated:</p>
+                        <ol>
+                            <li>The rift disappears from the board (one-time use).</li>
+                            <li>Roll a D20 (20-sided die) to determine the effect.</li>
+                            <li>Apply the effect immediately (some effects may require choices).</li>
+                            <li>Continue playing based on the effect's outcome.</li>
+                        </ol>
+                        <p class="rules-note">💡 <strong>Strategy Tip:</strong> Plan your moves carefully! Landing on rifts can be beneficial or harmful depending on the roll and game state.</p>
+                    </section>
+
+                    <section class="rules-section">
+                        <h3>🎲 Rift Effects (D20 Results)</h3>
+                        <div class="rift-effects-list">
+                            <div class="effect-item">
+                                <strong>1 - Necromancer's Trap:</strong> Remove your piece. Place one of your opponent's captured pieces onto the rift.
+                                <span class="effect-req">Requires: Opponent must have captured pieces.</span>
+                            </div>
+                            <div class="effect-item">
+                                <strong>2 - Archer's Trick Shot:</strong> Remove an enemy piece within 3 squares (any direction) from the rift.
+                            </div>
+                            <div class="effect-item">
+                                <strong>3 - Sandworm:</strong> Removes all pieces (yours and opponent's) within 1 square of the rift.
+                            </div>
+                            <div class="effect-item">
+                                <strong>4 - Honorable Sacrifice:</strong> The piece that activated the rift is removed from the board.
+                            </div>
+                            <div class="effect-item">
+                                <strong>5 - Demotion:</strong> The activating piece (if not a pawn) is replaced with a captured pawn from your reserves.
+                                <span class="effect-req">Requires: Must have captured pawns, activating piece cannot be a pawn.</span>
+                            </div>
+                            <div class="effect-item">
+                                <strong>6 - Foot Soldier's Gambit:</strong> The activating piece immediately moves again (same piece, not an extra turn).
+                            </div>
+                            <div class="effect-item">
+                                <strong>7 - Famine:</strong> Each player loses one captured piece from their reserves.
+                            </div>
+                            <div class="effect-item">
+                                <strong>8 - Earthquake:</strong> Randomly removes 3 pieces from anywhere on the board.
+                            </div>
+                            <div class="effect-item">
+                                <strong>9 - Sandstorm:</strong> <em>Field Effect.</em> All pieces can now move like knights (L-shape jumps). Effect remains until another field effect is activated.
+                                <span class="effect-req">Requires: Both players must have moved at least once.</span>
+                            </div>
+                            <div class="effect-item">
+                                <strong>10 - Dragon's Breath:</strong> Remove the first enemy piece in a chosen direction (N, S, E, W, NE, NW, SE, SW) from the rift.
+                            </div>
+                            <div class="effect-item">
+                                <strong>11 - Jack Frost's Mischief:</strong> Roll another D20. On 1-10: freeze the activating piece for 1 turn. On 11-20: no effect.
+                            </div>
+                            <div class="effect-item">
+                                <strong>12 - Portal in the Rift:</strong> Teleport the activating piece to any other unactivated rift on the board.
+                            </div>
+                            <div class="effect-item">
+                                <strong>13 - Catapult Roulette:</strong> Roll 2D8 (two 8-sided dice). The numbers determine a random coordinate. Remove the piece at that location (if any).
+                            </div>
+                            <div class="effect-item">
+                                <strong>14 - Conqueror's Tale:</strong> Your king gains the ability to move twice in one turn (only the king, total of 2 moves, then turn ends).
+                            </div>
+                            <div class="effect-item">
+                                <strong>15 - Promotion:</strong> If a pawn activated this, promote it to any piece (Queen, Rook, Bishop, Knight). Otherwise, no effect.
+                            </div>
+                            <div class="effect-item">
+                                <strong>16 - Time Distortion/Stasis:</strong> <em>Field Effect.</em> All pieces within 2 squares of the rift are frozen and cannot move. Effect remains until another field effect is activated.
+                            </div>
+                            <div class="effect-item">
+                                <strong>17 - Divine Intervention:</strong> The activating piece is returned to its starting position.
+                            </div>
+                            <div class="effect-item">
+                                <strong>18 - Fairy Fountain:</strong> If a pawn activated this, it gains special movement: forward 2 spaces, plus diagonal 1 space.
+                                <span class="effect-req">Requires: Activating piece must be a pawn.</span>
+                            </div>
+                            <div class="effect-item">
+                                <strong>19 - Eerie Fog's Turmoil:</strong> <em>Field Effect.</em> At the start of your NEXT turn, roll D20: 3-20 = play normally. 1-2 = skip that turn.
+                            </div>
+                            <div class="effect-item">
+                                <strong>20 - Spring of Revival:</strong> Choose one of your captured pieces and place it on any valid starting square (back row).
+                                <span class="effect-req">Requires: Must have captured pieces.</span>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="rules-section">
+                        <h3>🌍 Field Effects</h3>
+                        <p>Some rift effects create <strong>field effects</strong> that persist until:</p>
+                        <ul>
+                            <li>Another field effect is rolled (replaces the current one)</li>
+                            <li>The same field effect is rolled again (cancels itself)</li>
+                        </ul>
+                        <p><strong>Active Field Effects:</strong> Sandstorm (#9), Time Distortion/Stasis (#16), Eerie Fog's Turmoil (#19)</p>
+                        <p class="rules-note">📊 Current field effects are displayed in the "Active Field Effects" section.</p>
+                    </section>
+
+                    <section class="rules-section">
+                        <h3>🎮 Multiplayer Mode</h3>
+                        <ul>
+                            <li><strong>Creating a Room:</strong> Click "Multiplayer" → "Create New Room" → Share the room code.</li>
+                            <li><strong>Joining a Room:</strong> Enter the room code and your name, then click "Join Room".</li>
+                            <li><strong>Host Controls:</strong> The room creator is the host and starts the game when ready.</li>
+                            <li><strong>Spectators:</strong> Additional players can join as spectators and use chat.</li>
+                            <li><strong>Chat:</strong> Communicate with other players using the chat feature.</li>
+                        </ul>
+                    </section>
+
+                    <section class="rules-section">
+                        <h3>💡 Strategy Tips</h3>
+                        <ul>
+                            <li>Place rifts strategically—they can help or hurt depending on the roll!</li>
+                            <li>Watch for rift positions on rows 3-6 when planning moves.</li>
+                            <li>Some effects require specific conditions (captured pieces, piece types, etc.).</li>
+                            <li>Field effects can drastically change gameplay—adapt your strategy!</li>
+                            <li>In multiplayer, use chat to communicate or negotiate with opponents.</li>
+                        </ul>
+                    </section>
+
+                    <section class="rules-section">
+                        <h3>❓ Need Help?</h3>
+                        <p>This game is currently in <strong>BETA</strong>. If you encounter bugs or have suggestions, please report them to the developer. Have fun and embrace the chaos!</p>
+                    </section>
+                </div>
             </div>
         </div>
     </div>

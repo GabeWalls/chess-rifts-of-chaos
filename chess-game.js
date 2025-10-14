@@ -93,6 +93,8 @@ class ChessGame {
         // Settings controls
         document.getElementById('settings-btn').addEventListener('click', () => this.toggleSettingsPanel());
         document.getElementById('dark-mode-toggle').addEventListener('click', () => this.toggleDarkMode());
+        document.getElementById('rules-btn').addEventListener('click', () => this.showRulesModal());
+        document.getElementById('close-rules-modal').addEventListener('click', () => this.closeRulesModal());
         
         // Multiplayer controls
         document.getElementById('multiplayer-btn').addEventListener('click', () => this.showMultiplayerModal());
@@ -1687,6 +1689,16 @@ class ChessGame {
     toggleSettingsPanel() {
         const panel = document.getElementById('settings-panel');
         panel.classList.toggle('show');
+    }
+
+    showRulesModal() {
+        document.getElementById('rules-modal').style.display = 'flex';
+        // Close settings panel
+        document.getElementById('settings-panel').classList.remove('show');
+    }
+
+    closeRulesModal() {
+        document.getElementById('rules-modal').style.display = 'none';
     }
 
     toggleDarkMode() {
