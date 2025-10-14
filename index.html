@@ -201,14 +201,28 @@
                     <button class="close-btn" id="close-rules-modal">&times;</button>
                 </div>
                 <div class="rules-body">
-                    <!-- Page 1: Introduction -->
-                    <div class="rules-page active" id="rules-page-1">
+                    <!-- Tab Navigation -->
+                    <div class="rules-tabs">
+                        <button class="tab-btn active" data-tab="intro">Intro</button>
+                        <button class="tab-btn" data-tab="setup">Setup</button>
+                        <button class="tab-btn" data-tab="gameplay">Gameplay</button>
+                        <button class="tab-btn" data-tab="effects">Effects</button>
+                        <button class="tab-btn" data-tab="rules">Rules</button>
+                        <button class="tab-btn" data-tab="rifts1">Rifts 1-5</button>
+                        <button class="tab-btn" data-tab="rifts2">Rifts 6-10</button>
+                        <button class="tab-btn" data-tab="rifts3">Rifts 11-15</button>
+                        <button class="tab-btn" data-tab="rifts4">Rifts 16-21</button>
+                    </div>
+
+                    <!-- Tab Content -->
+                    <!-- Tab 1: Introduction -->
+                    <div class="rules-tab-content active" id="rules-tab-intro">
                         <h3>Introduction</h3>
                         <p>A chaotic twist on classic chess where rifts alter the battlefield.</p>
                     </div>
 
-                    <!-- Page 2: Setup -->
-                    <div class="rules-page" id="rules-page-2">
+                    <!-- Tab 2: Setup -->
+                    <div class="rules-tab-content" id="rules-tab-setup">
                         <h3>1. Setup</h3>
                         <ol>
                             <li><strong>Determine Rift Locations</strong>
@@ -244,8 +258,8 @@
                         </ol>
                     </div>
 
-                    <!-- Page 3: Core Gameplay -->
-                    <div class="rules-page" id="rules-page-3">
+                    <!-- Tab 3: Core Gameplay -->
+                    <div class="rules-tab-content" id="rules-tab-gameplay">
                         <h3>2. Core Gameplay</h3>
                         <ul>
                             <li>Play <strong>standard chess rules</strong>, except when a piece lands on a rift square.</li>
@@ -258,8 +272,8 @@
                         </ul>
                     </div>
 
-                    <!-- Page 4: Rift Effects Overview -->
-                    <div class="rules-page" id="rules-page-4">
+                    <!-- Tab 4: Rift Effects Overview -->
+                    <div class="rules-tab-content" id="rules-tab-effects">
                         <h3>3. Rift Effects</h3>
                         <ol>
                             <li><strong>Rift Rankings (☆ – ☆☆☆☆☆)</strong>
@@ -295,8 +309,8 @@
                         </ol>
                     </div>
 
-                    <!-- Page 5: Additional Rules -->
-                    <div class="rules-page" id="rules-page-5">
+                    <!-- Tab 5: Additional Rules -->
+                    <div class="rules-tab-content" id="rules-tab-rules">
                         <h3>4. Additional Rules</h3>
                         <ul>
                             <li><strong>Kings</strong>
@@ -324,8 +338,8 @@
                         </ul>
                     </div>
 
-                    <!-- Page 6: Rift Effects 1-5 -->
-                    <div class="rules-page" id="rules-page-6">
+                    <!-- Tab 6: Rift Effects 1-5 -->
+                    <div class="rules-tab-content" id="rules-tab-rifts1">
                         <h3>5. Rift Effect List (1-5)</h3>
                         <div class="rift-effects-list">
                             <div class="effect-item">
@@ -369,8 +383,8 @@
                         </div>
                     </div>
 
-                    <!-- Page 7: Rift Effects 6-10 -->
-                    <div class="rules-page" id="rules-page-7">
+                    <!-- Tab 7: Rift Effects 6-10 -->
+                    <div class="rules-tab-content" id="rules-tab-rifts2">
                         <h3>5. Rift Effect List (6-10)</h3>
                         <div class="rift-effects-list">
                             <div class="effect-item">
@@ -412,8 +426,8 @@
                         </div>
                     </div>
 
-                    <!-- Page 8: Rift Effects 11-15 -->
-                    <div class="rules-page" id="rules-page-8">
+                    <!-- Tab 8: Rift Effects 11-15 -->
+                    <div class="rules-tab-content" id="rules-tab-rifts3">
                         <h3>5. Rift Effect List (11-15)</h3>
                         <div class="rift-effects-list">
                             <div class="effect-item">
@@ -458,8 +472,8 @@
                         </div>
                     </div>
 
-                    <!-- Page 9: Rift Effects 16-21 -->
-                    <div class="rules-page" id="rules-page-9">
+                    <!-- Tab 9: Rift Effects 16-21 -->
+                    <div class="rules-tab-content" id="rules-tab-rifts4">
                         <h3>5. Rift Effect List (16-21)</h3>
                         <div class="rift-effects-list">
                             <div class="effect-item">
@@ -525,13 +539,6 @@
                             </div>
                         </div>
                     </div>
-                </div>
-
-                <!-- Navigation -->
-                <div class="rules-navigation">
-                    <button class="nav-btn" id="rules-prev-btn" disabled>← Previous</button>
-                    <span class="page-indicator" id="rules-page-indicator">1 of 9</span>
-                    <button class="nav-btn" id="rules-next-btn">Next →</button>
                 </div>
             </div>
         </div>

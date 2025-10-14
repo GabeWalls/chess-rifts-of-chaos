@@ -1717,68 +1717,126 @@ body.dark-mode .rules-modal .modal-header {
     overflow-y: auto;
 }
 
-/* Rules Pages */
-.rules-page {
+/* Rules Tabs */
+.rules-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-bottom: 20px;
+    padding: 0 10px;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+body.dark-mode .rules-tabs {
+    border-bottom-color: #2d3748;
+}
+
+.tab-btn {
+    background: #f8f9fa;
+    border: 2px solid #e2e8f0;
+    color: #667eea;
+    padding: 8px 16px;
+    border-radius: 8px 8px 0 0;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+body.dark-mode .tab-btn {
+    background: #2d3748;
+    border-color: #4a5568;
+    color: #cbd5e0;
+}
+
+.tab-btn:hover {
+    background: #e2e8f0;
+    border-color: #cbd5e0;
+}
+
+body.dark-mode .tab-btn:hover {
+    background: #4a5568;
+    border-color: #718096;
+}
+
+.tab-btn.active {
+    background: #667eea;
+    border-color: #667eea;
+    color: white;
+    border-bottom: 2px solid white;
+    margin-bottom: -2px;
+}
+
+body.dark-mode .tab-btn.active {
+    background: #818cf8;
+    border-color: #818cf8;
+    border-bottom-color: #1a202c;
+}
+
+/* Tab Content */
+.rules-tab-content {
     display: none;
 }
 
-.rules-page.active {
+.rules-tab-content.active {
     display: block;
 }
 
-.rules-page h3 {
+.rules-tab-content h3 {
     color: #667eea;
     margin-bottom: 20px;
     font-size: 1.5rem;
 }
 
-body.dark-mode .rules-page h3 {
+body.dark-mode .rules-tab-content h3 {
     color: #818cf8;
 }
 
-.rules-page p {
+.rules-tab-content p {
     line-height: 1.8;
     margin-bottom: 15px;
     color: #333;
-    margin-left: 0;
+    text-align: left;
 }
 
-body.dark-mode .rules-page p {
+body.dark-mode .rules-tab-content p {
     color: #cbd5e0;
 }
 
-.rules-page ul, .rules-page ol {
-    margin-left: 0;
+.rules-tab-content ul, .rules-tab-content ol {
     margin-bottom: 15px;
     padding-left: 20px;
+    text-align: left;
 }
 
-.rules-page li {
+.rules-tab-content li {
     margin-bottom: 10px;
     line-height: 1.6;
     color: #333;
+    text-align: left;
 }
 
-body.dark-mode .rules-page li {
+body.dark-mode .rules-tab-content li {
     color: #cbd5e0;
 }
 
-.rules-page strong {
+.rules-tab-content strong {
     color: #667eea;
     font-weight: 600;
 }
 
-body.dark-mode .rules-page strong {
+body.dark-mode .rules-tab-content strong {
     color: #818cf8;
 }
 
-.rules-page em {
+.rules-tab-content em {
     color: #e63946;
     font-style: italic;
     font-weight: 500;
 }
 
-body.dark-mode .rules-page em {
+body.dark-mode .rules-tab-content em {
     color: #fc8181;
 }
 
@@ -1818,10 +1876,12 @@ body.dark-mode .effect-item strong {
 .effect-item ul {
     margin-left: 0;
     padding-left: 20px;
+    text-align: left;
 }
 
 .effect-item li {
     margin-bottom: 5px;
+    text-align: left;
 }
 
 .effect-item em {
@@ -1834,58 +1894,6 @@ body.dark-mode .effect-item em {
     color: #fc8181;
 }
 
-/* Navigation */
-.rules-navigation {
-    padding: 20px 30px;
-    border-top: 2px solid #e2e8f0;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: #f8f9fa;
-    border-radius: 0 0 15px 15px;
-}
-
-body.dark-mode .rules-navigation {
-    border-top-color: #2d3748;
-    background: #2d3748;
-}
-
-.nav-btn {
-    background: #667eea;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 1rem;
-    transition: all 0.2s ease;
-}
-
-.nav-btn:hover:not(:disabled) {
-    background: #5a67d8;
-    transform: translateY(-1px);
-}
-
-.nav-btn:disabled {
-    background: #cbd5e0;
-    cursor: not-allowed;
-    opacity: 0.6;
-}
-
-body.dark-mode .nav-btn:disabled {
-    background: #4a5568;
-}
-
-.page-indicator {
-    font-weight: 600;
-    color: #667eea;
-    font-size: 1.1rem;
-}
-
-body.dark-mode .page-indicator {
-    color: #818cf8;
-}
-
 /* Responsive Rules Modal */
 @media (max-width: 768px) {
     .rules-modal .modal-header h2 {
@@ -1896,7 +1904,17 @@ body.dark-mode .page-indicator {
         padding: 20px;
     }
     
-    .rules-section h3 {
+    .rules-tabs {
+        gap: 3px;
+        padding: 0 5px;
+    }
+    
+    .tab-btn {
+        padding: 6px 12px;
+        font-size: 0.8rem;
+    }
+    
+    .rules-tab-content h3 {
         font-size: 1.2rem;
     }
     
