@@ -27,6 +27,7 @@ class ChessGame {
         this.isMultiplayer = false;
         this.isSpectator = false;
         this.roomPlayers = []; // Store all players in the room
+        this.currentRulesPage = 1;
         
         this.initializeBoard();
         this.setupEventListeners();
@@ -95,6 +96,8 @@ class ChessGame {
         document.getElementById('dark-mode-toggle').addEventListener('click', () => this.toggleDarkMode());
         document.getElementById('rules-btn').addEventListener('click', () => this.showRulesModal());
         document.getElementById('close-rules-modal').addEventListener('click', () => this.closeRulesModal());
+        document.getElementById('rules-prev-btn').addEventListener('click', () => this.showRulesPage(this.currentRulesPage - 1));
+        document.getElementById('rules-next-btn').addEventListener('click', () => this.showRulesPage(this.currentRulesPage + 1));
         
         // Multiplayer controls
         document.getElementById('multiplayer-btn').addEventListener('click', () => this.showMultiplayerModal());
@@ -1695,10 +1698,35 @@ class ChessGame {
         document.getElementById('rules-modal').style.display = 'flex';
         // Close settings panel
         document.getElementById('settings-panel').classList.remove('show');
+        // Reset to first page
+        this.showRulesPage(1);
     }
 
     closeRulesModal() {
         document.getElementById('rules-modal').style.display = 'none';
+    }
+
+    showRulesPage(pageNumber) {
+        // Hide all pages
+        document.querySelectorAll('.rules-page').forEach(page => {
+            page.classList.remove('active');
+        });
+        
+        // Show the selected page
+        document.getElementById(`rules-page-${pageNumber}`).classList.add('active');
+        
+        // Update navigation buttons
+        const prevBtn = document.getElementById('rules-prev-btn');
+        const nextBtn = document.getElementById('rules-next-btn');
+        const indicator = document.getElementById('rules-page-indicator');
+        
+        prevBtn.disabled = pageNumber === 1;
+        nextBtn.disabled = pageNumber === 9;
+        
+        indicator.textContent = `${pageNumber} of 9`;
+        
+        // Store current page
+        this.currentRulesPage = pageNumber;
     }
 
     toggleDarkMode() {

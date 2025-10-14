@@ -197,155 +197,341 @@
         <div class="rules-modal" id="rules-modal" style="display: none;">
             <div class="modal-content rules-content">
                 <div class="modal-header">
-                    <h2>📖 Chess: Rifts of Chaos - Game Rules</h2>
+                    <h2>Chess: Rifts of Chaos - Game Rules</h2>
                     <button class="close-btn" id="close-rules-modal">&times;</button>
                 </div>
                 <div class="rules-body">
-                    <section class="rules-section">
-                        <h3>🎯 Game Objective</h3>
-                        <p>The goal is to <strong>checkmate your opponent's king</strong>, just like traditional chess. However, mystical rifts scattered across the board will trigger powerful and unpredictable effects that can dramatically change the game!</p>
-                    </section>
+                    <!-- Page 1: Introduction -->
+                    <div class="rules-page active" id="rules-page-1">
+                        <h3>Introduction</h3>
+                        <p>A chaotic twist on classic chess where rifts alter the battlefield.</p>
+                    </div>
 
-                    <section class="rules-section">
-                        <h3>⚙️ Setup Phase</h3>
+                    <!-- Page 2: Setup -->
+                    <div class="rules-page" id="rules-page-2">
+                        <h3>1. Setup</h3>
                         <ol>
-                            <li><strong>Place 4 Rifts:</strong> Both players place 4 rifts on the board (rows 3-6 only).</li>
-                            <li><strong>Placement Rules:</strong> No two rifts can share the same row or column.</li>
-                            <li><strong>Random Option:</strong> Use "Generate Random Rifts" for quick setup.</li>
-                            <li><strong>Multiplayer:</strong> The host controls when the game starts after rifts are placed.</li>
+                            <li><strong>Determine Rift Locations</strong>
+                                <ul>
+                                    <li>Before placing pieces, choose <strong>4 rift spaces</strong> on the board.</li>
+                                    <li>Rifts may only be placed on rows <strong>3, 4, 5, or 6</strong>.</li>
+                                    <li>No two rifts can share the same row or column.</li>
+                                    <li>If your selection method places rifts in the same row or column, re-roll/re-draw until valid.</li>
+                                </ul>
+                                <p><strong>Ways to select rifts creatively:</strong></p>
+                                <ul>
+                                    <li>Write rows/columns on paper and draw from a hat.</li>
+                                    <li>Spin a marked wheel.</li>
+                                    <li>Roll a D8 (for columns/rows).</li>
+                                </ul>
+                            </li>
+                            <li><strong>Mark Rift Spaces</strong>
+                                <ul>
+                                    <li>Overlay a clear sheet and draw swirls with dry-erase marker.</li>
+                                    <li>Place paper or cardboard circles on chosen squares.</li>
+                                </ul>
+                            </li>
+                            <li><strong>Place Pieces</strong>
+                                <ul>
+                                    <li>Set up all chess pieces in their standard starting positions.</li>
+                                </ul>
+                            </li>
+                            <li><strong>Decide First Player</strong>
+                                <ul>
+                                    <li>Flip a coin, roll dice, or use any agreed method.</li>
+                                </ul>
+                            </li>
                         </ol>
-                    </section>
+                    </div>
 
-                    <section class="rules-section">
-                        <h3>♟️ Basic Gameplay</h3>
+                    <!-- Page 3: Core Gameplay -->
+                    <div class="rules-page" id="rules-page-3">
+                        <h3>2. Core Gameplay</h3>
                         <ul>
-                            <li><strong>Standard Chess Rules:</strong> All pieces move according to traditional chess rules.</li>
-                            <li><strong>Taking Turns:</strong> White moves first, then players alternate turns.</li>
-                            <li><strong>Capturing:</strong> Captured pieces are removed and stored (some rift effects use them!).</li>
-                            <li><strong>Winning:</strong> Checkmate the enemy king or force your opponent to resign.</li>
+                            <li>Play <strong>standard chess rules</strong>, except when a piece lands on a rift square.</li>
+                            <li>When a piece moves onto a rift:
+                                <ol>
+                                    <li>Roll a <strong>D20</strong> to determine the effect.</li>
+                                    <li>Apply the effect immediately.</li>
+                                </ol>
+                            </li>
                         </ul>
-                    </section>
+                    </div>
 
-                    <section class="rules-section">
-                        <h3>🌀 Rift Mechanics</h3>
-                        <p><strong>When any piece lands on a rift</strong>, that rift is activated:</p>
+                    <!-- Page 4: Rift Effects Overview -->
+                    <div class="rules-page" id="rules-page-4">
+                        <h3>3. Rift Effects</h3>
                         <ol>
-                            <li>The rift disappears from the board (one-time use).</li>
-                            <li>Roll a D20 (20-sided die) to determine the effect.</li>
-                            <li>Apply the effect immediately (some effects may require choices).</li>
-                            <li>Continue playing based on the effect's outcome.</li>
+                            <li><strong>Rift Rankings (☆ – ☆☆☆☆☆)</strong>
+                                <ul>
+                                    <li>☆ — Purely negative for you, possibly positive for opponent.</li>
+                                    <li>☆☆ — Negative for both players.</li>
+                                    <li>☆☆☆ — Neutral/equal effect on both players.</li>
+                                    <li>☆☆☆☆ — Mostly positive for you, with some drawbacks.</li>
+                                    <li>☆☆☆☆☆ — Strongly positive for you, possibly negative for opponent.</li>
+                                </ul>
+                            </li>
+                            <li><strong>Types of Rifts</strong>
+                                <ul>
+                                    <li><strong>Special Effects</strong>
+                                        <ul>
+                                            <li>Trigger once, then end.</li>
+                                            <li>May apply to one or both players.</li>
+                                            <li>Some require conditions to be met; if unmet, re-roll the D20.</li>
+                                            <li>After resolution, play passes to the opponent.</li>
+                                        </ul>
+                                    </li>
+                                    <li><strong>Field Effects</strong>
+                                        <ul>
+                                            <li>Alter game rules until replaced.</li>
+                                            <li>Only one field effect can be active at a time.</li>
+                                            <li>A new field effect cancels the current one.</li>
+                                            <li>If the same field effect is activated twice, both are canceled.</li>
+                                            <li>Keep track of active effects (e.g., on a whiteboard).</li>
+                                        </ul>
+                                    </li>
+                                </ul>
+                            </li>
                         </ol>
-                        <p class="rules-note">💡 <strong>Strategy Tip:</strong> Plan your moves carefully! Landing on rifts can be beneficial or harmful depending on the roll and game state.</p>
-                    </section>
+                    </div>
 
-                    <section class="rules-section">
-                        <h3>🎲 Rift Effects (D20 Results)</h3>
+                    <!-- Page 5: Additional Rules -->
+                    <div class="rules-page" id="rules-page-5">
+                        <h3>4. Additional Rules</h3>
+                        <ul>
+                            <li><strong>Kings</strong>
+                                <ul>
+                                    <li>Cannot activate a rift, but can be affected by rift effects.</li>
+                                </ul>
+                            </li>
+                            <li><strong>Activation Limits</strong>
+                                <ul>
+                                    <li>A rift may only activate once per turn.</li>
+                                    <li>If an effect moves a piece onto another rift during the same turn, that second rift does <strong>not</strong> trigger.</li>
+                                </ul>
+                            </li>
+                            <li><strong>Victory Conditions</strong>
+                                <ul>
+                                    <li>Standard win: checkmate your opponent's king.</li>
+                                    <li>If a rift removes a king from play, that player immediately loses.</li>
+                                </ul>
+                            </li>
+                            <li><strong>Priority Rule</strong>
+                                <ul>
+                                    <li>Field effects always take precedence over other rift rolls.</li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- Page 6: Rift Effects 1-5 -->
+                    <div class="rules-page" id="rules-page-6">
+                        <h3>5. Rift Effect List (1-5)</h3>
                         <div class="rift-effects-list">
                             <div class="effect-item">
-                                <strong>1 - Necromancer's Trap:</strong> Remove your piece. Place one of your opponent's captured pieces onto the rift.
-                                <span class="effect-req">Requires: Opponent must have captured pieces.</span>
+                                <strong>1. Necromancer's Trap (☆, Special)</strong>
+                                <ul>
+                                    <li>Remove your piece.</li>
+                                    <li>Place one of your opponent's captured pieces onto the rift.</li>
+                                    <li><em>Requirement: opponent must have a captured piece.</em></li>
+                                </ul>
                             </div>
                             <div class="effect-item">
-                                <strong>2 - Archer's Trick Shot:</strong> Remove an enemy piece within 3 squares (any direction) from the rift.
+                                <strong>2. Archer's Trick Shot (☆☆☆☆☆, Special)</strong>
+                                <ul>
+                                    <li>Choose a direction from the rift; also applies to two adjacent directions.</li>
+                                    <li>Range: 3 squares per direction.</li>
+                                    <li>Remove the first piece encountered.</li>
+                                    <li><em>Requirement: enemy piece within 3 squares.</em></li>
+                                </ul>
                             </div>
                             <div class="effect-item">
-                                <strong>3 - Sandworm:</strong> Removes all pieces (yours and opponent's) within 1 square of the rift.
+                                <strong>3. Sandworm (☆☆☆, Special)</strong>
+                                <ul>
+                                    <li>Remove all pieces within 1 square of the rift, plus the activating piece.</li>
+                                </ul>
                             </div>
                             <div class="effect-item">
-                                <strong>4 - Honorable Sacrifice:</strong> The piece that activated the rift is removed from the board.
+                                <strong>4. Honorable Sacrifice (☆☆☆, Special)</strong>
+                                <ul>
+                                    <li>Remove your activating piece and any one piece within 1 square.</li>
+                                    <li><em>Requirement: enemy piece within 1 square.</em></li>
+                                </ul>
                             </div>
                             <div class="effect-item">
-                                <strong>5 - Demotion:</strong> The activating piece (if not a pawn) is replaced with a captured pawn from your reserves.
-                                <span class="effect-req">Requires: Must have captured pawns, activating piece cannot be a pawn.</span>
-                            </div>
-                            <div class="effect-item">
-                                <strong>6 - Foot Soldier's Gambit:</strong> The activating piece immediately moves again (same piece, not an extra turn).
-                            </div>
-                            <div class="effect-item">
-                                <strong>7 - Famine:</strong> Each player loses one captured piece from their reserves.
-                            </div>
-                            <div class="effect-item">
-                                <strong>8 - Earthquake:</strong> Randomly removes 3 pieces from anywhere on the board.
-                            </div>
-                            <div class="effect-item">
-                                <strong>9 - Sandstorm:</strong> <em>Field Effect.</em> All pieces can now move like knights (L-shape jumps). Effect remains until another field effect is activated.
-                                <span class="effect-req">Requires: Both players must have moved at least once.</span>
-                            </div>
-                            <div class="effect-item">
-                                <strong>10 - Dragon's Breath:</strong> Remove the first enemy piece in a chosen direction (N, S, E, W, NE, NW, SE, SW) from the rift.
-                            </div>
-                            <div class="effect-item">
-                                <strong>11 - Jack Frost's Mischief:</strong> Roll another D20. On 1-10: freeze the activating piece for 1 turn. On 11-20: no effect.
-                            </div>
-                            <div class="effect-item">
-                                <strong>12 - Portal in the Rift:</strong> Teleport the activating piece to any other unactivated rift on the board.
-                            </div>
-                            <div class="effect-item">
-                                <strong>13 - Catapult Roulette:</strong> Roll 2D8 (two 8-sided dice). The numbers determine a random coordinate. Remove the piece at that location (if any).
-                            </div>
-                            <div class="effect-item">
-                                <strong>14 - Conqueror's Tale:</strong> Your king gains the ability to move twice in one turn (only the king, total of 2 moves, then turn ends).
-                            </div>
-                            <div class="effect-item">
-                                <strong>15 - Promotion:</strong> If a pawn activated this, promote it to any piece (Queen, Rook, Bishop, Knight). Otherwise, no effect.
-                            </div>
-                            <div class="effect-item">
-                                <strong>16 - Time Distortion/Stasis:</strong> <em>Field Effect.</em> All pieces within 2 squares of the rift are frozen and cannot move. Effect remains until another field effect is activated.
-                            </div>
-                            <div class="effect-item">
-                                <strong>17 - Divine Intervention:</strong> The activating piece is returned to its starting position.
-                            </div>
-                            <div class="effect-item">
-                                <strong>18 - Fairy Fountain:</strong> If a pawn activated this, it gains special movement: forward 2 spaces, plus diagonal 1 space.
-                                <span class="effect-req">Requires: Activating piece must be a pawn.</span>
-                            </div>
-                            <div class="effect-item">
-                                <strong>19 - Eerie Fog's Turmoil:</strong> <em>Field Effect.</em> At the start of your NEXT turn, roll D20: 3-20 = play normally. 1-2 = skip that turn.
-                            </div>
-                            <div class="effect-item">
-                                <strong>20 - Spring of Revival:</strong> Choose one of your captured pieces and place it on any valid starting square (back row).
-                                <span class="effect-req">Requires: Must have captured pieces.</span>
+                                <strong>5. Demotion (☆, Special)</strong>
+                                <ul>
+                                    <li>Remove your activating piece.</li>
+                                    <li>If it was a Castle, Knight, Bishop, or Queen, place a captured Pawn of yours on the rift.</li>
+                                    <li><em>Requirement: must have a captured Pawn.</em></li>
+                                </ul>
                             </div>
                         </div>
-                    </section>
+                    </div>
 
-                    <section class="rules-section">
-                        <h3>🌍 Field Effects</h3>
-                        <p>Some rift effects create <strong>field effects</strong> that persist until:</p>
-                        <ul>
-                            <li>Another field effect is rolled (replaces the current one)</li>
-                            <li>The same field effect is rolled again (cancels itself)</li>
-                        </ul>
-                        <p><strong>Active Field Effects:</strong> Sandstorm (#9), Time Distortion/Stasis (#16), Eerie Fog's Turmoil (#19)</p>
-                        <p class="rules-note">📊 Current field effects are displayed in the "Active Field Effects" section.</p>
-                    </section>
+                    <!-- Page 7: Rift Effects 6-10 -->
+                    <div class="rules-page" id="rules-page-7">
+                        <h3>5. Rift Effect List (6-10)</h3>
+                        <div class="rift-effects-list">
+                            <div class="effect-item">
+                                <strong>6. Foot Soldier's Gambit (☆☆☆☆, Special)</strong>
+                                <ul>
+                                    <li>The activating piece must immediately move again.</li>
+                                </ul>
+                            </div>
+                            <div class="effect-item">
+                                <strong>7. Famine (☆☆, Field)</strong>
+                                <ul>
+                                    <li>Pawns cannot move.</li>
+                                </ul>
+                            </div>
+                            <div class="effect-item">
+                                <strong>8. Holiday's Rejuvenation (☆☆☆☆, Field)</strong>
+                                <ul>
+                                    <li>Pawns may move two spaces forward.</li>
+                                    <li>Castles, Bishops, Queens can jump over 1 friendly piece (moving 1 space beyond).</li>
+                                    <li>Knights move 3 + 1 instead of 2 + 1.</li>
+                                </ul>
+                            </div>
+                            <div class="effect-item">
+                                <strong>9. Sandstorm (☆☆, Field)</strong>
+                                <ul>
+                                    <li>Pawns cannot move.</li>
+                                    <li>Knights move only 1 square.</li>
+                                    <li>Castles, Bishops, Queens max range: 3 squares.</li>
+                                    <li>Kings cannot move unless in check.</li>
+                                </ul>
+                            </div>
+                            <div class="effect-item">
+                                <strong>10. Dragon's Breath (☆☆☆☆, Special)</strong>
+                                <ul>
+                                    <li>Choose a direction; remove any piece up to 3 squares away in a straight line.</li>
+                                    <li><em>Requirement: enemy piece within 3 squares.</em></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
 
-                    <section class="rules-section">
-                        <h3>🎮 Multiplayer Mode</h3>
-                        <ul>
-                            <li><strong>Creating a Room:</strong> Click "Multiplayer" → "Create New Room" → Share the room code.</li>
-                            <li><strong>Joining a Room:</strong> Enter the room code and your name, then click "Join Room".</li>
-                            <li><strong>Host Controls:</strong> The room creator is the host and starts the game when ready.</li>
-                            <li><strong>Spectators:</strong> Additional players can join as spectators and use chat.</li>
-                            <li><strong>Chat:</strong> Communicate with other players using the chat feature.</li>
-                        </ul>
-                    </section>
+                    <!-- Page 8: Rift Effects 11-15 -->
+                    <div class="rules-page" id="rules-page-8">
+                        <h3>5. Rift Effect List (11-15)</h3>
+                        <div class="rift-effects-list">
+                            <div class="effect-item">
+                                <strong>11. Jack Frost's Mischief (☆☆, Field)</strong>
+                                <ul>
+                                    <li>After moving, roll a D20:
+                                        <ul>
+                                            <li>Odd = nothing happens.</li>
+                                            <li>Even = piece moves 1 extra square in same direction.</li>
+                                        </ul>
+                                    </li>
+                                    <li>If movement would collide with a piece, neither moves; both are frozen next turn.</li>
+                                    <li>If movement pushes off-board, the piece is removed.</li>
+                                </ul>
+                            </div>
+                            <div class="effect-item">
+                                <strong>12. Portal in the Rift (☆☆☆☆, Special)</strong>
+                                <ul>
+                                    <li>Move the activating piece to another unactivated rift.</li>
+                                    <li>If that rift is occupied, the occupying piece is removed.</li>
+                                </ul>
+                            </div>
+                            <div class="effect-item">
+                                <strong>13. Catapult Roulette (☆☆☆, Special)</strong>
+                                <ul>
+                                    <li>Roll 2D8 to choose a random square (column A–H, row 1–8).</li>
+                                    <li>Remove any piece on that square.</li>
+                                </ul>
+                            </div>
+                            <div class="effect-item">
+                                <strong>14. Conqueror's Tale (☆☆☆☆☆, Special)</strong>
+                                <ul>
+                                    <li>Your king gains the ability to move twice per turn for the rest of the game.</li>
+                                </ul>
+                            </div>
+                            <div class="effect-item">
+                                <strong>15. Medusa's Gaze (☆☆, Special)</strong>
+                                <ul>
+                                    <li>The activating piece is frozen in place and cannot be moved/removed (except by other rifts).</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
 
-                    <section class="rules-section">
-                        <h3>💡 Strategy Tips</h3>
-                        <ul>
-                            <li>Place rifts strategically—they can help or hurt depending on the roll!</li>
-                            <li>Watch for rift positions on rows 3-6 when planning moves.</li>
-                            <li>Some effects require specific conditions (captured pieces, piece types, etc.).</li>
-                            <li>Field effects can drastically change gameplay—adapt your strategy!</li>
-                            <li>In multiplayer, use chat to communicate or negotiate with opponents.</li>
-                        </ul>
-                    </section>
+                    <!-- Page 9: Rift Effects 16-21 -->
+                    <div class="rules-page" id="rules-page-9">
+                        <h3>5. Rift Effect List (16-21)</h3>
+                        <div class="rift-effects-list">
+                            <div class="effect-item">
+                                <strong>16. Time Distortion/Stasis (☆☆☆, Field)</strong>
+                                <ul>
+                                    <li>All pieces within a radius are frozen (cannot move).</li>
+                                    <li>Radius = D20 roll:
+                                        <ul>
+                                            <li>1–8 = 1 square, 9–14 = 2, 15–18 = 3, 19–20 = 4.</li>
+                                        </ul>
+                                    </li>
+                                    <li>Kings inside radius may only move if checked.</li>
+                                </ul>
+                            </div>
+                            <div class="effect-item">
+                                <strong>17. Crossroad Demon's Deal (☆☆, Special)</strong>
+                                <ul>
+                                    <li>You may decline this effect before rolling.</li>
+                                    <li>If accepted: remove your activating piece, roll a D20.
+                                        <ul>
+                                            <li>Odd = remove 1 more of your pieces (choice).</li>
+                                            <li>Even = remove 2 more of your pieces (choice).</li>
+                                        </ul>
+                                    </li>
+                                    <li>Opponent chooses one of your non-Pawn captured pieces to place on the rift.</li>
+                                    <li><em>Requirement: you must have 1 non-Pawn captured piece and 2 non-King pieces on board.</em></li>
+                                </ul>
+                            </div>
+                            <div class="effect-item">
+                                <strong>18. Fairy Fountain (☆☆, Special)</strong>
+                                <ul>
+                                    <li>Activating Pawn gains new movement:
+                                        <ul>
+                                            <li>Forward 2 spaces, plus 1 space left/right.</li>
+                                        </ul>
+                                    </li>
+                                    <li><em>Requirement: must be activated by a Pawn.</em></li>
+                                </ul>
+                            </div>
+                            <div class="effect-item">
+                                <strong>19. Eerie Fog's Turmoil (☆☆, Field)</strong>
+                                <ul>
+                                    <li>At the start of your turn, roll a D20.
+                                        <ul>
+                                            <li>3–20 = play normally.</li>
+                                            <li>1–2 = skip your turn.</li>
+                                        </ul>
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="effect-item">
+                                <strong>20. Spring of Revival (☆☆☆☆☆, Special)</strong>
+                                <ul>
+                                    <li>Place one of your captured pieces onto a starting square.</li>
+                                    <li><em>Requirement: must have at least 1 captured piece.</em></li>
+                                </ul>
+                            </div>
+                            <div class="effect-item">
+                                <strong>21. Blank (☆☆☆, Field)</strong>
+                                <ul>
+                                    <li>Pawns may now move sideways to capture.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-                    <section class="rules-section">
-                        <h3>❓ Need Help?</h3>
-                        <p>This game is currently in <strong>BETA</strong>. If you encounter bugs or have suggestions, please report them to the developer. Have fun and embrace the chaos!</p>
-                    </section>
+                <!-- Navigation -->
+                <div class="rules-navigation">
+                    <button class="nav-btn" id="rules-prev-btn" disabled>← Previous</button>
+                    <span class="page-indicator" id="rules-page-indicator">1 of 9</span>
+                    <button class="nav-btn" id="rules-next-btn">Next →</button>
                 </div>
             </div>
         </div>
