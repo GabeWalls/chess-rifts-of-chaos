@@ -1064,8 +1064,20 @@ class ChessGame {
             if (animationCount >= 10) {
                 clearInterval(animationInterval);
                 
-                // Final result
-                const roll = Math.floor(Math.random() * 20) + 1;
+                // Final result - keep rolling until requirements are met
+                let roll = Math.floor(Math.random() * 20) + 1;
+                const activatingPiece = this.lastMovedPiece.piece;
+                let rerollCount = 0;
+                const maxRerolls = 100; // Prevent infinite loop
+                
+                // Re-roll if requirements aren't met
+                while (!this.checkRiftRequirements(roll, activatingPiece) && rerollCount < maxRerolls) {
+                    const oldRoll = roll;
+                    roll = Math.floor(Math.random() * 20) + 1;
+                    this.addToGameLog(`Rolled ${oldRoll} but requirements not met - re-rolling...`, 'system');
+                    rerollCount++;
+                }
+                
                 diceDisplay.textContent = roll;
                 diceContainer.classList.remove('dice-rolling');
                 
@@ -1105,6 +1117,37 @@ class ChessGame {
         };
         
         return effects[roll] || effects[21]; // Default to blank effect
+    }
+
+    checkRiftRequirements(roll, activatingPiece) {
+        // Check if the rolled effect's requirements are met
+        // Returns true if requirements are met, false if they need to re-roll
+        
+        const playerColor = activatingPiece.color;
+        const opponentColor = playerColor === 'white' ? 'black' : 'white';
+        
+        switch(roll) {
+            case 1: // Necromancer's Trap - requires opponent to have captured pieces
+                const opponentCaptured = this.capturedPieces[opponentColor];
+                return opponentCaptured && opponentCaptured.length > 0;
+                
+            case 5: // Demotion - requires captured pawn AND non-pawn/non-king piece activating
+                if (activatingPiece.type === 'pawn' || activatingPiece.type === 'king') {
+                    return false; // Can't activate with pawn or king
+                }
+                const playerCapturedPawns = this.capturedPieces[playerColor];
+                return playerCapturedPawns && playerCapturedPawns.some(p => p.type === 'pawn');
+                
+            case 18: // Fairy Fountain - must be activated by a pawn
+                return activatingPiece.type === 'pawn';
+                
+            case 20: // Spring of Revival - requires player to have captured pieces
+                const playerCaptured = this.capturedPieces[playerColor];
+                return playerCaptured && playerCaptured.length > 0;
+                
+            default:
+                return true; // No requirements
+        }
     }
 
     applyRiftEffect(effect, roll) {
@@ -2246,11 +2289,14 @@ class ChessGame {
                 this.applyFieldEffect('jack_frost_mischief');
                 this.applyJackFrostSlide(riftRow, riftCol);
             } else {
+                // Odd roll - no effect, just end turn normally
                 this.addToGameLog(`Jack Frost's Mischief: Roll was odd - no effect!`, 'effect');
             }
             
             setTimeout(() => {
                 this.closeModal();
+                // Switch turns after Jack Frost resolution (whether odd or even)
+                this.switchPlayer();
             }, 2000);
         });
     }
@@ -2328,8 +2374,9 @@ class ChessGame {
             }
             
             if (finalRoll >= 3) {
-                // Roll 3-20: play normally, no field effect
+                // Roll 3-20: play normally, no field effect, just switch turns
                 this.addToGameLog(`Eerie Fog's Turmoil: Rolled ${finalRoll} - continue playing normally!`, 'effect');
+                // No field effect applied, just end the turn normally
             } else {
                 // Roll 1-2: skip next turn
                 this.applyFieldEffect('eerie_fog_turmoil');
@@ -2339,6 +2386,7 @@ class ChessGame {
             
             setTimeout(() => {
                 this.closeModal();
+                this.switchPlayer(); // Switch turns after Eerie Fog resolution
             }, 3000);
         });
     }
@@ -2437,18 +2485,22 @@ class ChessGame {
     }
 
     switchPlayer() {
-        // Check for Eerie Fog turn skip
-        if (this.activeFieldEffects.includes('eerie_fog_turmoil') && this.eerieFogSkipPlayer === this.currentPlayer) {
-            this.addToGameLog(`${this.currentPlayer} skips turn due to Eerie Fog's Turmoil!`, 'effect');
-            this.clearFieldEffects(); // Clear the field effect after skipping
-            this.eerieFogSkipPlayer = null;
-        }
-        
+        // Switch to next player
         this.currentPlayer = this.currentPlayer === 'white' ? 'black' : 'white';
         this.riftActivatedThisTurn = false;
         this.diceRolledThisTurn = false;
         this.kingMovedThisTurn = { white: 0, black: 0 }; // Reset king move tracking
         this.kingMovedFirst = false; // Reset king moved first flag
+        
+        // Check for Eerie Fog turn skip AFTER switching
+        if (this.activeFieldEffects.includes('eerie_fog_turmoil') && this.eerieFogSkipPlayer === this.currentPlayer) {
+            this.addToGameLog(`${this.currentPlayer} skips turn due to Eerie Fog's Turmoil!`, 'effect');
+            this.clearFieldEffects(); // Clear the field effect after skipping
+            this.eerieFogSkipPlayer = null;
+            // Switch player again to skip their turn
+            this.currentPlayer = this.currentPlayer === 'white' ? 'black' : 'white';
+        }
+        
         this.updateUI();
         this.addToGameLog(`${this.currentPlayer}'s turn`, 'system');
         
