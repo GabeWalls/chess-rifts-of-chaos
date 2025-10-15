@@ -1,108 +1,91 @@
-# Chess: Rifts of Chaos
+# ♟️ Chess: Rifts of Chaos
 
-A chaotic twist on classic chess where rifts alter the battlefield with magical effects!
+A chaotic twist on classic chess where mystical rifts alter the battlefield with 21 unique magical effects!
 
-## 🎮 Features
+## 🎮 [Play Now - Live Game](https://www.riftsofchaos.com)
 
-- **Classic Chess Mechanics** - Standard chess rules with piece movement
-- **Rift Effects** - 21 different magical effects that trigger when pieces land on rifts
-- **Multiplayer Support** - Play with friends online in real-time
-- **Room System** - Join games with 6-character room codes
-- **Spectator Mode** - Watch games with up to 2 spectators
+**Visit [www.riftsofchaos.com](https://www.riftsofchaos.com) to play the full multiplayer experience!**
+
+## 🌟 Features
+
+- **Multiplayer Chess** - Play with friends in real-time
+- **21 Unique Rift Effects** - From Necromancer's Trap to Dragon's Breath
+- **Room-Based System** - Create or join games with 6-character codes
+- **Spectator Mode** - Watch games and chat with players
+- **Host Controls** - Room creators can manage games and players
+- **Mobile Responsive** - Play on desktop, tablet, or mobile
 - **Dark Mode** - Toggle between light and dark themes
-- **Game Log** - Track all moves and effects
-- **Chat System** - Communicate with other players
 
-## 🚀 How to Play
+## 🎯 How to Play
 
-### Local Development
+1. **Visit [www.riftsofchaos.com](https://www.riftsofchaos.com)**
+2. **Place 4 rifts** on rows 3-6 (no two in same row/column)
+3. **Play standard chess** until a piece lands on a rift
+4. **Roll D20** to trigger magical effects
+5. **Adapt your strategy** as the battlefield changes!
 
-1. Clone the repository
-2. Install dependencies: `npm install`
-3. Start the server: `npm start`
-4. Open `http://localhost:3000` in your browser
+## 🎲 Rift Effects
 
-### Online Play
+The game features 21 unique rift effects ranging from 1-5 stars:
 
-**Frontend**: [https://gabewalls.github.io/chess-rifts-of-chaos/](https://gabewalls.github.io/chess-rifts-of-chaos/)  
-**Backend**: [https://web-production-4da5.up.railway.app/](https://web-production-4da5.up.railway.app/)
+- **☆ Effects:** Purely negative for you
+- **☆☆ Effects:** Negative for both players  
+- **☆☆☆ Effects:** Neutral/equal impact
+- **☆☆☆☆ Effects:** Mostly positive with drawbacks
+- **☆☆☆☆☆ Effects:** Strongly positive for you
 
-*Note: The game requires both frontend and backend to be running for multiplayer functionality.*
+### Popular Effects Include:
+- **Necromancer's Trap** - Steal opponent's captured piece
+- **Dragon's Breath** - Remove pieces in a direction
+- **Conqueror's Tale** - King moves twice per turn
+- **Portal in the Rift** - Teleport to another rift
+- **Sandstorm** - Restrict piece movement
 
-## 🎯 Game Rules
+*[View complete rules in-game via Settings → Rules](https://www.riftsofchaos.com)*
 
-### Setup
-1. Place 4 rifts on rows 3, 4, 5, or 6
-2. No two rifts can share the same row or column
-3. Players are assigned colors via coin flip
+## 🚀 Multiplayer
 
-### Gameplay
-- Standard chess rules apply
-- When a piece lands on a rift, roll a D20
-- The corresponding rift effect is triggered
-- Effects can be beneficial, harmful, or neutral
+- **Create Room** - Generate a 6-character room code
+- **Join Room** - Enter a friend's room code
+- **Real-time Play** - Synchronized moves and effects
+- **Chat System** - Communicate with players and spectators
+- **Host Privileges** - Room creators control game start
 
-### Rift Effects
-- **Special Effects**: Trigger once, then expire
-- **Field Effects**: Alter gameplay rules globally until replaced
-- **Player Choices**: Some effects allow player decisions
+## 🛠️ Technical Stack
 
-## 🌐 Multiplayer
+- **Frontend:** HTML5, CSS3, JavaScript (ES6+)
+- **Backend:** Node.js, Express.js
+- **Real-time:** Socket.io
+- **Hosting:** Heroku with custom domain
+- **Monetization:** Google AdSense
 
-### Creating a Game
-1. Click "🎮 Multiplayer"
-2. Enter your name
-3. Click "Create New Room"
-4. Share the room code with friends
+## 📱 Compatibility
 
-### Joining a Game
-1. Click "🎮 Multiplayer"
-2. Enter your name and room code
-3. Click "Join Room"
+- **Desktop:** Chrome, Firefox, Safari, Edge
+- **Mobile:** iOS Safari, Chrome Mobile, Samsung Internet
+- **Tablets:** iPad, Android tablets
+- **No downloads required** - Play instantly in your browser
 
-### Room Capacity
-- **2 Players** - Active chess players
-- **2 Spectators** - View-only observers
-- **Total**: 4 people per room
+## 🎨 Game Modes
 
-## 🛠️ Technical Details
+- **Single Player** - Practice against AI
+- **Multiplayer** - Play with friends online
+- **Spectator** - Watch ongoing games
 
-- **Frontend**: HTML5, CSS3, JavaScript (ES6+)
-- **Backend**: Node.js, Express, Socket.io
-- **Real-time**: WebSocket connections for multiplayer
-- **Hosting**: GitHub Pages (frontend) + Railway (backend)
-- **Deployment**: GitHub Actions + Railway CI/CD
+## 🌐 Live Site
 
-## 📱 Browser Support
+**Main URL:** [https://www.riftsofchaos.com](https://www.riftsofchaos.com)
 
-- Chrome (recommended)
-- Firefox
-- Safari
-- Edge
+**Alternative:** [https://riftsofchaos.com](https://riftsofchaos.com)
 
-## 🎨 Customization
+## 📞 Support
 
-The game supports:
-- Dark/Light mode toggle
-- Responsive design for mobile devices
-- Customizable rift animations
-- Adjustable game log and chat
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Submit a pull request
-
-## 📄 License
-
-This project is licensed under the MIT License.
+Experiencing issues? The game includes comprehensive in-game rules and troubleshooting. Visit [www.riftsofchaos.com](https://www.riftsofchaos.com) and check the Settings menu for help.
 
 ## 🎉 Credits
 
-Created by GabeWalls - A chaotic chess experience for friends to enjoy together!
+Created by GabeWalls - A unique chess variant combining strategy with magical chaos!
 
 ---
 
-**Note**: For the best multiplayer experience, ensure all players have a stable internet connection.
+**Ready to experience chess like never before? [Play Chess: Rifts of Chaos now!](https://www.riftsofchaos.com)**
