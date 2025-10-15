@@ -1419,8 +1419,11 @@ body.dark-mode .dice-display {
 
 /* Ensure gold aura stays gold in dark mode */
 body.dark-mode .conqueror-king {
-    background: linear-gradient(45deg, #ffd700, #ffed4e, #ffd700);
-    box-shadow: 0 0 25px rgba(255, 215, 0, 1);
+    background: linear-gradient(45deg, #ffd700, #ffed4e, #ffd700) !important;
+    box-shadow: 0 0 25px rgba(255, 215, 0, 1) !important;
+    background-size: 200% 200%;
+    animation: goldAura 2s ease-in-out infinite;
+    border-radius: 50%;
 }
 
 .fairy-fountain-pawn {
@@ -1434,8 +1437,50 @@ body.dark-mode .conqueror-king {
 
 /* Ensure pink aura stays pink in dark mode */
 body.dark-mode .fairy-fountain-pawn {
-    background: linear-gradient(45deg, #ff69b4, #ffb6c1, #ff69b4);
-    box-shadow: 0 0 25px rgba(255, 105, 180, 1);
+    background: linear-gradient(45deg, #ff69b4, #ffb6c1, #ff69b4) !important;
+    box-shadow: 0 0 25px rgba(255, 105, 180, 1) !important;
+    background-size: 200% 200%;
+    animation: pinkAura 2s ease-in-out infinite;
+    border-radius: 50%;
+}
+
+/* Ensure ALL visual effects are not affected by dark mode */
+body.dark-mode .frozen-piece {
+    opacity: 0.5 !important;
+}
+
+body.dark-mode .frozen-piece::after {
+    filter: brightness(1) !important;
+}
+
+body.dark-mode .dragon-target {
+    box-shadow: 0 0 20px rgba(255, 69, 0, 0.8), inset 0 0 20px rgba(255, 69, 0, 0.4) !important;
+    animation: dragonPulse 1s ease-in-out infinite !important;
+}
+
+body.dark-mode .archer-target {
+    box-shadow: 0 0 20px rgba(0, 128, 255, 0.8), inset 0 0 20px rgba(0, 128, 255, 0.4) !important;
+    animation: archerPulse 1s ease-in-out infinite !important;
+}
+
+body.dark-mode .revival-target {
+    box-shadow: 0 0 20px rgba(76, 175, 80, 0.8), inset 0 0 20px rgba(76, 175, 80, 0.4) !important;
+    animation: revivalPulse 1s ease-in-out infinite !important;
+}
+
+body.dark-mode .portal-target {
+    box-shadow: 0 0 20px rgba(0, 150, 255, 0.9), inset 0 0 20px rgba(0, 150, 255, 0.5) !important;
+    animation: portalPulse 1s ease-in-out infinite !important;
+}
+
+body.dark-mode .sandstorm-overlay {
+    background: linear-gradient(135deg, rgba(194, 178, 128, 0.4) 0%, rgba(244, 164, 96, 0.3) 50%, rgba(210, 180, 140, 0.4) 100%) !important;
+    mix-blend-mode: multiply !important;
+}
+
+body.dark-mode .sandstorm-overlay.active {
+    opacity: 1 !important;
+    animation: sandstormPulse 4s ease-in-out infinite, sandstormGrain 0.5s steps(10) infinite !important;
 }
 
 @keyframes goldAura {
