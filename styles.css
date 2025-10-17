@@ -372,11 +372,7 @@ body.dark-mode .chess-square.rift {
     display: none;
 }
 
-/* Dark mode: Keep blue rift graphic */
-body.dark-mode .chess-square.rift::before {
-    background-image: url('assets/Rift/SVG/Rift Blue.svg') !important;
-    filter: drop-shadow(0 0 10px rgba(100, 150, 255, 0.8)) !important;
-}
+/* Dark mode: Rift graphic stays the same (no changes needed) */
 
 @keyframes rift-glow {
     0%, 100% { background-position: 0% 50%; }
@@ -1846,7 +1842,8 @@ body.dark-mode .d20-side-panel {
 
 body.dark-mode .d20-display,
 body.dark-mode .d20-result-number {
-    color: #fff;
+    color: #1a1a1a;
+    background-color: transparent;
 }
 
 body.dark-mode .d20-result-text {
