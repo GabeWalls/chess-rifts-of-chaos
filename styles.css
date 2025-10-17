@@ -545,18 +545,20 @@ body.dark-mode .chess-square.rift::before {
 }
 
 .dice-display {
-    width: 80px;
-    height: 80px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border-radius: 15px;
+    width: 120px;
+    height: 120px;
+    background-image: url('assets/D20/SVG/D20.svg');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
     display: flex;
     align-items: center;
     justify-content: center;
     margin: 0 auto 15px;
-    font-size: 2rem;
+    font-size: 3rem;
     font-weight: bold;
-    color: white;
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+    color: #333;
+    position: relative;
 }
 
 .effect-options {
@@ -1329,13 +1331,24 @@ body.dark-mode .settings-panel {
 .dice-display {
     font-size: 3rem;
     font-weight: bold;
-    color: #ff6b6b;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    color: #333;
+    min-width: 120px;
+    min-height: 120px;
+    width: 120px;
+    height: 120px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background-image: url('assets/D20/SVG/D20.svg');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    position: relative;
     transition: all 0.3s ease;
 }
 
 body.dark-mode .dice-display {
-    color: #ff8a80;
+    color: #fff;
 }
 
 /* Field Effect Items */
@@ -1629,13 +1642,25 @@ body.dark-mode .sandstorm-overlay.active {
 .dice-roll-number {
     font-size: 3rem;
     font-weight: bold;
-    color: #667eea;
-    min-width: 80px;
-    min-height: 80px;
+    color: #333;
+    min-width: 120px;
+    min-height: 120px;
+    width: 120px;
+    height: 120px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    background-image: url('assets/D20/SVG/D20.svg');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    position: relative;
     /* Fixed size - no enlargement during animation */
+}
+
+/* Dark mode: Keep number readable on D20 */
+body.dark-mode .dice-roll-number {
+    color: #fff;
 }
 
 /* Catapult Roulette hit animation */
