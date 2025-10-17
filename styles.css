@@ -331,19 +331,13 @@ body.dark-mode .coord-label.highlighted {
 
 /* Rift styling */
 .chess-square.rift {
-    background: linear-gradient(45deg, #667eea, #764ba2, #4facfe, #00f2fe);
-    background-size: 400% 400%;
-    animation: rift-glow 6s ease-in-out infinite;
-    position: relative;
-}
-
-/* Keep rifts blue in dark mode - ensure they show the background */
-body.dark-mode .chess-square.rift {
     background: linear-gradient(45deg, #667eea, #764ba2, #4facfe, #00f2fe) !important;
     background-size: 400% 400% !important;
     animation: rift-glow 6s ease-in-out infinite !important;
     position: relative;
 }
+
+/* Rifts stay the same in dark mode - no override needed */
 
 .chess-square.rift::before {
     content: '';
@@ -870,18 +864,7 @@ body.dark-mode .chess-square.dark {
     color: #333;
 }
 
-/* Ensure rift squares override dark mode square colors */
-body.dark-mode .chess-square.dark.rift {
-    background: linear-gradient(45deg, #667eea, #764ba2, #4facfe, #00f2fe) !important;
-    background-size: 400% 400% !important;
-    animation: rift-glow 6s ease-in-out infinite !important;
-}
-
-body.dark-mode .chess-square.light.rift {
-    background: linear-gradient(45deg, #667eea, #764ba2, #4facfe, #00f2fe) !important;
-    background-size: 400% 400% !important;
-    animation: rift-glow 6s ease-in-out infinite !important;
-}
+/* Rift squares automatically override any background colors with their gradient */
 
 body.dark-mode .game-controls {
     background: rgba(0, 0, 0, 0.6);
@@ -1939,6 +1922,19 @@ body.dark-mode .d20-options-area {
 /* Dark mode multiplayer icon */
 body.dark-mode .multiplayer-icon {
     filter: none;
+}
+
+/* Rules Icon Styling */
+.rules-icon {
+    width: 20px;
+    height: 20px;
+    margin-right: 8px;
+    vertical-align: middle;
+    display: inline-block;
+}
+
+body.dark-mode .rules-icon {
+    filter: brightness(0) invert(1);
 }
 
 /* Catapult Roulette hit animation */
