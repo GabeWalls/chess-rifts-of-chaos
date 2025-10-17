@@ -1399,8 +1399,20 @@ class ChessGame {
         this.updateCapturedPieces();
         this.updateFieldEffects();
         
-        // Don't auto-close modal - let player choose when to close
-        // this.closeModal() and this.switchPlayer() will be called when player clicks "Close"
+        // Handle turn switching based on rift effect
+        // Effects that already handle their own turn switching: 1, 5, 12, 18, 20
+        // Effects that don't switch turns: 6 (Foot Soldier's Gambit), 14 (Conqueror's Tale)
+        // All other effects should end the turn
+        const effectsWithOwnTurnSwitching = [1, 5, 12, 18, 20];
+        const effectsThatDontSwitchTurns = [6, 14];
+        
+        if (!effectsWithOwnTurnSwitching.includes(roll) && !effectsThatDontSwitchTurns.includes(roll)) {
+            // End turn for rift effects that don't handle their own turn switching
+            setTimeout(() => {
+                this.clearD20Highlighting();
+                this.switchPlayer();
+            }, 1000); // Small delay to let player see the effect
+        }
     }
 
     closeModal() {
