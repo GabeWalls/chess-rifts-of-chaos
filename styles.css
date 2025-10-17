@@ -1930,13 +1930,22 @@ body.dark-mode .d20-options-area {
     padding-top: 14px;
     padding-bottom: 10px;
     width: 100%;
+    background: white;
+    color: black;
+    border: 2px solid #333;
+}
+
+body.dark-mode #multiplayer-btn {
+    background: black;
+    color: white;
+    border: 2px solid #ccc;
 }
 
 .multiplayer-controls-sidebar {
     width: 100%;
 }
 
-/* Dark mode multiplayer icon */
+/* Multiplayer icon styling - gradient version works in both modes */
 body.dark-mode .multiplayer-icon {
     filter: none;
 }
@@ -1956,8 +1965,8 @@ body.dark-mode .rules-icon {
 
 /* Rules Header Icon Styling */
 .rules-header-icon {
-    width: 24px;
-    height: 24px;
+    width: 32px;
+    height: 32px;
     margin-right: 10px;
     vertical-align: middle;
     display: inline-block;

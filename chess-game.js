@@ -1011,9 +1011,11 @@ class ChessGame {
             } else if (piece && piece.type === 'king' && this.kingAbilities[piece.color]?.doubleMove && this.kingMovedThisTurn[piece.color] >= 2) {
                 // King has moved twice, turn is over
                 this.addToGameLog(`${piece.color} king has used both moves!`, 'system');
+                this.clearD20Highlighting();
                 this.switchPlayer();
             } else {
                 // Regular piece moved or king without ability
+                this.clearD20Highlighting();
                 this.switchPlayer();
             }
         }
@@ -1110,6 +1112,13 @@ class ChessGame {
                 this.applyRiftEffect(effect, roll);
             }
         }, 100);
+    }
+
+    clearD20Highlighting() {
+        // Clear D20 highlighting when turn ends
+        const d20Display = document.getElementById('d20-display');
+        d20Display.classList.remove('d20-ready-to-roll');
+        d20Display.classList.remove('d20-final-result');
     }
 
     closeD20SidePanel() {
@@ -1798,6 +1807,7 @@ class ChessGame {
         this.renderBoard();
         
         setTimeout(() => {
+            this.clearD20Highlighting();
             this.switchPlayer();
         }, 2000);
     }
@@ -1811,6 +1821,7 @@ class ChessGame {
         // Hide options area
         document.getElementById('d20-options-area').style.display = 'none';
         this.addToGameLog('Rift effect canceled.', 'system');
+        this.clearD20Highlighting();
         this.switchPlayer();
     }
 
@@ -2211,6 +2222,7 @@ class ChessGame {
                 targetSquare.classList.remove('catapult-hit');
             }
             document.getElementById('d20-options-area').style.display = 'none';
+            this.clearD20Highlighting();
             this.switchPlayer();
         }, 2000);
     }
@@ -2404,6 +2416,7 @@ class ChessGame {
             setTimeout(() => {
                 this.closeModal();
                 // Switch turns after Jack Frost resolution (whether odd or even)
+                this.clearD20Highlighting();
                 this.switchPlayer();
             }, 2000);
         });
@@ -2494,6 +2507,7 @@ class ChessGame {
             
             setTimeout(() => {
                 this.closeModal();
+                this.clearD20Highlighting();
                 this.switchPlayer(); // Switch turns after Eerie Fog resolution
             }, 3000);
         });
@@ -2600,11 +2614,8 @@ class ChessGame {
         this.kingMovedThisTurn = { white: 0, black: 0 }; // Reset king move tracking
         this.kingMovedFirst = false; // Reset king moved first flag
         
-        // Clear D20 highlighting and disable roll button after turn
-        const d20Display = document.getElementById('d20-display');
+        // Disable roll button after turn (keep highlighting until next move)
         const rollButton = document.getElementById('roll-d20-btn');
-        d20Display.classList.remove('d20-ready-to-roll');
-        d20Display.classList.remove('d20-final-result');
         rollButton.disabled = true;
         
         // Check for Eerie Fog turn skip AFTER switching
