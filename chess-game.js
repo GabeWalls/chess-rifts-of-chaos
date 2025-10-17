@@ -995,12 +995,14 @@ class ChessGame {
             });
         }
         
+        // Always render the board first to show the piece on the rift
+        this.renderBoard();
+        
         // Check for rift activation
         if (this.isRift(toRow, toCol) && !this.riftActivatedThisTurn) {
             this.activateRift(toRow, toCol);
             this.riftActivatedThisTurn = true;
         } else {
-            this.renderBoard();
             
             // Check if king can move again with Conqueror's Tale
             const piece = this.board[toRow][toCol];

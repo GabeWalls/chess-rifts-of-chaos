@@ -1983,6 +1983,25 @@ body.dark-mode .rules-icon {
     flex: 1;
 }
 
+/* Modal Header Icon Styling */
+.modal-header-icon {
+    width: 24px;
+    height: 24px;
+    margin-right: 10px;
+    vertical-align: middle;
+    display: inline-block;
+}
+
+.room-modal .modal-header {
+    display: flex;
+    align-items: center;
+}
+
+.room-modal .modal-header h3 {
+    margin: 0;
+    flex: 1;
+}
+
 /* Catapult Roulette hit animation */
 .catapult-hit {
     animation: catapultBlink 0.4s ease-in-out 5;
