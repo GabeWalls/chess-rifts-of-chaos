@@ -1262,9 +1262,18 @@ body:has(.beta-banner.hidden) .settings-menu {
     animation: settingsRotate 0.5s ease-in-out;
 }
 
+.settings-btn:not(:hover) .settings-icon {
+    animation: settingsRotateReverse 0.5s ease-in-out;
+}
+
 @keyframes settingsRotate {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(180deg); }
+}
+
+@keyframes settingsRotateReverse {
+    0% { transform: rotate(180deg); }
+    100% { transform: rotate(0deg); }
 }
 
 body.dark-mode .settings-btn {
@@ -1795,7 +1804,7 @@ body.dark-mode .dice-roll-number {
 }
 
 /* D20 button glows blue when D20 is ready to roll */
-.d20-ready-to-roll ~ .roll-d20-btn:not(:disabled) {
+.d20-roll-section:has(.d20-ready-to-roll) .roll-d20-btn:not(:disabled) {
     box-shadow: 0 0 20px rgba(102, 126, 234, 0.8);
     animation: d20ButtonGlow 2s ease-in-out infinite;
 }
