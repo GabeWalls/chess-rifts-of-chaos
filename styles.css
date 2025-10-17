@@ -864,7 +864,24 @@ body.dark-mode .chess-square.dark {
     color: #333;
 }
 
-/* Rift squares automatically override any background colors with their gradient */
+/* Ensure rift squares override dark mode square colors */
+body.dark-mode .chess-square.rift {
+    background: linear-gradient(45deg, #667eea, #764ba2, #4facfe, #00f2fe) !important;
+    background-size: 400% 400% !important;
+    animation: rift-glow 6s ease-in-out infinite !important;
+}
+
+body.dark-mode .chess-square.dark.rift {
+    background: linear-gradient(45deg, #667eea, #764ba2, #4facfe, #00f2fe) !important;
+    background-size: 400% 400% !important;
+    animation: rift-glow 6s ease-in-out infinite !important;
+}
+
+body.dark-mode .chess-square.light.rift {
+    background: linear-gradient(45deg, #667eea, #764ba2, #4facfe, #00f2fe) !important;
+    background-size: 400% 400% !important;
+    animation: rift-glow 6s ease-in-out infinite !important;
+}
 
 body.dark-mode .game-controls {
     background: rgba(0, 0, 0, 0.6);
@@ -1935,6 +1952,25 @@ body.dark-mode .multiplayer-icon {
 
 body.dark-mode .rules-icon {
     filter: brightness(0) invert(1);
+}
+
+/* Rules Header Icon Styling */
+.rules-header-icon {
+    width: 24px;
+    height: 24px;
+    margin-right: 10px;
+    vertical-align: middle;
+    display: inline-block;
+}
+
+.rules-modal .modal-header {
+    display: flex;
+    align-items: center;
+}
+
+.rules-modal .modal-header h2 {
+    margin: 0;
+    flex: 1;
 }
 
 /* Catapult Roulette hit animation */
