@@ -460,6 +460,11 @@ body.dark-mode .coord-label.highlighted {
     margin: 20px 0;
 }
 
+.captured-pieces h4,
+.active-effects h4 {
+    color: #000;
+}
+
 .captured-white, .captured-black {
     margin: 10px 0;
     padding: 10px;
@@ -470,7 +475,12 @@ body.dark-mode .coord-label.highlighted {
 
 body.dark-mode .captured-white, 
 body.dark-mode .captured-black {
-    background: #666;
+    background: #444;
+    color: #fff;
+}
+
+body.dark-mode .captured-white span, 
+body.dark-mode .captured-black span {
     color: #fff;
 }
 
@@ -507,7 +517,7 @@ body.dark-mode .captured-black {
 }
 
 body.dark-mode #field-effects-list {
-    background: #666;
+    background: #444;
     color: #fff;
 }
 
@@ -901,6 +911,14 @@ body.dark-mode .game-controls {
 
 body.dark-mode .game-controls h3 {
     color: #ffffff;
+}
+
+.setup-controls h3 {
+    color: #000;
+}
+
+.setup-controls p {
+    color: #000;
 }
 
 body.dark-mode .setup-controls h3 {
@@ -1366,13 +1384,13 @@ body.dark-mode .settings-panel {
 
 /* D20 highlighting states */
 .d20-ready-to-roll {
-    filter: drop-shadow(0 0 15px rgba(0, 128, 255, 0.8));
-    animation: d20BlueGlow 2s ease-in-out infinite;
+    filter: drop-shadow(0 0 25px rgba(0, 128, 255, 1));
+    animation: d20BlueGlow 1.5s ease-in-out infinite;
 }
 
 .d20-final-result {
-    filter: drop-shadow(0 0 20px rgba(255, 215, 0, 1));
-    animation: d20YellowGlow 1s ease-in-out;
+    filter: drop-shadow(0 0 30px rgba(255, 215, 0, 1));
+    animation: d20YellowGlow 3s ease-out;
 }
 
 @keyframes diceRoll {
@@ -1382,17 +1400,21 @@ body.dark-mode .settings-panel {
 }
 
 @keyframes d20BlueGlow {
-    0%, 100% { filter: drop-shadow(0 0 10px rgba(0, 128, 255, 0.6)); }
-    50% { filter: drop-shadow(0 0 20px rgba(0, 128, 255, 1)); }
+    0%, 100% { filter: drop-shadow(0 0 20px rgba(0, 128, 255, 0.8)); }
+    50% { filter: drop-shadow(0 0 40px rgba(0, 128, 255, 1)); }
 }
 
 @keyframes d20YellowGlow {
     0% { 
-        filter: drop-shadow(0 0 25px rgba(255, 215, 0, 1));
-        transform: scale(1.15);
+        filter: drop-shadow(0 0 30px rgba(255, 215, 0, 1));
+        transform: scale(1.2);
+    }
+    50% { 
+        filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.8));
+        transform: scale(1.1);
     }
     100% { 
-        filter: drop-shadow(0 0 5px rgba(255, 215, 0, 0.3));
+        filter: drop-shadow(0 0 0px rgba(255, 215, 0, 0));
         transform: scale(1);
     }
 }
@@ -1773,7 +1795,7 @@ body.dark-mode .dice-roll-number {
 }
 
 body.dark-mode .d20-panel-content {
-    background: #666;
+    background: #444;
     color: #fff;
 }
 
@@ -1897,7 +1919,7 @@ body.dark-mode .d20-side-panel {
 
 body.dark-mode .d20-display,
 body.dark-mode .d20-result-number {
-    color: #1a1a1a;
+    color: #fff;
     background-color: transparent;
 }
 
