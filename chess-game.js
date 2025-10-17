@@ -489,6 +489,11 @@ class ChessGame {
         this.addToGameLog('Game started!', 'system');
         this.addToGameLog(`Rifts placed at: ${this.rifts.map(r => String.fromCharCode(97 + r.col) + (8 - r.row)).join(', ')}`, 'system');
         
+        // Show D20 panel when game starts
+        const d20Panel = document.getElementById('d20-roll-panel');
+        d20Panel.style.display = 'block';
+        d20Panel.classList.add('collapsed');
+        
         // In multiplayer, notify server that game started
         if (this.isMultiplayer && this.socket) {
             this.socket.emit('start-game', {
