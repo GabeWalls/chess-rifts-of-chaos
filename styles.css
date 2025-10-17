@@ -545,8 +545,8 @@ body.dark-mode .chess-square.rift::before {
 }
 
 .dice-display {
-    width: 120px;
-    height: 120px;
+    width: 140px;
+    height: 140px;
     background-image: url('assets/D20/SVG/D20.svg');
     background-size: contain;
     background-repeat: no-repeat;
@@ -555,10 +555,11 @@ body.dark-mode .chess-square.rift::before {
     align-items: center;
     justify-content: center;
     margin: 0 auto 15px;
-    font-size: 3rem;
+    font-size: 2.2rem;
     font-weight: bold;
     color: #333;
     position: relative;
+    padding-top: 8px; /* Move number up slightly */
 }
 
 .effect-options {
@@ -1329,13 +1330,13 @@ body.dark-mode .settings-panel {
 }
 
 .dice-display {
-    font-size: 3rem;
+    font-size: 2.2rem;
     font-weight: bold;
     color: #333;
-    min-width: 120px;
-    min-height: 120px;
-    width: 120px;
-    height: 120px;
+    min-width: 140px;
+    min-height: 140px;
+    width: 140px;
+    height: 140px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -1344,6 +1345,7 @@ body.dark-mode .settings-panel {
     background-repeat: no-repeat;
     background-position: center;
     position: relative;
+    padding-top: 8px; /* Move number up slightly */
     transition: all 0.3s ease;
 }
 
@@ -1640,13 +1642,13 @@ body.dark-mode .sandstorm-overlay.active {
 
 /* D20 Dice Roll Animation */
 .dice-roll-number {
-    font-size: 3rem;
+    font-size: 2.2rem;
     font-weight: bold;
     color: #333;
-    min-width: 120px;
-    min-height: 120px;
-    width: 120px;
-    height: 120px;
+    min-width: 140px;
+    min-height: 140px;
+    width: 140px;
+    height: 140px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -1655,12 +1657,191 @@ body.dark-mode .sandstorm-overlay.active {
     background-repeat: no-repeat;
     background-position: center;
     position: relative;
+    padding-top: 8px; /* Move number up slightly */
     /* Fixed size - no enlargement during animation */
 }
 
 /* Dark mode: Keep number readable on D20 */
 body.dark-mode .dice-roll-number {
     color: #fff;
+}
+
+/* D20 Side Panel */
+.d20-side-panel {
+    position: fixed;
+    top: 50%;
+    right: 20px;
+    transform: translateY(-50%);
+    width: 300px;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+    border: 2px solid #667eea;
+}
+
+.d20-panel-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 15px 20px;
+    border-radius: 13px 13px 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.d20-panel-header h4 {
+    margin: 0;
+    font-size: 1.2rem;
+}
+
+.close-d20-panel {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.3s ease;
+}
+
+.close-d20-panel:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.d20-panel-content {
+    padding: 20px;
+}
+
+.d20-roll-section {
+    text-align: center;
+}
+
+.d20-display-container {
+    margin-bottom: 20px;
+}
+
+.d20-display {
+    font-size: 2.2rem;
+    font-weight: bold;
+    color: #333;
+    width: 140px;
+    height: 140px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background-image: url('assets/D20/SVG/D20.svg');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    position: relative;
+    padding-top: 8px;
+    margin: 0 auto;
+}
+
+.roll-d20-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 25px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.roll-d20-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.d20-result-section {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.d20-result-display {
+    margin-bottom: 15px;
+}
+
+.d20-result-number {
+    font-size: 2.2rem;
+    font-weight: bold;
+    color: #333;
+    width: 140px;
+    height: 140px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background-image: url('assets/D20/SVG/D20.svg');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    position: relative;
+    padding-top: 8px;
+    margin: 0 auto;
+}
+
+.d20-result-text {
+    font-size: 1.1rem;
+    color: #666;
+    margin-top: 10px;
+}
+
+.rift-effect-info {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 10px;
+    border-left: 4px solid #667eea;
+}
+
+.rift-effect-info h5 {
+    margin: 0 0 10px 0;
+    color: #333;
+    font-size: 1.1rem;
+}
+
+.rift-effect-info p {
+    margin: 0;
+    color: #666;
+    font-size: 0.95rem;
+    line-height: 1.4;
+}
+
+/* Dark mode for side panel */
+body.dark-mode .d20-side-panel {
+    background: #2a2a2a;
+    border-color: #667eea;
+}
+
+body.dark-mode .d20-display,
+body.dark-mode .d20-result-number {
+    color: #fff;
+}
+
+body.dark-mode .d20-result-text {
+    color: #ccc;
+}
+
+body.dark-mode .rift-effect-info {
+    background: #3a3a3a;
+    border-left-color: #667eea;
+}
+
+body.dark-mode .rift-effect-info h5 {
+    color: #fff;
+}
+
+body.dark-mode .rift-effect-info p {
+    color: #ccc;
 }
 
 /* Catapult Roulette hit animation */

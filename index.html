@@ -137,6 +137,32 @@
                     </div>
                     <button id="resign-btn" class="btn danger">Resign</button>
                 </div>
+
+                <!-- D20 Roll Side Panel -->
+                <div class="d20-side-panel" id="d20-side-panel" style="display: none;">
+                    <div class="d20-panel-header">
+                        <h4>Rift Effect</h4>
+                        <button class="close-d20-panel" id="close-d20-panel">×</button>
+                    </div>
+                    <div class="d20-panel-content">
+                        <div class="d20-roll-section" id="d20-roll-section">
+                            <div class="d20-display-container">
+                                <div id="d20-display" class="d20-display">?</div>
+                            </div>
+                            <button class="roll-d20-btn" id="roll-d20-btn">Roll D20</button>
+                        </div>
+                        <div class="d20-result-section" id="d20-result-section" style="display: none;">
+                            <div class="d20-result-display">
+                                <div id="d20-result-number" class="d20-result-number">?</div>
+                            </div>
+                            <div class="d20-result-text" id="d20-result-text">Rolling...</div>
+                        </div>
+                        <div class="rift-effect-info" id="rift-effect-info" style="display: none;">
+                            <h5 id="rift-effect-name">Effect Name</h5>
+                            <p id="rift-effect-description">Effect description will appear here.</p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </main>
 

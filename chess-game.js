@@ -83,6 +83,10 @@ class ChessGame {
         document.getElementById('close-modal').addEventListener('click', () => this.closeModal());
         document.getElementById('new-game').addEventListener('click', () => this.newGame());
         
+        // D20 Side Panel controls
+        document.getElementById('roll-d20-btn').addEventListener('click', () => this.rollD20SidePanel());
+        document.getElementById('close-d20-panel').addEventListener('click', () => this.closeD20SidePanel());
+        
         // Chat controls
         document.getElementById('send-chat').addEventListener('click', () => this.sendChatMessage());
         document.getElementById('chat-input').addEventListener('keypress', (e) => {
@@ -1015,13 +1019,90 @@ class ChessGame {
         const squareElement = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
         squareElement.classList.add('activated');
         
-        // Show rift effects modal
-        this.showRiftEffectsModal();
+        // Show D20 side panel instead of modal
+        this.showD20SidePanel();
         
         // Remove activation class after animation
         setTimeout(() => {
             squareElement.classList.remove('activated');
         }, 1000);
+    }
+
+    showD20SidePanel() {
+        // Show the side panel
+        document.getElementById('d20-side-panel').style.display = 'block';
+        
+        // Reset the panel state
+        document.getElementById('d20-roll-section').style.display = 'block';
+        document.getElementById('d20-result-section').style.display = 'none';
+        document.getElementById('rift-effect-info').style.display = 'none';
+        document.getElementById('d20-display').textContent = '?';
+        document.getElementById('roll-d20-btn').disabled = false;
+        this.diceRolledThisTurn = false;
+    }
+
+    rollD20SidePanel() {
+        // Prevent multiple rolls per turn
+        if (this.diceRolledThisTurn) {
+            return;
+        }
+        
+        const rollButton = document.getElementById('roll-d20-btn');
+        const d20Display = document.getElementById('d20-display');
+        
+        // Disable roll button and mark as rolled
+        rollButton.disabled = true;
+        this.diceRolledThisTurn = true;
+        
+        // Add rolling animation
+        d20Display.style.animation = 'diceRoll 0.1s ease-in-out infinite';
+        
+        // Show random numbers during animation
+        let animationCount = 0;
+        const animationInterval = setInterval(() => {
+            const randomNum = Math.floor(Math.random() * 20) + 1;
+            d20Display.textContent = randomNum;
+            animationCount++;
+            
+            if (animationCount >= 15) {
+                clearInterval(animationInterval);
+                
+                // Final result - keep rolling until requirements are met
+                let roll = Math.floor(Math.random() * 20) + 1;
+                const activatingPiece = this.lastMovedPiece.piece;
+                let rerollCount = 0;
+                const maxRerolls = 100; // Prevent infinite loop
+                
+                // Re-roll if requirements aren't met
+                while (!this.checkRiftRequirements(roll, activatingPiece) && rerollCount < maxRerolls) {
+                    const oldRoll = roll;
+                    roll = Math.floor(Math.random() * 20) + 1;
+                    this.addToGameLog(`Rolled ${oldRoll} but requirements not met - re-rolling...`, 'system');
+                    rerollCount++;
+                }
+                
+                d20Display.textContent = roll;
+                d20Display.style.animation = '';
+                
+                // Show result section
+                document.getElementById('d20-roll-section').style.display = 'none';
+                document.getElementById('d20-result-section').style.display = 'block';
+                document.getElementById('d20-result-number').textContent = roll;
+                document.getElementById('d20-result-text').textContent = `Rolled: ${roll}`;
+                
+                const effect = this.getRiftEffect(roll);
+                document.getElementById('rift-effect-name').textContent = effect.name;
+                document.getElementById('rift-effect-description').textContent = effect.description;
+                document.getElementById('rift-effect-info').style.display = 'block';
+                
+                this.addToGameLog(`D20 rolled: ${roll} - ${effect.name}`, 'effect');
+                this.applyRiftEffect(effect, roll);
+            }
+        }, 100);
+    }
+
+    closeD20SidePanel() {
+        document.getElementById('d20-side-panel').style.display = 'none';
     }
 
     showRiftEffectsModal() {
@@ -1297,6 +1378,7 @@ class ChessGame {
 
     closeModal() {
         document.getElementById('rift-effects-modal').style.display = 'none';
+        document.getElementById('d20-side-panel').style.display = 'none';
         this.switchPlayer();
     }
 
