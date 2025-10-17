@@ -1945,9 +1945,9 @@ body.dark-mode #multiplayer-btn {
     width: 100%;
 }
 
-/* Multiplayer icon styling - gradient version works in both modes */
+/* Multiplayer icon styling - black in light mode, white in dark mode */
 body.dark-mode .multiplayer-icon {
-    filter: none;
+    content: url('assets/Multiplayer/SVG/Multiplayer Icon White.svg');
 }
 
 /* Rules Icon Styling */
@@ -1959,14 +1959,15 @@ body.dark-mode .multiplayer-icon {
     display: inline-block;
 }
 
+/* Rules icon styling - black in light mode, white in dark mode */
 body.dark-mode .rules-icon {
-    filter: brightness(0) invert(1);
+    content: url('assets/Rulebook/SVG/Rulebook White.svg');
 }
 
 /* Rules Header Icon Styling */
 .rules-header-icon {
-    width: 32px;
-    height: 32px;
+    width: 40px;
+    height: 40px;
     margin-right: 10px;
     vertical-align: middle;
     display: inline-block;
