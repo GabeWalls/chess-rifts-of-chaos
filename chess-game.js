@@ -85,7 +85,7 @@ class ChessGame {
         
         // D20 Side Panel controls
         document.getElementById('roll-d20-btn').addEventListener('click', () => this.rollD20SidePanel());
-        document.getElementById('collapse-d20-panel').addEventListener('click', () => this.toggleD20Panel());
+        // Collapse functionality removed
         
         // Chat controls
         document.getElementById('send-chat').addEventListener('click', () => this.sendChatMessage());
@@ -489,10 +489,9 @@ class ChessGame {
         this.addToGameLog('Game started!', 'system');
         this.addToGameLog(`Rifts placed at: ${this.rifts.map(r => String.fromCharCode(97 + r.col) + (8 - r.row)).join(', ')}`, 'system');
         
-        // Show D20 panel when game starts
+        // Show D20 panel when game starts (always expanded)
         const d20Panel = document.getElementById('d20-roll-panel');
         d20Panel.style.display = 'block';
-        d20Panel.classList.add('collapsed');
         
         // In multiplayer, notify server that game started
         if (this.isMultiplayer && this.socket) {
@@ -1034,10 +1033,7 @@ class ChessGame {
     }
 
     showD20SidePanel() {
-        // Show the panel and expand it
-        const panel = document.getElementById('d20-roll-panel');
-        panel.style.display = 'block';
-        panel.classList.remove('collapsed');
+        // Panel is always visible, just reset state
         
         // Reset the panel state
         document.getElementById('d20-roll-section').style.display = 'block';
@@ -1116,14 +1112,13 @@ class ChessGame {
         }, 100);
     }
 
-    toggleD20Panel() {
-        const panel = document.getElementById('d20-roll-panel');
-        panel.classList.toggle('collapsed');
-    }
-
     closeD20SidePanel() {
-        // Hide the panel
-        document.getElementById('d20-roll-panel').style.display = 'none';
+        // Panel stays visible, just reset state
+        document.getElementById('d20-roll-section').style.display = 'block';
+        document.getElementById('d20-result-section').style.display = 'none';
+        document.getElementById('rift-effect-info').style.display = 'none';
+        document.getElementById('d20-display').classList.remove('d20-ready-to-roll');
+        document.getElementById('d20-display').classList.remove('d20-final-result');
     }
 
     showRiftEffectsModal() {
@@ -2594,6 +2589,13 @@ class ChessGame {
         this.diceRolledThisTurn = false;
         this.kingMovedThisTurn = { white: 0, black: 0 }; // Reset king move tracking
         this.kingMovedFirst = false; // Reset king moved first flag
+        
+        // Clear D20 highlighting and disable roll button after turn
+        const d20Display = document.getElementById('d20-display');
+        const rollButton = document.getElementById('roll-d20-btn');
+        d20Display.classList.remove('d20-ready-to-roll');
+        d20Display.classList.remove('d20-final-result');
+        rollButton.disabled = true;
         
         // Check for Eerie Fog turn skip AFTER switching
         if (this.activeFieldEffects.includes('eerie_fog_turmoil') && this.eerieFogSkipPlayer === this.currentPlayer) {

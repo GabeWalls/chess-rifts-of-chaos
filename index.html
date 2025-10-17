@@ -52,29 +52,39 @@
         </header>
 
         <main class="game-main">
-            <!-- D20 Roll Panel (Side Panel) -->
-            <div class="d20-roll-panel" id="d20-roll-panel" style="display: none;">
-                <div class="d20-panel-header">
-                    <h4>Rift Effect</h4>
-                    <button class="collapse-d20-panel" id="collapse-d20-panel">−</button>
+            <!-- Left Sidebar (D20 + Multiplayer) -->
+            <div class="left-sidebar">
+                <!-- D20 Roll Panel (Side Panel) -->
+                <div class="d20-roll-panel" id="d20-roll-panel" style="display: none;">
+                    <div class="d20-panel-header">
+                        <h4>D20</h4>
+                    </div>
+                    <div class="d20-panel-content" id="d20-panel-content">
+                        <div class="d20-roll-section" id="d20-roll-section">
+                            <div class="d20-display-container">
+                                <div id="d20-display" class="d20-display">?</div>
+                            </div>
+                            <button class="roll-d20-btn" id="roll-d20-btn" disabled>Roll D20</button>
+                        </div>
+                        <div class="d20-result-section" id="d20-result-section" style="display: none;">
+                            <div class="d20-result-display">
+                                <div id="d20-result-number" class="d20-result-number">?</div>
+                            </div>
+                            <div class="d20-result-text" id="d20-result-text">Rolling...</div>
+                        </div>
+                        <div class="rift-effect-info" id="rift-effect-info" style="display: none;">
+                            <h5 id="rift-effect-name">Effect Name</h5>
+                            <p id="rift-effect-description">Effect description will appear here.</p>
+                        </div>
+                    </div>
                 </div>
-                <div class="d20-panel-content" id="d20-panel-content">
-                    <div class="d20-roll-section" id="d20-roll-section">
-                        <div class="d20-display-container">
-                            <div id="d20-display" class="d20-display">?</div>
-                        </div>
-                        <button class="roll-d20-btn" id="roll-d20-btn">Roll D20</button>
-                    </div>
-                    <div class="d20-result-section" id="d20-result-section" style="display: none;">
-                        <div class="d20-result-display">
-                            <div id="d20-result-number" class="d20-result-number">?</div>
-                        </div>
-                        <div class="d20-result-text" id="d20-result-text">Rolling...</div>
-                    </div>
-                    <div class="rift-effect-info" id="rift-effect-info" style="display: none;">
-                        <h5 id="rift-effect-name">Effect Name</h5>
-                        <p id="rift-effect-description">Effect description will appear here.</p>
-                    </div>
+
+                <!-- Multiplayer Button (under D20 panel) -->
+                <div class="multiplayer-controls-sidebar">
+                    <button id="multiplayer-btn" class="btn">
+                        <img src="assets/Multiplayer/SVG/Multiplayer Icon White.svg" alt="Multiplayer" class="multiplayer-icon">
+                        Multiplayer
+                    </button>
                 </div>
             </div>
 
@@ -166,14 +176,6 @@
 
             </div>
         </main>
-
-        <!-- Multiplayer Button -->
-        <div class="multiplayer-controls">
-            <button id="multiplayer-btn" class="btn">
-                <img src="assets/Multiplayer/SVG/Multiplayer Icon White.svg" alt="Multiplayer" class="multiplayer-icon">
-                Multiplayer
-            </button>
-        </div>
         
         <!-- Ad Placement - Top Banner -->
         <div class="ad-container ad-banner-top">
