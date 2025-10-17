@@ -223,8 +223,8 @@ body.dark-mode .beta-banner {
 }
 
 .coord-spacer {
-    width: 30px;
-    height: 30px;
+    width: 40px;
+    height: 40px;
 }
 
 .coord-label.highlighted {
@@ -341,8 +341,8 @@ body.dark-mode .chess-square.rift {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 30px;
-    height: 30px;
+    width: 40px;
+    height: 40px;
     background-image: url('assets/Rift/SVG/Rift.svg');
     background-size: contain;
     background-repeat: no-repeat;
@@ -354,7 +354,7 @@ body.dark-mode .chess-square.rift {
 
 @keyframes rift-swirl {
     0% { transform: translate(-50%, -50%) rotate(0deg); }
-    100% { transform: translate(-50%, -50%) rotate(360deg); }
+    100% { transform: translate(-50%, -50%) rotate(-360deg); }
 }
 
 /* Hide rift graphic when square has a piece */
@@ -362,23 +362,7 @@ body.dark-mode .chess-square.rift {
     display: none;
 }
 
-/* Ensure swirl animation works in dark mode */
-body.dark-mode .chess-square.rift::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 30px;
-    height: 30px;
-    background-image: url('assets/Rift/SVG/Rift.svg');
-    background-size: contain;
-    background-repeat: no-repeat;
-    background-position: center;
-    z-index: 5;
-    filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.8));
-    animation: rift-swirl 4s linear infinite;
-}
+/* Ensure rift graphics work in dark mode - no overrides needed */
 
 @keyframes rift-glow {
     0%, 100% { background-position: 0% 50%; }
@@ -1053,8 +1037,8 @@ body:has(.beta-banner.hidden) .multiplayer-controls {
     cursor: pointer;
     color: #666;
     padding: 0;
-    width: 30px;
-    height: 30px;
+    width: 40px;
+    height: 40px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1337,12 +1321,31 @@ body.dark-mode .settings-panel {
     animation: diceRoll 2s ease-in-out;
 }
 
+/* D20 highlighting states */
+.d20-ready-to-roll {
+    box-shadow: 0 0 20px rgba(0, 128, 255, 0.8), inset 0 0 20px rgba(0, 128, 255, 0.4);
+    animation: d20BlueGlow 2s ease-in-out infinite;
+}
+
+.d20-final-result {
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.8), inset 0 0 20px rgba(255, 215, 0, 0.4);
+    animation: d20YellowGlow 1s ease-in-out;
+}
+
 @keyframes diceRoll {
     0% { transform: scale(1); }
-    25% { transform: scale(1.1); }
-    50% { transform: scale(1.2); }
-    75% { transform: scale(1.1); }
+    50% { transform: scale(1.15); }
     100% { transform: scale(1); }
+}
+
+@keyframes d20BlueGlow {
+    0%, 100% { box-shadow: 0 0 15px rgba(0, 128, 255, 0.6), inset 0 0 15px rgba(0, 128, 255, 0.3); }
+    50% { box-shadow: 0 0 25px rgba(0, 128, 255, 1), inset 0 0 25px rgba(0, 128, 255, 0.5); }
+}
+
+@keyframes d20YellowGlow {
+    0% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.8), inset 0 0 20px rgba(255, 215, 0, 0.4); }
+    100% { box-shadow: 0 0 5px rgba(255, 215, 0, 0.3), inset 0 0 5px rgba(255, 215, 0, 0.2); }
 }
 
 .dice-display {
@@ -1682,28 +1685,29 @@ body.dark-mode .dice-roll-number {
     color: #fff;
 }
 
-/* D20 Side Panel */
-.d20-side-panel {
-    position: fixed;
-    top: 50%;
-    right: 20px;
-    transform: translateY(-50%);
-    width: 300px;
-    background: white;
-    border-radius: 15px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-    z-index: 1000;
-    border: 2px solid #667eea;
+/* D20 Roll Panel (Collapsible) */
+.d20-roll-panel {
+    background: #fff;
+    border: 2px solid #333;
+    border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    margin-bottom: 20px;
+    overflow: hidden;
 }
 
 .d20-panel-header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    padding: 15px 20px;
-    border-radius: 13px 13px 0 0;
+    background: #333;
+    color: #fff;
+    padding: 15px;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.d20-panel-header:hover {
+    background: #444;
 }
 
 .d20-panel-header h4 {
@@ -1711,28 +1715,39 @@ body.dark-mode .dice-roll-number {
     font-size: 1.2rem;
 }
 
-.close-d20-panel {
-    background: none;
+.collapse-d20-panel {
+    background: #666;
+    color: #fff;
     border: none;
-    color: white;
-    font-size: 1.5rem;
-    cursor: pointer;
-    padding: 0;
+    border-radius: 50%;
     width: 30px;
     height: 30px;
-    border-radius: 50%;
+    font-size: 18px;
+    cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: background-color 0.3s ease;
+    transition: background 0.3s;
 }
 
-.close-d20-panel:hover {
-    background-color: rgba(255, 255, 255, 0.2);
+.collapse-d20-panel:hover {
+    background: #888;
 }
 
 .d20-panel-content {
     padding: 20px;
+    transition: max-height 0.3s ease-out;
+}
+
+/* Collapsed state */
+.d20-roll-panel.collapsed .d20-panel-content {
+    max-height: 0;
+    padding: 0 20px;
+    overflow: hidden;
+}
+
+.d20-roll-panel.collapsed .collapse-d20-panel {
+    transform: rotate(180deg);
 }
 
 .d20-roll-section {

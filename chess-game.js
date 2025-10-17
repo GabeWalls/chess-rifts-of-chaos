@@ -85,7 +85,7 @@ class ChessGame {
         
         // D20 Side Panel controls
         document.getElementById('roll-d20-btn').addEventListener('click', () => this.rollD20SidePanel());
-        document.getElementById('close-d20-panel').addEventListener('click', () => this.closeD20SidePanel());
+        document.getElementById('collapse-d20-panel').addEventListener('click', () => this.toggleD20Panel());
         
         // Chat controls
         document.getElementById('send-chat').addEventListener('click', () => this.sendChatMessage());
@@ -1029,8 +1029,10 @@ class ChessGame {
     }
 
     showD20SidePanel() {
-        // Show the side panel
-        document.getElementById('d20-side-panel').style.display = 'block';
+        // Show the panel and expand it
+        const panel = document.getElementById('d20-roll-panel');
+        panel.style.display = 'block';
+        panel.classList.remove('collapsed');
         
         // Reset the panel state
         document.getElementById('d20-roll-section').style.display = 'block';
@@ -1039,6 +1041,10 @@ class ChessGame {
         document.getElementById('d20-display').textContent = '?';
         document.getElementById('roll-d20-btn').disabled = false;
         this.diceRolledThisTurn = false;
+        
+        // Add blue highlighting for ready to roll state
+        document.getElementById('d20-display').classList.add('d20-ready-to-roll');
+        document.getElementById('d20-display').classList.remove('d20-final-result');
     }
 
     rollD20SidePanel() {
@@ -1084,6 +1090,10 @@ class ChessGame {
                 d20Display.textContent = roll;
                 d20Display.style.animation = '';
                 
+                // Add yellow highlighting for final result
+                d20Display.classList.remove('d20-ready-to-roll');
+                d20Display.classList.add('d20-final-result');
+                
                 // Show result section
                 document.getElementById('d20-roll-section').style.display = 'none';
                 document.getElementById('d20-result-section').style.display = 'block';
@@ -1101,8 +1111,14 @@ class ChessGame {
         }, 100);
     }
 
+    toggleD20Panel() {
+        const panel = document.getElementById('d20-roll-panel');
+        panel.classList.toggle('collapsed');
+    }
+
     closeD20SidePanel() {
-        document.getElementById('d20-side-panel').style.display = 'none';
+        // Hide the panel
+        document.getElementById('d20-roll-panel').style.display = 'none';
     }
 
     showRiftEffectsModal() {
@@ -1378,7 +1394,7 @@ class ChessGame {
 
     closeModal() {
         document.getElementById('rift-effects-modal').style.display = 'none';
-        document.getElementById('d20-side-panel').style.display = 'none';
+        document.getElementById('d20-roll-panel').style.display = 'none';
         this.switchPlayer();
     }
 
