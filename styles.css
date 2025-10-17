@@ -162,10 +162,20 @@ body.dark-mode .beta-banner {
 
 /* Main game area */
 .game-main {
-    display: grid;
-    grid-template-columns: 1fr 350px;
-    gap: 30px;
-    align-items: start;
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+}
+
+.chess-board-container {
+    flex: 1;
+    min-width: 0;
+}
+
+.game-controls {
+    width: 350px;
+    flex-shrink: 0;
 }
 
 /* Chess board */
@@ -343,7 +353,7 @@ body.dark-mode .chess-square.rift {
     transform: translate(-50%, -50%);
     width: 40px;
     height: 40px;
-    background-image: url('assets/Rift/SVG/Rift.svg');
+    background-image: url('assets/Rift/SVG/Rift White.svg');
     background-size: contain;
     background-repeat: no-repeat;
     background-position: center;
@@ -362,7 +372,11 @@ body.dark-mode .chess-square.rift {
     display: none;
 }
 
-/* Ensure rift graphics work in dark mode - no overrides needed */
+/* Dark mode: Use black rift graphic */
+body.dark-mode .chess-square.rift::before {
+    background-image: url('assets/Rift/SVG/Rift Black.svg') !important;
+    filter: drop-shadow(0 0 10px rgba(0, 0, 0, 0.8)) !important;
+}
 
 @keyframes rift-glow {
     0%, 100% { background-position: 0% 50%; }
@@ -1323,12 +1337,12 @@ body.dark-mode .settings-panel {
 
 /* D20 highlighting states */
 .d20-ready-to-roll {
-    box-shadow: 0 0 20px rgba(0, 128, 255, 0.8), inset 0 0 20px rgba(0, 128, 255, 0.4);
+    filter: drop-shadow(0 0 15px rgba(0, 128, 255, 0.8));
     animation: d20BlueGlow 2s ease-in-out infinite;
 }
 
 .d20-final-result {
-    box-shadow: 0 0 20px rgba(255, 215, 0, 0.8), inset 0 0 20px rgba(255, 215, 0, 0.4);
+    filter: drop-shadow(0 0 20px rgba(255, 215, 0, 1));
     animation: d20YellowGlow 1s ease-in-out;
 }
 
@@ -1339,13 +1353,19 @@ body.dark-mode .settings-panel {
 }
 
 @keyframes d20BlueGlow {
-    0%, 100% { box-shadow: 0 0 15px rgba(0, 128, 255, 0.6), inset 0 0 15px rgba(0, 128, 255, 0.3); }
-    50% { box-shadow: 0 0 25px rgba(0, 128, 255, 1), inset 0 0 25px rgba(0, 128, 255, 0.5); }
+    0%, 100% { filter: drop-shadow(0 0 10px rgba(0, 128, 255, 0.6)); }
+    50% { filter: drop-shadow(0 0 20px rgba(0, 128, 255, 1)); }
 }
 
 @keyframes d20YellowGlow {
-    0% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.8), inset 0 0 20px rgba(255, 215, 0, 0.4); }
-    100% { box-shadow: 0 0 5px rgba(255, 215, 0, 0.3), inset 0 0 5px rgba(255, 215, 0, 0.2); }
+    0% { 
+        filter: drop-shadow(0 0 25px rgba(255, 215, 0, 1));
+        transform: scale(1.15);
+    }
+    100% { 
+        filter: drop-shadow(0 0 5px rgba(255, 215, 0, 0.3));
+        transform: scale(1);
+    }
 }
 
 .dice-display {
@@ -1685,14 +1705,16 @@ body.dark-mode .dice-roll-number {
     color: #fff;
 }
 
-/* D20 Roll Panel (Collapsible) */
+/* D20 Roll Panel (Side Panel) */
 .d20-roll-panel {
     background: #fff;
     border: 2px solid #333;
     border-radius: 10px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-    margin-bottom: 20px;
     overflow: hidden;
+    width: 320px;
+    margin-right: 20px;
+    align-self: flex-start;
 }
 
 .d20-panel-header {
@@ -1877,16 +1899,24 @@ body.dark-mode .rift-effect-info p {
 
 /* Multiplayer Icon Styling */
 .multiplayer-icon {
-    width: 20px;
-    height: 20px;
-    margin-right: 8px;
+    width: 24px;
+    height: 24px;
+    margin-right: 10px;
     vertical-align: middle;
-    filter: brightness(1);
+    display: inline-block;
+}
+
+#multiplayer-btn {
+    font-size: 1.1rem;
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 /* Dark mode multiplayer icon */
 body.dark-mode .multiplayer-icon {
-    filter: brightness(1.2);
+    filter: none;
 }
 
 /* Catapult Roulette hit animation */

@@ -1060,8 +1060,8 @@ class ChessGame {
         rollButton.disabled = true;
         this.diceRolledThisTurn = true;
         
-        // Add rolling animation
-        d20Display.style.animation = 'diceRoll 0.1s ease-in-out infinite';
+        // Remove any animations during rolling
+        d20Display.style.animation = 'none';
         
         // Show random numbers during animation
         let animationCount = 0;
