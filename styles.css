@@ -1866,6 +1866,54 @@ body.dark-mode .rift-effect-info p {
     color: #ccc;
 }
 
+/* D20 Options Area */
+.d20-options-area {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    padding: 15px;
+    margin-top: 15px;
+}
+
+.d20-options-area button {
+    margin: 5px;
+    padding: 8px 16px;
+    border-radius: 5px;
+    border: none;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.3s;
+}
+
+.d20-options-area button.cancel-btn {
+    background: #dc3545;
+    color: white;
+}
+
+.d20-options-area button.cancel-btn:hover {
+    background: #c82333;
+}
+
+.d20-options-area button.action-btn {
+    background: #007bff;
+    color: white;
+}
+
+.d20-options-area button.action-btn:hover {
+    background: #0056b3;
+}
+
+.d20-options-area button:disabled {
+    background: #6c757d;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+body.dark-mode .d20-options-area {
+    background: #3a3a3a;
+    border-color: #555;
+}
+
 /* Multiplayer Icon Styling */
 .multiplayer-icon {
     width: 24px;

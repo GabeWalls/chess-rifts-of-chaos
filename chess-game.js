@@ -1718,8 +1718,9 @@ class ChessGame {
             { name: 'Northwest', dr: -1, dc: -1 }
         ];
 
-        const optionsDiv = document.getElementById('rift-effect-options');
-        let buttonsHtml = '<div class="effect-choices"><p style="color: #333; margin-bottom: 10px;">Choose a direction with enemy pieces:</p>';
+        const optionsDiv = document.getElementById('d20-options-area');
+        optionsDiv.style.display = 'block';
+        let buttonsHtml = '<p style="margin-bottom: 10px; font-weight: bold;">Choose a direction:</p>';
         
         let hasValidDirections = false;
         directions.forEach((dir, index) => {
@@ -1728,7 +1729,7 @@ class ChessGame {
             if (hasEnemyInDirection) {
                 hasValidDirections = true;
                 buttonsHtml += `
-                    <button class="effect-choice" onclick="game.executeDragonBreath(${riftRow}, ${riftCol}, ${dir.dr}, ${dir.dc})">
+                    <button class="action-btn" onclick="game.executeDragonBreathFromPanel(${riftRow}, ${riftCol}, ${dir.dr}, ${dir.dc})">
                         ${dir.name}
                     </button>
                 `;
@@ -1736,14 +1737,10 @@ class ChessGame {
         });
         
         if (!hasValidDirections) {
-            buttonsHtml += '<p style="color: #666; text-align: center; margin: 20px 0;">No enemy pieces in any direction!</p>';
+            buttonsHtml += '<p style="color: #666; text-align: center; margin: 15px 0;">No enemy pieces in range!</p>';
         }
         
-        buttonsHtml += `
-            <button class="effect-choice" onclick="game.closeModal()">
-                Cancel
-            </button>
-        </div>`;
+        buttonsHtml += `<br><button class="cancel-btn" onclick="game.cancelRiftEffect()">Cancel</button>`;
         
         optionsDiv.innerHTML = buttonsHtml;
         this.addToGameLog(`Dragon's Breath activated! Choose direction.`, 'effect');
@@ -1768,7 +1765,10 @@ class ChessGame {
         return false;
     }
 
-    executeDragonBreath(riftRow, riftCol, dr, dc) {
+    executeDragonBreathFromPanel(riftRow, riftCol, dr, dc) {
+        // Hide options area
+        document.getElementById('d20-options-area').style.display = 'none';
+        
         let piecesRemoved = 0;
         
         for (let distance = 1; distance <= 3; distance++) {
@@ -1798,8 +1798,20 @@ class ChessGame {
         this.renderBoard();
         
         setTimeout(() => {
-            this.closeModal();
+            this.switchPlayer();
         }, 2000);
+    }
+
+    executeDragonBreath(riftRow, riftCol, dr, dc) {
+        // Legacy function - kept for compatibility
+        this.executeDragonBreathFromPanel(riftRow, riftCol, dr, dc);
+    }
+
+    cancelRiftEffect() {
+        // Hide options area
+        document.getElementById('d20-options-area').style.display = 'none';
+        this.addToGameLog('Rift effect canceled.', 'system');
+        this.switchPlayer();
     }
 
     executeDragonBreathOnTarget(riftRow, riftCol, dr, dc) {
@@ -2124,24 +2136,23 @@ class ChessGame {
     }
 
     showCatapultRouletteDice() {
-        const optionsDiv = document.getElementById('rift-effect-options');
+        const optionsDiv = document.getElementById('d20-options-area');
+        optionsDiv.style.display = 'block';
         optionsDiv.innerHTML = `
-            <div class="effect-choices">
-                <p style="color: #333; margin-bottom: 10px;">Roll 2D8 to select a random square</p>
-                <div style="display: flex; gap: 20px; justify-content: center; margin: 20px 0;">
-                    <div style="text-align: center;">
-                        <div style="font-size: 3rem; font-weight: bold; color: #667eea;">?</div>
-                        <div>Column (A-H)</div>
-                    </div>
-                    <div style="text-align: center;">
-                        <div style="font-size: 3rem; font-weight: bold; color: #764ba2;">?</div>
-                        <div>Row (1-8)</div>
-                    </div>
+            <p style="font-weight: bold; margin-bottom: 10px;">Roll 2D8 to select a random square</p>
+            <div style="display: flex; gap: 20px; justify-content: center; margin: 20px 0;">
+                <div style="text-align: center;">
+                    <div style="font-size: 3rem; font-weight: bold; color: #667eea;">?</div>
+                    <div>Column (A-H)</div>
                 </div>
-                <button class="effect-choice" onclick="game.rollCatapultDice()">
-                    Roll Dice
-                </button>
+                <div style="text-align: center;">
+                    <div style="font-size: 3rem; font-weight: bold; color: #764ba2;">?</div>
+                    <div>Row (1-8)</div>
+                </div>
             </div>
+            <button class="action-btn" onclick="game.rollCatapultDice()">
+                Roll Dice
+            </button>
         `;
         
         this.addToGameLog(`Catapult Roulette activated! Roll 2D8.`, 'effect');
@@ -2156,19 +2167,17 @@ class ChessGame {
         const targetRow = 8 - row; // Convert to 0-indexed (row 1 = index 7)
         
         // Show the roll results
-        const optionsDiv = document.getElementById('rift-effect-options');
+        const optionsDiv = document.getElementById('d20-options-area');
         optionsDiv.innerHTML = `
-            <div class="effect-choices">
-                <p style="color: #333; margin-bottom: 10px;">Rolled: ${colLetter}${row}</p>
-                <div style="display: flex; gap: 20px; justify-content: center; margin: 20px 0;">
-                    <div style="text-align: center;">
-                        <div style="font-size: 3rem; font-weight: bold; color: #667eea;">${col}</div>
-                        <div>Column (${colLetter})</div>
-                    </div>
-                    <div style="text-align: center;">
-                        <div style="font-size: 3rem; font-weight: bold; color: #764ba2;">${row}</div>
-                        <div>Row</div>
-                    </div>
+            <p style="font-weight: bold; margin-bottom: 10px;">Rolled: ${colLetter}${row}</p>
+            <div style="display: flex; gap: 20px; justify-content: center; margin: 20px 0;">
+                <div style="text-align: center;">
+                    <div style="font-size: 3rem; font-weight: bold; color: #667eea;">${col}</div>
+                    <div>Column (${colLetter})</div>
+                </div>
+                <div style="text-align: center;">
+                    <div style="font-size: 3rem; font-weight: bold; color: #764ba2;">${row}</div>
+                    <div>Row</div>
                 </div>
             </div>
         `;
@@ -2196,12 +2205,13 @@ class ChessGame {
         this.updateCapturedPieces();
         this.renderBoard();
         
-        // Remove animation class after animation completes
+        // Remove animation class and hide options area after animation completes
         setTimeout(() => {
             if (targetSquare) {
                 targetSquare.classList.remove('catapult-hit');
             }
-            this.closeModal();
+            document.getElementById('d20-options-area').style.display = 'none';
+            this.switchPlayer();
         }, 2000);
     }
 
