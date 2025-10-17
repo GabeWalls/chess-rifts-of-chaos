@@ -978,7 +978,7 @@ body.dark-mode .chat-messages {
 /* Fix captured pieces text in dark mode */
 body.dark-mode .captured-white span,
 body.dark-mode .captured-black span {
-    color: #333 !important;
+    color: #fff !important;
 }
 
 /* Fix active field effects text in dark mode */
