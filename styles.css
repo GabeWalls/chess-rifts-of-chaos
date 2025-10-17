@@ -1720,7 +1720,7 @@ body.dark-mode .dice-roll-number {
 }
 
 .d20-panel-header {
-    background: #333;
+    background: #000;
     color: #fff;
     padding: 15px;
     display: flex;
@@ -1779,6 +1779,21 @@ body.dark-mode .dice-roll-number {
 .roll-d20-btn:hover {
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+/* D20 button glows blue when D20 is ready to roll */
+.d20-ready-to-roll ~ .roll-d20-btn:not(:disabled) {
+    box-shadow: 0 0 20px rgba(102, 126, 234, 0.8);
+    animation: d20ButtonGlow 2s ease-in-out infinite;
+}
+
+@keyframes d20ButtonGlow {
+    0%, 100% { 
+        box-shadow: 0 0 20px rgba(102, 126, 234, 0.8);
+    }
+    50% { 
+        box-shadow: 0 0 30px rgba(102, 126, 234, 1);
+    }
 }
 
 .d20-result-section {
@@ -2000,6 +2015,19 @@ body.dark-mode .rules-icon {
 .room-modal .modal-header h3 {
     margin: 0;
     flex: 1;
+}
+
+/* Settings Icon Styling */
+.settings-icon {
+    width: 24px;
+    height: 24px;
+    vertical-align: middle;
+    display: block;
+}
+
+/* Settings icon switches between black and white based on mode */
+body.dark-mode .settings-icon {
+    content: url('assets/Settings/SVG/Settings White.svg');
 }
 
 /* Catapult Roulette hit animation */

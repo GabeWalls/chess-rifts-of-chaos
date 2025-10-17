@@ -1113,7 +1113,7 @@ class ChessGame {
                 this.addToGameLog(`D20 rolled: ${roll} - ${effect.name}`, 'effect');
                 this.applyRiftEffect(effect, roll);
             }
-        }, 100);
+        }, 50);
     }
 
     clearD20Highlighting() {
