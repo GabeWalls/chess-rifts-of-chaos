@@ -599,8 +599,10 @@ class ChessGame {
         const piece = this.board[fromRow][fromCol];
         if (!piece || piece.color !== this.currentPlayer) return false;
         
-        // Check if piece is frozen
-        if (piece.frozen || this.frozenPieces.has(piece)) return false;
+        // Check if piece is frozen (kings with Conqueror's Tale can move despite being frozen)
+        if ((piece.frozen || this.frozenPieces.has(piece)) && !(piece.type === 'king' && this.kingAbilities[piece.color]?.doubleMove)) {
+            return false;
+        }
         
         // Basic bounds check
         if (toRow < 0 || toRow > 7 || toCol < 0 || toCol > 7) return false;
@@ -769,8 +771,13 @@ class ChessGame {
         if (this.activeFieldEffects.includes('sandstorm')) {
             if (piece.type === 'pawn') return []; // Pawns cannot move
             if (piece.type === 'king') {
-                // Kings cannot move unless in check (simplified - for now just restrict movement)
-                return []; // Simplified implementation - in full version would check for check
+                // Kings with Conqueror's Tale can move once in sandstorm
+                if (this.kingAbilities[piece.color]?.doubleMove) {
+                    // King can move normally but only once (handled by existing double move logic)
+                    return null; // Use default king moves
+                }
+                // Other kings cannot move in sandstorm
+                return [];
             }
             if (piece.type === 'knight') {
                 // Knights move only 1 square
@@ -1210,14 +1217,14 @@ class ChessGame {
             6: { name: "Foot Soldier's Gambit", type: "special", rating: 4, description: "The activating piece must immediately move again." },
             7: { name: "Famine", type: "field", rating: 2, description: "Pawns cannot move." },
             8: { name: "Holiday's Rejuvenation", type: "field", rating: 4, description: "Pawns may move two spaces forward. Castles, Bishops, Queens can jump over 1 friendly piece. Knights move 3+1 instead of 2+1." },
-            9: { name: "Sandstorm", type: "field", rating: 2, description: "Pawns cannot move. Knights move only 1 square. Castles, Bishops, Queens max range: 3 squares. Kings cannot move unless in check." },
+            9: { name: "Sandstorm", type: "field", rating: 2, description: "Pawns cannot move. Knights move only 1 square. Castles, Bishops, Queens max range: 3 squares. Exception: Kings caught in the sandstorm may still move only if they possess Conqueror's Tale." },
             10: { name: "Dragon's Breath", type: "special", rating: 4, description: "Choose a direction; remove any piece up to 3 squares away in a straight line." },
             11: { name: "Glacial Cross", type: "field", rating: 2, description: "Roll 2D8 to randomly select a row and column. All pieces in that row and column become frozen until the effect ends." },
             12: { name: "Portal in the Rift", type: "special", rating: 4, description: "Move the activating piece to another unactivated rift." },
             13: { name: "Catapult Roulette", type: "special", rating: 3, description: "Roll 2D8 to choose a random square (column A–H, row 1–8). Remove any piece on that square." },
-            14: { name: "Conqueror's Tale", type: "special", rating: 5, description: "Your king gains the ability to move twice per turn for the rest of the game." },
+            14: { name: "Conqueror's Tale", type: "special", rating: 5, description: "Your king permanently gains the ability to move twice per turn. If sandstorm is enabled, kings with Conqueror's Tale enabled can move once until the field effect is over. If Time Distortion/Stasis or Glacial Cross are enabled, Kings with Conqueror's Tale are NOT affected." },
             15: { name: "Medusa's Gaze", type: "special", rating: 2, description: "The activating piece is frozen in place and cannot be moved/removed (except by other rifts)." },
-            16: { name: "Time Distortion/Stasis", type: "field", rating: 3, description: "All pieces within a radius are frozen (cannot move)." },
+            16: { name: "Time Distortion/Stasis", type: "field", rating: 3, description: "All pieces within a radius are frozen. Radius is based on a D20 roll: 1–8 = 1 square, 9–14 = 2 squares, 15–18 = 3 squares, 19–20 = 4 squares. Exception: Kings caught in the stasis may still move only if they possess Conqueror's Tale." },
             17: { name: "Crossroad Demon's Deal", type: "special", rating: 2, description: "You may decline this effect before rolling. If accepted: remove your activating piece, roll a D20." },
             18: { name: "Fairy Fountain", type: "special", rating: 2, description: "Activating Pawn gains new movement: Forward 2 spaces, plus 1 space left/right." },
             19: { name: "Eerie Fog's Turmoil", type: "field", rating: 2, description: "At the start of your turn, roll a D20: 3–20 = play normally. 1–2 = skip your turn." },
@@ -2769,8 +2776,9 @@ class ChessGame {
         const effectDescriptions = {
             'famine': 'Pawns cannot move while this effect is active.',
             'holiday_rejuvenation': 'Pawns may advance two spaces forward. Castles, Bishops, and Queens may jump over one friendly piece. Knights move in a "3 + 1" pattern.',
-            'sandstorm': 'Pawns cannot move. Knights move only 1 square. Castles, Bishops, Queens max range: 3 squares. Kings cannot move unless in check.',
+            'sandstorm': 'Pawns cannot move. Knights move only 1 square. Castles, Bishops, Queens max range: 3 squares. Exception: Kings caught in the sandstorm may still move only if they possess Conqueror\'s Tale.',
             'glacial_cross': 'All pieces in the selected row and column are frozen and cannot move. Exception: Kings with Conqueror\'s Tale can still move.',
+            'time_distortion': 'All pieces within a radius are frozen. Radius is based on a D20 roll: 1–8 = 1 square, 9–14 = 2 squares, 15–18 = 3 squares, 19–20 = 4 squares. Exception: Kings caught in the stasis may still move only if they possess Conqueror\'s Tale.',
             'eerie_fog_turmoil': 'At the start of your turn, roll a D20: 3–20 = proceed normally. 1–2 = turn skipped.',
             'blank': 'Pawns may capture sideways.'
         };

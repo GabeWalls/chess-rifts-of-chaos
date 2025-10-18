@@ -505,7 +505,7 @@
                                     <li>Pawns cannot move.</li>
                                     <li>Knights move only 1 square.</li>
                                     <li>Castles, Bishops, Queens max range: 3 squares.</li>
-                                    <li>Kings cannot move unless in check.</li>
+                                    <li><em>Exception: Kings caught in the sandstorm may still move only if they possess Conqueror's Tale.</em></li>
                                 </ul>
                             </div>
                             <div class="effect-item" id="rift-10">
@@ -541,6 +541,8 @@
                                 <strong>14. Conqueror's Tale (☆☆☆☆☆, Special)</strong>
                                 <ul>
                                     <li>Your king permanently gains the ability to move twice per turn.</li>
+                                    <li>If sandstorm is enabled, kings with Conqueror's Tale enabled can move once until the field effect is over.</li>
+                                    <li>If Time Distortion / Stasis or Glacial Cross are enabled, King's with Conqueror's Tale are NOT affected.</li>
                                 </ul>
                             </div>
                             <div class="effect-item" id="rift-15">
@@ -552,13 +554,16 @@
                             <div class="effect-item" id="rift-16">
                                 <strong>16. Time Distortion/Stasis (☆☆☆, Field)</strong>
                                 <ul>
-                                    <li>All pieces within a radius are frozen (cannot move).</li>
-                                    <li>Radius = D20 roll:
+                                    <li>All pieces within a radius are frozen.</li>
+                                    <li>Radius is based on a D20 roll:
                                         <ul>
-                                            <li>1–8 = 1 square, 9–14 = 2, 15–18 = 3, 19–20 = 4.</li>
+                                            <li>1–8 = 1 square</li>
+                                            <li>9–14 = 2 squares</li>
+                                            <li>15–18 = 3 squares</li>
+                                            <li>19–20 = 4 squares</li>
                                         </ul>
                                     </li>
-                                    <li>Kings inside radius may only move if checked.</li>
+                                    <li><em>Exception: Kings caught in the stasis may still move only if they possess Conqueror's Tale.</em></li>
                                 </ul>
                             </div>
                             <div class="effect-item" id="rift-17">
