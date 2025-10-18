@@ -1421,10 +1421,10 @@ class ChessGame {
         this.updateFieldEffects();
         
         // Handle turn switching based on rift effect
-        // Effects that already handle their own turn switching: 1, 5, 12, 20
+        // Effects that already handle their own turn switching: 1, 2, 5, 10, 11, 12, 17, 20
         // Effects that don't switch turns: 6 (Foot Soldier's Gambit), 14 (Conqueror's Tale)
         // All other effects should end the turn
-        const effectsWithOwnTurnSwitching = [1, 5, 12, 20];
+        const effectsWithOwnTurnSwitching = [1, 2, 5, 10, 11, 12, 17, 20];
         const effectsThatDontSwitchTurns = [6, 14];
         
         if (!effectsWithOwnTurnSwitching.includes(roll) && !effectsThatDontSwitchTurns.includes(roll)) {
@@ -1820,10 +1820,17 @@ class ChessGame {
     highlightDragonBreathArea(riftRow, riftCol) {
         // Highlight all squares within 3 spaces of the rift in red
         const directions = [
-            [-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [1, 0], [1, 1]
+            { dr: -1, dc: -1, name: 'Northwest', arrow: '↖' },
+            { dr: -1, dc: 0, name: 'North', arrow: '↑' },
+            { dr: -1, dc: 1, name: 'Northeast', arrow: '↗' },
+            { dr: 0, dc: -1, name: 'West', arrow: '←' },
+            { dr: 0, dc: 1, name: 'East', arrow: '→' },
+            { dr: 1, dc: -1, name: 'Southwest', arrow: '↙' },
+            { dr: 1, dc: 0, name: 'South', arrow: '↓' },
+            { dr: 1, dc: 1, name: 'Southeast', arrow: '↘' }
         ];
         
-        directions.forEach(([dr, dc]) => {
+        directions.forEach(({ dr, dc, name, arrow }) => {
             for (let distance = 1; distance <= 3; distance++) {
                 const targetRow = riftRow + (dr * distance);
                 const targetCol = riftCol + (dc * distance);
@@ -1832,6 +1839,22 @@ class ChessGame {
                     const square = document.querySelector(`[data-row="${targetRow}"][data-col="${targetCol}"]`);
                     if (square) {
                         square.classList.add('dragon-target');
+                        
+                        // Add arrow on the first square of each direction
+                        if (distance === 1) {
+                            const arrowDiv = document.createElement('div');
+                            arrowDiv.className = 'dragon-arrow';
+                            arrowDiv.textContent = arrow;
+                            arrowDiv.dataset.direction = name;
+                            arrowDiv.dataset.dr = dr;
+                            arrowDiv.dataset.dc = dc;
+                            arrowDiv.style.cssText = 'position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 2rem; color: #ff4500; font-weight: bold; cursor: pointer; z-index: 10; text-shadow: 0 0 10px rgba(255, 69, 0, 0.8);';
+                            arrowDiv.onclick = (e) => {
+                                e.stopPropagation();
+                                this.executeDragonBreathFromPanel(riftRow, riftCol, dr, dc);
+                            };
+                            square.appendChild(arrowDiv);
+                        }
                     }
                 }
             }
@@ -1839,9 +1862,12 @@ class ChessGame {
     }
 
     cancelDragonBreath() {
-        // Remove highlights
+        // Remove highlights and arrows
         document.querySelectorAll('.dragon-target').forEach(square => {
             square.classList.remove('dragon-target');
+        });
+        document.querySelectorAll('.dragon-arrow').forEach(arrow => {
+            arrow.remove();
         });
         
         // Clear the options area
@@ -1856,12 +1882,15 @@ class ChessGame {
     }
 
     executeDragonBreathFromPanel(riftRow, riftCol, dr, dc) {
-        // Remove dragon breath highlights
+        // Remove dragon breath highlights and arrows
         document.querySelectorAll('.dragon-target').forEach(square => {
             square.classList.remove('dragon-target');
         });
+        document.querySelectorAll('.dragon-arrow').forEach(arrow => {
+            arrow.remove();
+        });
         
-        // Hide options area
+        // Clear options area
         const optionsDiv = document.getElementById('d20-options-area');
         if (optionsDiv) {
             optionsDiv.innerHTML = '';
