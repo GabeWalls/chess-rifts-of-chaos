@@ -1212,7 +1212,7 @@ class ChessGame {
             8: { name: "Holiday's Rejuvenation", type: "field", rating: 4, description: "Pawns may move two spaces forward. Castles, Bishops, Queens can jump over 1 friendly piece. Knights move 3+1 instead of 2+1." },
             9: { name: "Sandstorm", type: "field", rating: 2, description: "Pawns cannot move. Knights move only 1 square. Castles, Bishops, Queens max range: 3 squares. Kings cannot move unless in check." },
             10: { name: "Dragon's Breath", type: "special", rating: 4, description: "Choose a direction; remove any piece up to 3 squares away in a straight line." },
-            11: { name: "Jack Frost's Mischief", type: "field", rating: 2, description: "After moving, roll a D20: Odd = nothing happens. Even = piece moves 1 extra square in same direction." },
+            11: { name: "Glacial Cross", type: "field", rating: 2, description: "Roll 2D8 to randomly select a row and column. All pieces in that row and column become frozen until the effect ends." },
             12: { name: "Portal in the Rift", type: "special", rating: 4, description: "Move the activating piece to another unactivated rift." },
             13: { name: "Catapult Roulette", type: "special", rating: 3, description: "Roll 2D8 to choose a random square (column A–H, row 1–8). Remove any piece on that square." },
             14: { name: "Conqueror's Tale", type: "special", rating: 5, description: "Your king gains the ability to move twice per turn for the rest of the game." },
@@ -1339,8 +1339,8 @@ class ChessGame {
                 case 10: // Dragon's Breath
                     this.showDragonDirectionChoice(riftRow, riftCol);
                     return; // Don't close modal yet
-                case 11: // Jack Frost's Mischief
-                    this.showJackFrostRoll(riftRow, riftCol);
+                case 11: // Glacial Cross
+                    this.showGlacialCrossDice();
                     return; // Don't close modal yet
                 case 12: // Portal in the Rift
                     this.showPortalChoice(riftRow, riftCol, activatingPiece);
@@ -2380,33 +2380,36 @@ class ChessGame {
         });
     }
 
-    showJackFrostRoll(riftRow, riftCol) {
+    showGlacialCrossDice() {
         const optionsDiv = document.getElementById('rift-effect-options');
         optionsDiv.innerHTML = `
             <div class="effect-choices">
-                <p style="color: #333; margin-bottom: 10px;">Jack Frost's Mischief! Roll D20:</p>
-                <p style="color: #666; font-size: 0.9rem;">Odd = nothing happens, Even = piece slides 1 extra square</p>
-                <div style="margin: 20px 0;">
-                    <div style="font-size: 3rem; font-weight: bold; color: #667eea;">?</div>
+                <p style="color: #333; margin-bottom: 10px;">Glacial Cross! Roll 2D8:</p>
+                <p style="color: #666; font-size: 0.9rem;">First die = column (A-H), Second die = row (1-8)</p>
+                <div style="margin: 20px 0; display: flex; gap: 20px; justify-content: center;">
+                    <div style="font-size: 2rem; font-weight: bold; color: #667eea;">?</div>
+                    <div style="font-size: 2rem; font-weight: bold; color: #667eea;">?</div>
                 </div>
-                <button class="effect-choice" onclick="game.rollJackFrost(${riftRow}, ${riftCol})">
-                    Roll D20
+                <button class="effect-choice" onclick="game.rollGlacialCross()">
+                    Roll 2D8
                 </button>
             </div>
         `;
         
-        this.addToGameLog(`Jack Frost's Mischief activated!`, 'effect');
+        this.addToGameLog(`Glacial Cross activated!`, 'effect');
     }
 
-    rollJackFrost(riftRow, riftCol) {
-        const finalRoll = Math.floor(Math.random() * 20) + 1;
+    rollGlacialCross() {
+        const columnRoll = Math.floor(Math.random() * 8) + 1; // 1-8 for A-H
+        const rowRoll = Math.floor(Math.random() * 8) + 1; // 1-8 for rows
         
         const optionsDiv = document.getElementById('rift-effect-options');
         optionsDiv.innerHTML = `
             <div class="effect-choices">
                 <p style="color: #333; margin-bottom: 10px;">Rolling...</p>
-                <div style="margin: 20px 0;">
-                    <div id="dice-result" class="dice-roll-number">?</div>
+                <div style="margin: 20px 0; display: flex; gap: 20px; justify-content: center;">
+                    <div id="dice-result-1" class="dice-roll-number">?</div>
+                    <div id="dice-result-2" class="dice-roll-number">?</div>
                 </div>
                 <p style="color: #666;">
                     &nbsp;
@@ -2414,28 +2417,80 @@ class ChessGame {
             </div>
         `;
         
-        this.animateDiceRoll('dice-result', finalRoll, () => {
-            const resultText = document.querySelector('.effect-choices p:last-child');
-            if (resultText) {
-                resultText.textContent = finalRoll % 2 === 0 ? 'Even! Piece slides 1 extra square forward' : 'Odd! Nothing happens';
-            }
-            
-            if (finalRoll % 2 === 0) {
-                // Apply Jack Frost field effect
-                this.applyFieldEffect('jack_frost_mischief');
-                this.applyJackFrostSlide(riftRow, riftCol);
-            } else {
-                // Odd roll - no effect, just end turn normally
-                this.addToGameLog(`Jack Frost's Mischief: Roll was odd - no effect!`, 'effect');
-            }
-            
-            setTimeout(() => {
-                this.closeModal();
-                // Switch turns after Jack Frost resolution (whether odd or even)
-                this.clearD20Highlighting();
-                this.switchPlayer();
-            }, 2000);
+        // Animate both dice
+        this.animateDiceRoll('dice-result-1', columnRoll, () => {
+            this.animateDiceRoll('dice-result-2', rowRoll, () => {
+                const resultText = document.querySelector('.effect-choices p:last-child');
+                const columnLetter = String.fromCharCode(96 + columnRoll); // Convert 1-8 to a-h
+                const rowNumber = 9 - rowRoll; // Convert 1-8 to 8-1 (chess notation)
+                
+                if (resultText) {
+                    resultText.textContent = `Glacial Cross: Column ${columnLetter.toUpperCase()}, Row ${rowNumber}`;
+                }
+                
+                // Apply Glacial Cross effect
+                this.applyGlacialCross(columnRoll - 1, rowRoll - 1); // Convert to 0-based indexing
+                
+                setTimeout(() => {
+                    this.closeModal();
+                    this.clearD20Highlighting();
+                    this.switchPlayer();
+                }, 2000);
+            });
         });
+    }
+
+    applyGlacialCross(columnIndex, rowIndex) {
+        // Apply Glacial Cross field effect
+        this.applyFieldEffect('glacial_cross');
+        
+        // Freeze all pieces in the selected row and column
+        const frozenPieces = [];
+        
+        // Freeze pieces in the column
+        for (let row = 0; row < 8; row++) {
+            if (this.board[row][columnIndex]) {
+                const piece = this.board[row][columnIndex];
+                // Check if king has Conqueror's Tale
+                if (piece.type === 'king' && this.kingAbilities[piece.color]?.doubleMove) {
+                    // King with Conqueror's Tale can still move
+                    this.addToGameLog(`Glacial Cross: ${piece.color} king (Conqueror's Tale) can still move despite stasis!`, 'effect');
+                } else {
+                    // Freeze the piece
+                    piece.frozen = true;
+                    this.frozenPieces.add(piece);
+                    frozenPieces.push({ piece, row, col: columnIndex });
+                }
+            }
+        }
+        
+        // Freeze pieces in the row
+        for (let col = 0; col < 8; col++) {
+            if (this.board[rowIndex][col]) {
+                const piece = this.board[rowIndex][col];
+                // Check if king has Conqueror's Tale
+                if (piece.type === 'king' && this.kingAbilities[piece.color]?.doubleMove) {
+                    // King with Conqueror's Tale can still move
+                    this.addToGameLog(`Glacial Cross: ${piece.color} king (Conqueror's Tale) can still move despite stasis!`, 'effect');
+                } else {
+                    // Freeze the piece
+                    piece.frozen = true;
+                    this.frozenPieces.add(piece);
+                    frozenPieces.push({ piece, row: rowIndex, col });
+                }
+            }
+        }
+        
+        const columnLetter = String.fromCharCode(97 + columnIndex);
+        const rowNumber = 8 - rowIndex;
+        
+        if (frozenPieces.length > 0) {
+            this.addToGameLog(`Glacial Cross: ${frozenPieces.length} pieces frozen in column ${columnLetter.toUpperCase()} and row ${rowNumber}!`, 'effect');
+        } else {
+            this.addToGameLog(`Glacial Cross: No pieces found in column ${columnLetter.toUpperCase()} and row ${rowNumber}!`, 'effect');
+        }
+        
+        this.renderBoard();
     }
 
     animateDiceRoll(elementId, finalNumber, callback) {
@@ -2733,7 +2788,7 @@ class ChessGame {
             'famine': 'Pawns cannot move while this effect is active.',
             'holiday_rejuvenation': 'Pawns may advance two spaces forward. Castles, Bishops, and Queens may jump over one friendly piece. Knights move in a "3 + 1" pattern.',
             'sandstorm': 'Pawns cannot move. Knights move only 1 square. Castles, Bishops, Queens max range: 3 squares. Kings cannot move unless in check.',
-            'jack_frost_mischief': 'After moving a piece, roll a D20: Odd = no effect. Even = the piece slides 1 extra square forward.',
+            'glacial_cross': 'All pieces in the selected row and column are frozen and cannot move. Exception: Kings with Conqueror\'s Tale can still move.',
             'eerie_fog_turmoil': 'At the start of your turn, roll a D20: 3–20 = proceed normally. 1–2 = turn skipped.',
             'blank': 'Pawns may capture sideways.'
         };
