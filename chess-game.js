@@ -2435,115 +2435,115 @@ class ChessGame {
         const optionsDiv = document.getElementById('d20-options-area');
         optionsDiv.style.display = 'block';
         optionsDiv.innerHTML = `
-            <div class="effect-choices">
-                <p style="color: #333; margin-bottom: 10px;">Glacial Cross! Roll 2D8:</p>
-                <p style="color: #666; font-size: 0.9rem;">First die = column (A-H), Second die = row (1-8)</p>
-                <div style="margin: 20px 0; display: flex; gap: 20px; justify-content: center;">
-                    <div style="font-size: 2rem; font-weight: bold; color: #667eea;">?</div>
-                    <div style="font-size: 2rem; font-weight: bold; color: #667eea;">?</div>
+            <p style="font-weight: bold; margin-bottom: 10px;">Glacial Cross! Roll 2D8 to freeze a row and column</p>
+            <div style="display: flex; gap: 20px; justify-content: center; margin: 20px 0;">
+                <div style="text-align: center;">
+                    <div style="font-size: 3rem; font-weight: bold; color: #667eea;">?</div>
+                    <div>Column (A-H)</div>
                 </div>
-                <button class="action-btn" onclick="game.rollGlacialCross()">
-                    Roll 2D8
-                </button>
+                <div style="text-align: center;">
+                    <div style="font-size: 3rem; font-weight: bold; color: #764ba2;">?</div>
+                    <div>Row (1-8)</div>
+                </div>
             </div>
+            <button class="action-btn" onclick="game.rollGlacialCrossDice()">
+                Roll Dice
+            </button>
         `;
         
-        this.addToGameLog(`Glacial Cross activated!`, 'effect');
+        this.addToGameLog(`Glacial Cross activated! Roll 2D8.`, 'effect');
     }
 
-    rollGlacialCross() {
-        const columnRoll = Math.floor(Math.random() * 8) + 1; // 1-8 for A-H
-        const rowRoll = Math.floor(Math.random() * 8) + 1; // 1-8 for rows
+    rollGlacialCrossDice() {
+        const col = Math.floor(Math.random() * 8) + 1; // 1-8
+        const row = Math.floor(Math.random() * 8) + 1; // 1-8
         
+        const colLetter = String.fromCharCode(64 + col); // A-H
+        const targetCol = col - 1; // Convert to 0-indexed
+        const targetRow = 8 - row; // Convert to 0-indexed (row 1 = index 7)
+        
+        // Show the roll results
         const optionsDiv = document.getElementById('d20-options-area');
         optionsDiv.innerHTML = `
-            <div class="effect-choices">
-                <p style="color: #333; margin-bottom: 10px;">Rolling...</p>
-                <div style="margin: 20px 0; display: flex; gap: 20px; justify-content: center;">
-                    <div id="dice-result-1" class="dice-roll-number">?</div>
-                    <div id="dice-result-2" class="dice-roll-number">?</div>
+            <p style="font-weight: bold; margin-bottom: 10px;">Rolled: Column ${colLetter}, Row ${row}</p>
+            <div style="display: flex; gap: 20px; justify-content: center; margin: 20px 0;">
+                <div style="text-align: center;">
+                    <div style="font-size: 3rem; font-weight: bold; color: #667eea;">${col}</div>
+                    <div>Column (${colLetter})</div>
                 </div>
-                <p style="color: #666;">
-                    &nbsp;
-                </p>
+                <div style="text-align: center;">
+                    <div style="font-size: 3rem; font-weight: bold; color: #764ba2;">${row}</div>
+                    <div>Row</div>
+                </div>
             </div>
         `;
         
-        // Animate both dice
-        this.animateDiceRoll('dice-result-1', columnRoll, () => {
-            this.animateDiceRoll('dice-result-2', rowRoll, () => {
-                const resultText = document.querySelector('.effect-choices p:last-child');
-                const columnLetter = String.fromCharCode(96 + columnRoll); // Convert 1-8 to a-h
-                const rowNumber = 9 - rowRoll; // Convert 1-8 to 8-1 (chess notation)
-                
-                if (resultText) {
-                    resultText.textContent = `Glacial Cross: Column ${columnLetter.toUpperCase()}, Row ${rowNumber}`;
-                }
-                
-                // Apply Glacial Cross effect
-                this.applyGlacialCross(columnRoll - 1, rowRoll - 1); // Convert to 0-based indexing
-                
-                setTimeout(() => {
-                    // Clear the options area instead of closing modal
-                    optionsDiv.innerHTML = '';
-                    this.clearD20Highlighting();
-                    this.switchPlayer();
-                }, 2000);
-            });
-        });
+        this.applyGlacialCross(targetCol, targetRow, colLetter, row);
     }
 
-    applyGlacialCross(columnIndex, rowIndex) {
-        // Apply Glacial Cross field effect
+    applyGlacialCross(columnIndex, rowIndex, colLetter, row) {
+        // Apply Glacial Cross field effect first
         this.applyFieldEffect('glacial_cross');
         
         // Freeze all pieces in the selected row and column
         const frozenPieces = [];
         
         // Freeze pieces in the column
-        for (let row = 0; row < 8; row++) {
-            if (this.board[row][columnIndex]) {
-                const piece = this.board[row][columnIndex];
+        for (let r = 0; r < 8; r++) {
+            if (this.board[r][columnIndex]) {
+                const piece = this.board[r][columnIndex];
                 // Check if king has Conqueror's Tale
                 if (piece.type === 'king' && this.kingAbilities[piece.color]?.doubleMove) {
                     // King with Conqueror's Tale can still move
-                    this.addToGameLog(`Glacial Cross: ${piece.color} king (Conqueror's Tale) can still move despite stasis!`, 'effect');
+                    this.addToGameLog(`Glacial Cross: ${piece.color} king (Conqueror's Tale) immune to freeze!`, 'effect');
                 } else {
                     // Freeze the piece
                     piece.frozen = true;
                     this.frozenPieces.add(piece);
-                    frozenPieces.push({ piece, row, col: columnIndex });
+                    frozenPieces.push({ piece, row: r, col: columnIndex });
                 }
             }
         }
         
         // Freeze pieces in the row
-        for (let col = 0; col < 8; col++) {
-            if (this.board[rowIndex][col]) {
-                const piece = this.board[rowIndex][col];
+        for (let c = 0; c < 8; c++) {
+            if (this.board[rowIndex][c]) {
+                const piece = this.board[rowIndex][c];
+                // Skip if already frozen (to avoid double-counting pieces at intersection)
+                if (piece.frozen || this.frozenPieces.has(piece)) {
+                    continue;
+                }
                 // Check if king has Conqueror's Tale
                 if (piece.type === 'king' && this.kingAbilities[piece.color]?.doubleMove) {
                     // King with Conqueror's Tale can still move
-                    this.addToGameLog(`Glacial Cross: ${piece.color} king (Conqueror's Tale) can still move despite stasis!`, 'effect');
+                    this.addToGameLog(`Glacial Cross: ${piece.color} king (Conqueror's Tale) immune to freeze!`, 'effect');
                 } else {
                     // Freeze the piece
                     piece.frozen = true;
                     this.frozenPieces.add(piece);
-                    frozenPieces.push({ piece, row: rowIndex, col });
+                    frozenPieces.push({ piece, row: rowIndex, col: c });
                 }
             }
         }
         
-        const columnLetter = String.fromCharCode(97 + columnIndex);
-        const rowNumber = 8 - rowIndex;
+        this.updateCapturedPieces();
+        this.renderBoard();
         
         if (frozenPieces.length > 0) {
-            this.addToGameLog(`Glacial Cross: ${frozenPieces.length} pieces frozen in column ${columnLetter.toUpperCase()} and row ${rowNumber}!`, 'effect');
+            this.addToGameLog(`Glacial Cross: ${frozenPieces.length} pieces frozen in column ${colLetter} and row ${row}!`, 'effect');
         } else {
-            this.addToGameLog(`Glacial Cross: No pieces found in column ${columnLetter.toUpperCase()} and row ${rowNumber}!`, 'effect');
+            this.addToGameLog(`Glacial Cross: No pieces found in column ${colLetter} and row ${row}!`, 'effect');
         }
         
-        this.renderBoard();
+        // Clear options area and switch turn after a delay
+        setTimeout(() => {
+            const optionsDiv = document.getElementById('d20-options-area');
+            if (optionsDiv) {
+                optionsDiv.innerHTML = '';
+            }
+            this.clearD20Highlighting();
+            this.switchPlayer();
+        }, 2000);
     }
 
     animateDiceRoll(elementId, finalNumber, callback) {
