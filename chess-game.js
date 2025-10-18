@@ -1588,11 +1588,11 @@ class ChessGame {
                 color: activatingPiece.color,
                 hasMoved: false,
                 realitySplit: true,
-                pairedWith: { row: riftRow, col: riftCol }
+                pairedPiece: activatingPiece  // Direct reference to paired piece
             };
             
-            // Link pieces together
-            activatingPiece.pairedWith = { row: startRow, col: startCol };
+            // Link pieces together with direct references
+            activatingPiece.pairedPiece = duplicatePiece;
             
             this.board[startRow][startCol] = duplicatePiece;
             this.addToGameLog(`Reality Split: ${activatingPiece.color} ${activatingPiece.type} duplicated! Both pieces now have purple phantom aura.`, 'effect');
@@ -1606,15 +1606,19 @@ class ChessGame {
 
     removeRealitySplitPieces(capturedPiece) {
         // If the captured piece has a paired piece, find and remove it
-        if (capturedPiece.pairedWith) {
-            const pairedRow = capturedPiece.pairedWith.row;
-            const pairedCol = capturedPiece.pairedWith.col;
-            const pairedPiece = this.board[pairedRow][pairedCol];
+        if (capturedPiece.pairedPiece) {
+            const pairedPiece = capturedPiece.pairedPiece;
             
-            if (pairedPiece && pairedPiece.realitySplit) {
-                this.capturedPieces[pairedPiece.color].push(pairedPiece);
-                this.board[pairedRow][pairedCol] = null;
-                this.addToGameLog(`Reality Split: ${pairedPiece.color} ${pairedPiece.type} vanished with its duplicate!`, 'effect');
+            // Find the paired piece on the board
+            for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                    if (this.board[row][col] === pairedPiece) {
+                        this.capturedPieces[pairedPiece.color].push(pairedPiece);
+                        this.board[row][col] = null;
+                        this.addToGameLog(`Reality Split: ${pairedPiece.color} ${pairedPiece.type} vanished with its duplicate!`, 'effect');
+                        return;
+                    }
+                }
             }
         }
     }
