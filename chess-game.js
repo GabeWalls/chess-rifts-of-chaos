@@ -1201,7 +1201,7 @@ class ChessGame {
 
     getRiftEffect(roll) {
         const effects = {
-            1: { name: "Necromancer's Trap", type: "special", rating: 1, description: "Remove your piece. Place one of your opponent's captured pieces onto the rift." },
+            1: { name: "Necromancer's Trap", type: "special", rating: 1, description: "The activating piece is removed. If the opponent has captured pieces, the highest ranking piece is revived onto the rift." },
             2: { name: "Archer's Trick Shot", type: "special", rating: 5, description: "Choose a direction from the rift; also applies to two adjacent directions. Range: 3 squares per direction. Remove the first piece encountered." },
             3: { name: "Sandworm", type: "special", rating: 3, description: "Remove all pieces within 1 square of the rift, plus the activating piece." },
             4: { name: "Honorable Sacrifice", type: "special", rating: 3, description: "Remove your activating piece and any one piece within 1 square." },
@@ -1960,38 +1960,39 @@ class ChessGame {
         const capturedPieces = this.capturedPieces[opponentColor];
         
         if (capturedPieces.length === 0) {
-            this.addToGameLog(`Necromancer's Trap: No enemy pieces to resurrect!`, 'effect');
+            this.addToGameLog(`Necromancer's Trap: Opponent has no captured pieces to resurrect!`, 'effect');
             setTimeout(() => this.closeModal(), 1500);
             return;
         }
         
-        const optionsDiv = document.getElementById('rift-effect-options');
-        let buttonsHtml = '<div class="effect-choices"><p style="color: #333; margin-bottom: 10px;">Select an enemy piece to resurrect:</p>';
+        // Find the highest ranking piece
+        const pieceRanking = { 'queen': 9, 'rook': 5, 'bishop': 3, 'knight': 3, 'pawn': 1, 'king': 10 };
+        let highestRankingPiece = capturedPieces[0];
+        let highestRank = pieceRanking[capturedPieces[0].type] || 0;
         
-        capturedPieces.forEach((piece, index) => {
-            buttonsHtml += `
-                <button class="effect-choice" onclick="game.resurrectEnemyPiece(${riftRow}, ${riftCol}, '${opponentColor}', ${index})">
-                    ${this.getPieceSymbol(piece)} ${piece.color} ${piece.type}
-                </button>
-            `;
-        });
+        for (let i = 1; i < capturedPieces.length; i++) {
+            const currentRank = pieceRanking[capturedPieces[i].type] || 0;
+            if (currentRank > highestRank) {
+                highestRank = currentRank;
+                highestRankingPiece = capturedPieces[i];
+            }
+        }
         
-        buttonsHtml += '</div>';
-        optionsDiv.innerHTML = buttonsHtml;
-        
-        this.addToGameLog(`Necromancer's Trap activated! Choose an enemy piece to resurrect.`, 'effect');
+        // Remove the highest ranking piece from captured pieces
+        const pieceIndex = capturedPieces.indexOf(highestRankingPiece);
+        this.resurrectEnemyPiece(riftRow, riftCol, opponentColor, pieceIndex, highestRankingPiece);
     }
 
-    resurrectEnemyPiece(riftRow, riftCol, opponentColor, pieceIndex) {
+    resurrectEnemyPiece(riftRow, riftCol, opponentColor, pieceIndex, pieceToResurrect) {
         // Remove activating piece immediately
-        const pieceToResurrect = this.capturedPieces[opponentColor].splice(pieceIndex, 1)[0];
+        this.capturedPieces[opponentColor].splice(pieceIndex, 1);
         this.removePieceWithAnimation(riftRow, riftCol);
         
         setTimeout(() => {
             this.board[riftRow][riftCol] = pieceToResurrect;
             this.updateCapturedPieces();
             this.renderBoard();
-            this.addToGameLog(`Necromancer's Trap: ${pieceToResurrect.color} ${pieceToResurrect.type} resurrected!`, 'effect');
+            this.addToGameLog(`Necromancer's Trap: Highest ranking ${pieceToResurrect.color} ${pieceToResurrect.type} resurrected!`, 'effect');
             this.closeModal();
         }, 1500);
     }
