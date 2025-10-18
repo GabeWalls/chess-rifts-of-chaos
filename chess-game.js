@@ -313,7 +313,7 @@ class ChessGame {
 
     executeArcherShotOnTarget(riftRow, riftCol, targetRow, targetCol) {
         const piece = this.board[targetRow][targetCol];
-        this.capturePiece(piece, targetRow, targetCol);
+        const result = this.capturePiece(piece, targetRow, targetCol);
         this.removePieceWithAnimation(targetRow, targetCol);
         this.addToGameLog(`Archer's Precision removed ${piece.color} ${piece.type}!`, 'effect');
         
@@ -324,6 +324,27 @@ class ChessGame {
         const optionsDiv = document.getElementById('d20-options-area');
         if (optionsDiv) {
             optionsDiv.innerHTML = '';
+        }
+        
+        // Check if king was captured - end game
+        if (result.kingCaptured) {
+            const winner = result.color === 'white' ? 'black' : 'white';
+            setTimeout(() => {
+                this.addToGameLog(`Archer's Precision captured the ${result.color} king!`, 'effect');
+                
+                // In multiplayer, notify server of victory
+                if (this.isMultiplayer && this.socket) {
+                    this.socket.emit('game-ended', {
+                        roomCode: this.roomCode,
+                        winner: winner,
+                        loser: result.color,
+                        reason: 'king_captured_by_archers_precision'
+                    });
+                }
+                
+                this.endGame(winner);
+            }, 1000);
+            return;
         }
         
         // Switch player after shot
@@ -1600,13 +1621,16 @@ class ChessGame {
 
     capturePiece(piece, row, col) {
         // Universal piece capture function that handles Reality Split
-        if (!piece) return;
+        if (!piece) return { kingCaptured: false };
         
         // Check if this piece was already removed (e.g., as part of Reality Split pair)
         if (this.board[row][col] !== piece) {
             // Piece already removed from board, skip
-            return;
+            return { kingCaptured: false };
         }
+        
+        const isKing = piece.type === 'king';
+        const capturedColor = piece.color;
         
         // Handle Reality Split - if either piece is captured, remove both
         if (piece.realitySplit) {
@@ -1618,6 +1642,8 @@ class ChessGame {
         
         // Remove from board
         this.board[row][col] = null;
+        
+        return { kingCaptured: isKing, color: capturedColor };
     }
 
     showPortalChoice(riftRow, riftCol, activatingPiece) {
@@ -1932,6 +1958,7 @@ class ChessGame {
         }
         
         let piecesRemoved = 0;
+        let kingCaptured = null;
         
         // Remove ALL pieces in the chosen direction (3 squares)
         for (let distance = 1; distance <= 3; distance++) {
@@ -1943,7 +1970,10 @@ class ChessGame {
                 
                 // Remove ANY piece (enemy or friendly) in this direction
                 if (piece) {
-                    this.capturePiece(piece, targetRow, targetCol);
+                    const result = this.capturePiece(piece, targetRow, targetCol);
+                    if (result.kingCaptured) {
+                        kingCaptured = result.color;
+                    }
                     this.removePieceWithAnimation(targetRow, targetCol, piecesRemoved * 400);
                     this.addToGameLog(`Dragon's Breath removed ${piece.color} ${piece.type}!`, 'effect');
                     piecesRemoved++;
@@ -1959,6 +1989,27 @@ class ChessGame {
         
         this.updateCapturedPieces();
         this.renderBoard();
+        
+        // Check if king was captured - end game
+        if (kingCaptured) {
+            const winner = kingCaptured === 'white' ? 'black' : 'white';
+            setTimeout(() => {
+                this.addToGameLog(`Dragon's Breath captured the ${kingCaptured} king!`, 'effect');
+                
+                // In multiplayer, notify server of victory
+                if (this.isMultiplayer && this.socket) {
+                    this.socket.emit('game-ended', {
+                        roomCode: this.roomCode,
+                        winner: winner,
+                        loser: kingCaptured,
+                        reason: 'king_captured_by_dragons_breath'
+                    });
+                }
+                
+                this.endGame(winner);
+            }, 1500);
+            return;
+        }
         
         setTimeout(() => {
             this.clearD20Highlighting();
@@ -2182,13 +2233,37 @@ class ChessGame {
         }
         
         // Remove pieces immediately from board state, then animate
+        let kingCaptured = null;
         piecesToRemove.forEach(({ row, col, piece }) => {
-            this.capturePiece(piece, row, col);
+            const result = this.capturePiece(piece, row, col);
+            if (result.kingCaptured) {
+                kingCaptured = result.color;
+            }
             this.removePieceWithAnimation(row, col, delay);
             delay += 200;
         });
         
         this.addToGameLog(`Sandworm devours all nearby pieces!`, 'effect');
+        
+        // Check if king was captured - end game
+        if (kingCaptured) {
+            const winner = kingCaptured === 'white' ? 'black' : 'white';
+            setTimeout(() => {
+                this.addToGameLog(`Sandworm captured the ${kingCaptured} king!`, 'effect');
+                
+                // In multiplayer, notify server of victory
+                if (this.isMultiplayer && this.socket) {
+                    this.socket.emit('game-ended', {
+                        roomCode: this.roomCode,
+                        winner: winner,
+                        loser: kingCaptured,
+                        reason: 'king_captured_by_sandworm'
+                    });
+                }
+                
+                this.endGame(winner);
+            }, 1500);
+        }
     }
 
     applyHonorableSacrifice(riftRow, riftCol, activatingPiece) {
@@ -2199,6 +2274,7 @@ class ChessGame {
         // Remove ALL enemy pieces within 1 square with animation
         const directions = [[-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [1, 0], [1, 1]];
         let enemyPiecesRemoved = 0;
+        let kingCaptured = null;
         
         for (const [rowOffset, colOffset] of directions) {
             const targetRow = riftRow + rowOffset;
@@ -2207,7 +2283,10 @@ class ChessGame {
             if (this.isInBounds(targetRow, targetCol) && this.board[targetRow][targetCol]) {
                 const piece = this.board[targetRow][targetCol];
                 if (piece.color !== this.currentPlayer) {
-                    this.capturePiece(piece, targetRow, targetCol);
+                    const result = this.capturePiece(piece, targetRow, targetCol);
+                    if (result.kingCaptured) {
+                        kingCaptured = result.color;
+                    }
                     this.removePieceWithAnimation(targetRow, targetCol, 500 + (enemyPiecesRemoved * 300));
                     enemyPiecesRemoved++;
                 }
@@ -2218,6 +2297,26 @@ class ChessGame {
             this.addToGameLog(`Honorable Sacrifice: ${enemyPiecesRemoved} enemy piece${enemyPiecesRemoved > 1 ? 's' : ''} removed!`, 'effect');
         } else {
             this.addToGameLog(`Honorable Sacrifice: No enemy pieces in range.`, 'effect');
+        }
+        
+        // Check if king was captured - end game
+        if (kingCaptured) {
+            const winner = kingCaptured === 'white' ? 'black' : 'white';
+            setTimeout(() => {
+                this.addToGameLog(`Honorable Sacrifice captured the ${kingCaptured} king!`, 'effect');
+                
+                // In multiplayer, notify server of victory
+                if (this.isMultiplayer && this.socket) {
+                    this.socket.emit('game-ended', {
+                        roomCode: this.roomCode,
+                        winner: winner,
+                        loser: kingCaptured,
+                        reason: 'king_captured_by_honorable_sacrifice'
+                    });
+                }
+                
+                this.endGame(winner);
+            }, 1500);
         }
     }
 
@@ -2362,6 +2461,40 @@ class ChessGame {
         
         if (this.board[row][col]) {
             const piece = this.board[row][col];
+            
+            // Check for king capture - game ends immediately
+            if (piece.type === 'king') {
+                this.capturePiece(piece, row, col);
+                this.removePieceWithAnimation(row, col);
+                this.updateCapturedPieces();
+                this.renderBoard();
+                
+                const winner = piece.color === 'white' ? 'black' : 'white';
+                this.addToGameLog(`Catapult Roulette hit ${colLetter}${rowNum} - captured the ${piece.color} king!`, 'effect');
+                
+                // Remove animation class
+                setTimeout(() => {
+                    if (targetSquare) {
+                        targetSquare.classList.remove('catapult-hit');
+                    }
+                    document.getElementById('d20-options-area').style.display = 'none';
+                    
+                    // In multiplayer, notify server of victory
+                    if (this.isMultiplayer && this.socket) {
+                        this.socket.emit('game-ended', {
+                            roomCode: this.roomCode,
+                            winner: winner,
+                            loser: piece.color,
+                            reason: 'king_captured_by_catapult'
+                        });
+                    }
+                    
+                    this.endGame(winner);
+                }, 1500);
+                return;
+            }
+            
+            // Normal piece capture
             this.capturePiece(piece, row, col);
             this.removePieceWithAnimation(row, col);
             this.addToGameLog(`Catapult Roulette hit ${colLetter}${rowNum} - removed ${piece.color} ${piece.type}!`, 'effect');
