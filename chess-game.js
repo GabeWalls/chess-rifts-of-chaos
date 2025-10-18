@@ -1523,31 +1523,57 @@ class ChessGame {
 
     // Choice-based rift effects
     applyRealitySplit(riftRow, riftCol, activatingPiece) {
-        // Create a duplicate piece
-        const duplicatePiece = {
-            ...activatingPiece,
-            id: activatingPiece.id + '_duplicate',
-            realitySplit: true,
-            originalPiece: activatingPiece.id
-        };
-        
-        // Set the original piece as part of reality split
+        // Set the original piece as part of reality split first
         activatingPiece.realitySplit = true;
-        activatingPiece.duplicatePiece = duplicatePiece.id;
         
-        // Find the original piece's starting square (pawn starting positions)
+        // Determine starting position based on piece type and current position
         let startRow, startCol;
+        
         if (activatingPiece.type === 'pawn') {
+            // Pawn starting row is 6 for white, 1 for black
             startRow = activatingPiece.color === 'white' ? 6 : 1;
-            startCol = activatingPiece.col; // Keep same column
-        } else {
-            // For other pieces, find a suitable starting position
+            // Use the current column where the pawn is located (riftCol)
+            startCol = riftCol;
+        } else if (activatingPiece.type === 'rook') {
+            // Rook starts on row 7 (white) or 0 (black), columns 0 or 7
             startRow = activatingPiece.color === 'white' ? 7 : 0;
-            startCol = activatingPiece.col;
+            startCol = riftCol <= 3 ? 0 : 7; // Choose closest corner
+        } else if (activatingPiece.type === 'knight') {
+            // Knight starts on row 7 (white) or 0 (black), columns 1 or 6
+            startRow = activatingPiece.color === 'white' ? 7 : 0;
+            startCol = riftCol <= 3 ? 1 : 6; // Choose closest knight position
+        } else if (activatingPiece.type === 'bishop') {
+            // Bishop starts on row 7 (white) or 0 (black), columns 2 or 5
+            startRow = activatingPiece.color === 'white' ? 7 : 0;
+            startCol = riftCol <= 3 ? 2 : 5; // Choose closest bishop position
+        } else if (activatingPiece.type === 'queen') {
+            // Queen starts on row 7 (white) or 0 (black), column 3
+            startRow = activatingPiece.color === 'white' ? 7 : 0;
+            startCol = 3;
+        } else if (activatingPiece.type === 'king') {
+            // King starts on row 7 (white) or 0 (black), column 4
+            startRow = activatingPiece.color === 'white' ? 7 : 0;
+            startCol = 4;
+        } else {
+            // Default fallback
+            startRow = activatingPiece.color === 'white' ? 7 : 0;
+            startCol = riftCol;
         }
         
         // Check if the starting position is empty
         if (!this.board[startRow][startCol]) {
+            // Create a duplicate piece
+            const duplicatePiece = {
+                type: activatingPiece.type,
+                color: activatingPiece.color,
+                hasMoved: false,
+                realitySplit: true,
+                pairedWith: { row: riftRow, col: riftCol }
+            };
+            
+            // Link pieces together
+            activatingPiece.pairedWith = { row: startRow, col: startCol };
+            
             this.board[startRow][startCol] = duplicatePiece;
             this.addToGameLog(`Reality Split: ${activatingPiece.color} ${activatingPiece.type} duplicated! Both pieces now have purple phantom aura.`, 'effect');
         } else {
@@ -1559,30 +1585,18 @@ class ChessGame {
     }
 
     removeRealitySplitPieces(capturedPiece) {
-        // Find and remove both pieces in the reality split
-        let originalPiece = null;
-        let duplicatePiece = null;
-        
-        // Find both pieces on the board
-        for (let row = 0; row < 8; row++) {
-            for (let col = 0; col < 8; col++) {
-                const piece = this.board[row][col];
-                if (piece && piece.realitySplit) {
-                    if (piece.id === capturedPiece.id) {
-                        // This is the captured piece
-                        continue;
-                    }
-                    if (piece.originalPiece === capturedPiece.id || piece.duplicatePiece === capturedPiece.id) {
-                        // This is the other piece in the reality split
-                        this.capturedPieces[piece.color].push(piece);
-                        this.board[row][col] = null;
-                        this.addToGameLog(`Reality Split: ${piece.color} ${piece.type} vanished with its duplicate!`, 'effect');
-                    }
-                }
+        // If the captured piece has a paired piece, find and remove it
+        if (capturedPiece.pairedWith) {
+            const pairedRow = capturedPiece.pairedWith.row;
+            const pairedCol = capturedPiece.pairedWith.col;
+            const pairedPiece = this.board[pairedRow][pairedCol];
+            
+            if (pairedPiece && pairedPiece.realitySplit) {
+                this.capturedPieces[pairedPiece.color].push(pairedPiece);
+                this.board[pairedRow][pairedCol] = null;
+                this.addToGameLog(`Reality Split: ${pairedPiece.color} ${pairedPiece.type} vanished with its duplicate!`, 'effect');
             }
         }
-        
-        this.addToGameLog(`Reality Split: ${capturedPiece.color} ${capturedPiece.type} vanished with its duplicate!`, 'effect');
     }
 
     showPortalChoice(riftRow, riftCol, activatingPiece) {
