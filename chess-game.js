@@ -313,8 +313,7 @@ class ChessGame {
 
     executeArcherShotOnTarget(riftRow, riftCol, targetRow, targetCol) {
         const piece = this.board[targetRow][targetCol];
-        this.capturedPieces[piece.color].push(piece);
-        this.board[targetRow][targetCol] = null;
+        this.capturePiece(piece, targetRow, targetCol);
         this.removePieceWithAnimation(targetRow, targetCol);
         this.addToGameLog(`Archer's Precision removed ${piece.color} ${piece.type}!`, 'effect');
         
@@ -1599,6 +1598,28 @@ class ChessGame {
         }
     }
 
+    capturePiece(piece, row, col) {
+        // Universal piece capture function that handles Reality Split
+        if (!piece) return;
+        
+        // Check if this piece was already removed (e.g., as part of Reality Split pair)
+        if (this.board[row][col] !== piece) {
+            // Piece already removed from board, skip
+            return;
+        }
+        
+        // Handle Reality Split - if either piece is captured, remove both
+        if (piece.realitySplit) {
+            this.removeRealitySplitPieces(piece);
+        }
+        
+        // Add to captured pieces
+        this.capturedPieces[piece.color].push(piece);
+        
+        // Remove from board
+        this.board[row][col] = null;
+    }
+
     showPortalChoice(riftRow, riftCol, activatingPiece) {
         const availableRifts = this.rifts.filter(rift => 
             rift.row !== riftRow || rift.col !== riftCol
@@ -1922,8 +1943,7 @@ class ChessGame {
                 
                 // Remove ANY piece (enemy or friendly) in this direction
                 if (piece) {
-                    this.capturedPieces[piece.color].push(piece);
-                    this.board[targetRow][targetCol] = null;
+                    this.capturePiece(piece, targetRow, targetCol);
                     this.removePieceWithAnimation(targetRow, targetCol, piecesRemoved * 400);
                     this.addToGameLog(`Dragon's Breath removed ${piece.color} ${piece.type}!`, 'effect');
                     piecesRemoved++;
@@ -2163,8 +2183,7 @@ class ChessGame {
         
         // Remove pieces immediately from board state, then animate
         piecesToRemove.forEach(({ row, col, piece }) => {
-            this.capturedPieces[piece.color].push(piece);
-            this.board[row][col] = null;
+            this.capturePiece(piece, row, col);
             this.removePieceWithAnimation(row, col, delay);
             delay += 200;
         });
@@ -2174,8 +2193,7 @@ class ChessGame {
 
     applyHonorableSacrifice(riftRow, riftCol, activatingPiece) {
         // Remove activating piece immediately from board state
-        this.board[riftRow][riftCol] = null;
-        this.capturedPieces[activatingPiece.color].push(activatingPiece);
+        this.capturePiece(activatingPiece, riftRow, riftCol);
         this.removePieceWithAnimation(riftRow, riftCol);
         
         // Remove ALL enemy pieces within 1 square with animation
@@ -2189,8 +2207,7 @@ class ChessGame {
             if (this.isInBounds(targetRow, targetCol) && this.board[targetRow][targetCol]) {
                 const piece = this.board[targetRow][targetCol];
                 if (piece.color !== this.currentPlayer) {
-                    this.capturedPieces[piece.color].push(piece);
-                    this.board[targetRow][targetCol] = null;
+                    this.capturePiece(piece, targetRow, targetCol);
                     this.removePieceWithAnimation(targetRow, targetCol, 500 + (enemyPiecesRemoved * 300));
                     enemyPiecesRemoved++;
                 }
@@ -2207,8 +2224,7 @@ class ChessGame {
     applyDemotion(riftRow, riftCol, activatingPiece) {
         if (activatingPiece.type === 'pawn') {
             // If it's already a pawn, remove it
-            this.board[riftRow][riftCol] = null;
-            this.capturedPieces[activatingPiece.color].push(activatingPiece);
+            this.capturePiece(activatingPiece, riftRow, riftCol);
             this.removePieceWithAnimation(riftRow, riftCol);
             this.addToGameLog(`Demotion: Pawn removed!`, 'effect');
         } else {
@@ -2346,8 +2362,7 @@ class ChessGame {
         
         if (this.board[row][col]) {
             const piece = this.board[row][col];
-            this.capturedPieces[piece.color].push(piece);
-            this.board[row][col] = null;
+            this.capturePiece(piece, row, col);
             this.removePieceWithAnimation(row, col);
             this.addToGameLog(`Catapult Roulette hit ${colLetter}${rowNum} - removed ${piece.color} ${piece.type}!`, 'effect');
         } else {
