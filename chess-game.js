@@ -2557,6 +2557,7 @@ class ChessGame {
                 } else {
                     // Freeze the piece
                     piece.frozen = true;
+                    piece.frozenByFieldEffect = true;
                     this.frozenPieces.add(piece);
                     frozenPieces.push({ piece, row: r, col: columnIndex });
                 }
@@ -2578,6 +2579,7 @@ class ChessGame {
                 } else {
                     // Freeze the piece
                     piece.frozen = true;
+                    piece.frozenByFieldEffect = true;
                     this.frozenPieces.add(piece);
                     frozenPieces.push({ piece, row: rowIndex, col: c });
                 }
