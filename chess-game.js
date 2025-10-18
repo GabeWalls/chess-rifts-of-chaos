@@ -999,8 +999,8 @@ class ChessGame {
         // Always render the board first to show the piece on the rift
         this.renderBoard();
         
-        // Check for rift activation
-        if (this.isRift(toRow, toCol) && !this.riftActivatedThisTurn) {
+        // Check for rift activation (kings cannot activate rifts)
+        if (this.isRift(toRow, toCol) && !this.riftActivatedThisTurn && piece.type !== 'king') {
             this.activateRift(toRow, toCol);
             this.riftActivatedThisTurn = true;
         } else {
@@ -1206,7 +1206,7 @@ class ChessGame {
             2: { name: "Archer's Trick Shot", type: "special", rating: 5, description: "Choose a direction from the rift; also applies to two adjacent directions. Range: 3 squares per direction. Remove the first piece encountered." },
             3: { name: "Sandworm", type: "special", rating: 3, description: "Remove all pieces within 1 square of the rift, plus the activating piece." },
             4: { name: "Honorable Sacrifice", type: "special", rating: 3, description: "Remove your activating piece and any one piece within 1 square." },
-            5: { name: "Demotion", type: "special", rating: 1, description: "Remove your activating piece. If it was a Castle, Knight, Bishop, or Queen, place a captured Pawn of yours on the rift." },
+            5: { name: "Demotion", type: "special", rating: 1, description: "The activating piece transforms into a Pawn immediately (retain color, same position). If it was already a Pawn, it is removed instead." },
             6: { name: "Foot Soldier's Gambit", type: "special", rating: 4, description: "The activating piece must immediately move again." },
             7: { name: "Famine", type: "field", rating: 2, description: "Pawns cannot move." },
             8: { name: "Holiday's Rejuvenation", type: "field", rating: 4, description: "Pawns may move two spaces forward. Castles, Bishops, Queens can jump over 1 friendly piece. Knights move 3+1 instead of 2+1." },
@@ -1305,18 +1305,7 @@ class ChessGame {
                     this.applyHonorableSacrifice(riftRow, riftCol, activatingPiece);
                     break;
                 case 5: // Demotion
-                    const capturedPawns = this.capturedPieces[activatingPiece.color].filter(p => p.type === 'pawn');
-                    // Must have captured pawns AND activating piece must not be a pawn
-                    if (capturedPawns.length > 0 && activatingPiece.type !== 'pawn') {
-                        this.applyDemotion(riftRow, riftCol, activatingPiece);
-                    } else {
-                        if (activatingPiece.type === 'pawn') {
-                            this.addToGameLog(`Demotion: Pawns cannot be demoted!`, 'effect');
-                        } else {
-                            this.addToGameLog(`Demotion: No captured pawns available!`, 'effect');
-                        }
-                        this.switchPlayer();
-                    }
+                    this.applyDemotion(riftRow, riftCol, activatingPiece);
                     break;
                 case 6: // Foot Soldier's Gambit
                     this.applyFootSoldierGambit(activatingPiece, riftRow, riftCol);
@@ -2073,29 +2062,22 @@ class ChessGame {
     }
 
     applyDemotion(riftRow, riftCol, activatingPiece) {
-        // Remove activating piece immediately from board state
-        this.board[riftRow][riftCol] = null;
-        this.capturedPieces[activatingPiece.color].push(activatingPiece);
-        this.removePieceWithAnimation(riftRow, riftCol);
-        
-        // Place captured pawn if available and piece was not a pawn
-        if (['rook', 'knight', 'bishop', 'queen'].includes(activatingPiece.type)) {
-            const capturedPawns = this.capturedPieces[activatingPiece.color].filter(p => p.type === 'pawn');
-            if (capturedPawns.length > 0) {
-                const pawnIndex = this.capturedPieces[activatingPiece.color].findIndex(p => p.type === 'pawn');
-                const pawn = this.capturedPieces[activatingPiece.color].splice(pawnIndex, 1)[0];
-                setTimeout(() => {
-                    this.board[riftRow][riftCol] = pawn;
-                    this.updateCapturedPieces();
-                    this.renderBoard();
-                    this.addToGameLog(`Demotion: ${activatingPiece.type} demoted to pawn!`, 'effect');
-                }, 1500);
-            } else {
-                this.addToGameLog(`Demotion: No captured pawns to place.`, 'effect');
-            }
+        if (activatingPiece.type === 'pawn') {
+            // If it's already a pawn, remove it
+            this.board[riftRow][riftCol] = null;
+            this.capturedPieces[activatingPiece.color].push(activatingPiece);
+            this.removePieceWithAnimation(riftRow, riftCol);
+            this.addToGameLog(`Demotion: Pawn removed!`, 'effect');
         } else {
-            this.addToGameLog(`Demotion: Pawn cannot be demoted further.`, 'effect');
+            // Transform the piece into a pawn
+            const originalType = activatingPiece.type;
+            activatingPiece.type = 'pawn';
+            activatingPiece.hasMoved = true; // Pawns are considered moved
+            this.renderBoard();
+            this.addToGameLog(`Demotion: ${originalType} transformed into a pawn!`, 'effect');
         }
+        
+        this.updateCapturedPieces();
     }
 
     applyFootSoldierGambit(activatingPiece, riftRow, riftCol) {
