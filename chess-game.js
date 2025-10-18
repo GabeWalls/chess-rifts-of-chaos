@@ -171,6 +171,11 @@ class ChessGame {
                     if (piece.type === 'pawn' && piece.fairyFountain) {
                         square.classList.add('fairy-fountain-pawn');
                     }
+                    
+                    // Add reality split class if piece is part of reality split
+                    if (piece.realitySplit) {
+                        square.classList.add('reality-split-piece');
+                    }
                 }
                 
                 square.addEventListener('click', () => this.handleSquareClick(row, col));
@@ -945,6 +950,11 @@ class ChessGame {
                 capturedPiece.frozen = false;
             }
             
+            // Handle Reality Split - if either piece is captured, remove both
+            if (capturedPiece.realitySplit) {
+                this.removeRealitySplitPieces(capturedPiece);
+            }
+            
             this.capturedPieces[capturedPiece.color].push(capturedPiece);
             this.updateCapturedPieces();
             this.addToGameLog(`${this.currentPlayer} captured ${capturedPiece.color}'s ${capturedPiece.type}`, 'move');
@@ -1225,7 +1235,7 @@ class ChessGame {
             14: { name: "Conqueror's Tale", type: "special", rating: 5, description: "Your king permanently gains the ability to move twice per turn. If sandstorm is enabled, kings with Conqueror's Tale enabled can move once until the field effect is over. If Time Distortion/Stasis or Glacial Cross are enabled, Kings with Conqueror's Tale are NOT affected." },
             15: { name: "Medusa's Gaze", type: "special", rating: 2, description: "The activating piece is frozen in place and cannot be moved/removed (except by other rifts)." },
             16: { name: "Time Distortion/Stasis", type: "field", rating: 3, description: "All pieces within a radius are frozen. Radius is based on a D20 roll: 1–8 = 1 square, 9–14 = 2 squares, 15–18 = 3 squares, 19–20 = 4 squares. Exception: Kings caught in the stasis may still move only if they possess Conqueror's Tale." },
-            17: { name: "Crossroad Demon's Deal", type: "special", rating: 2, description: "You may decline this effect before rolling. If accepted: remove your activating piece, roll a D20." },
+            17: { name: "Reality Split", type: "special", rating: 2, description: "The activating piece duplicates itself; both versions can move independently, but if either dies, both vanish. Both pieces are highlighted with a purple phantom aura. The duplicate piece is spawned on the original piece's starting square." },
             18: { name: "Fairy Fountain", type: "special", rating: 2, description: "Activating Pawn gains new movement: Forward 2 spaces, plus 1 space left/right." },
             19: { name: "Eerie Fog's Turmoil", type: "field", rating: 2, description: "At the start of your turn, roll a D20: 3–20 = play normally. 1–2 = skip your turn." },
             20: { name: "Spring of Revival", type: "special", rating: 5, description: "Place one of your captured pieces onto a starting square." },
@@ -1353,9 +1363,9 @@ class ChessGame {
                 case 16: // Time Distortion/Stasis
                     this.applyTimeDistortionFieldEffect(riftRow, riftCol);
                     break;
-                case 17: // Crossroad Demon's Deal
-                    this.showCrossroadDemonChoice(riftRow, riftCol, activatingPiece);
-                    return; // Don't close modal yet
+                case 17: // Reality Split
+                    this.applyRealitySplit(riftRow, riftCol, activatingPiece);
+                    break;
                 case 18: // Fairy Fountain
                     if (activatingPiece.type === 'pawn') {
                         this.applyFairyFountain(riftRow, riftCol, activatingPiece);
@@ -1498,63 +1508,67 @@ class ChessGame {
     }
 
     // Choice-based rift effects
-    showCrossroadDemonChoice(riftRow, riftCol, activatingPiece) {
-        const optionsDiv = document.getElementById('rift-effect-options');
-        optionsDiv.innerHTML = `
-            <div class="effect-choices">
-                <button class="effect-choice decline" onclick="game.acceptCrossroadDemonDeal(${riftRow}, ${riftCol}, '${activatingPiece.color}', false)">
-                    Decline Deal
-                </button>
-                <button class="effect-choice accept" onclick="game.acceptCrossroadDemonDeal(${riftRow}, ${riftCol}, '${activatingPiece.color}', true)">
-                    Accept Deal
-                </button>
-            </div>
-        `;
-        this.addToGameLog(`Crossroad Demon's Deal activated! Choose to accept or decline.`, 'effect');
+    applyRealitySplit(riftRow, riftCol, activatingPiece) {
+        // Create a duplicate piece
+        const duplicatePiece = {
+            ...activatingPiece,
+            id: activatingPiece.id + '_duplicate',
+            realitySplit: true,
+            originalPiece: activatingPiece.id
+        };
+        
+        // Set the original piece as part of reality split
+        activatingPiece.realitySplit = true;
+        activatingPiece.duplicatePiece = duplicatePiece.id;
+        
+        // Find the original piece's starting square (pawn starting positions)
+        let startRow, startCol;
+        if (activatingPiece.type === 'pawn') {
+            startRow = activatingPiece.color === 'white' ? 6 : 1;
+            startCol = activatingPiece.col; // Keep same column
+        } else {
+            // For other pieces, find a suitable starting position
+            startRow = activatingPiece.color === 'white' ? 7 : 0;
+            startCol = activatingPiece.col;
+        }
+        
+        // Check if the starting position is empty
+        if (!this.board[startRow][startCol]) {
+            this.board[startRow][startCol] = duplicatePiece;
+            this.addToGameLog(`Reality Split: ${activatingPiece.color} ${activatingPiece.type} duplicated! Both pieces now have purple phantom aura.`, 'effect');
+        } else {
+            this.addToGameLog(`Reality Split: Cannot duplicate - starting position occupied!`, 'effect');
+        }
+        
+        this.renderBoard();
+        this.updateCapturedPieces();
     }
 
-    acceptCrossroadDemonDeal(riftRow, riftCol, color, accepted) {
-        if (!accepted) {
-            this.addToGameLog(`${color} declined Crossroad Demon's Deal.`, 'effect');
-            this.closeModal();
-            return;
-        }
-
-        // Remove activating piece
-        this.removePieceWithAnimation(riftRow, riftCol);
-        this.capturedPieces[color].push(this.lastMovedPiece.piece);
+    removeRealitySplitPieces(capturedPiece) {
+        // Find and remove both pieces in the reality split
+        let originalPiece = null;
+        let duplicatePiece = null;
         
-        // Roll D20 for additional pieces to remove
-        const additionalRoll = Math.floor(Math.random() * 20) + 1;
-        const piecesToRemove = additionalRoll % 2 === 0 ? 2 : 1;
-        
-        this.addToGameLog(`Crossroad Demon's Deal accepted! Rolling for additional pieces... (${additionalRoll})`, 'effect');
-        
-        // Remove additional pieces with animation
-        let removed = 0;
-        for (let row = 0; row < 8 && removed < piecesToRemove; row++) {
-            for (let col = 0; col < 8 && removed < piecesToRemove; col++) {
-                if (this.board[row][col] && this.board[row][col].color === this.currentPlayer && 
-                    this.board[row][col].type !== 'king') {
-                    this.capturedPieces[this.currentPlayer].push(this.board[row][col]);
-                    this.removePieceWithAnimation(row, col, removed * 500);
-                    removed++;
+        // Find both pieces on the board
+        for (let row = 0; row < 8; row++) {
+            for (let col = 0; col < 8; col++) {
+                const piece = this.board[row][col];
+                if (piece && piece.realitySplit) {
+                    if (piece.id === capturedPiece.id) {
+                        // This is the captured piece
+                        continue;
+                    }
+                    if (piece.originalPiece === capturedPiece.id || piece.duplicatePiece === capturedPiece.id) {
+                        // This is the other piece in the reality split
+                        this.capturedPieces[piece.color].push(piece);
+                        this.board[row][col] = null;
+                        this.addToGameLog(`Reality Split: ${piece.color} ${piece.type} vanished with its duplicate!`, 'effect');
+                    }
                 }
             }
         }
-
-        // Revive a captured piece
-        const capturedNonPawns = this.capturedPieces[this.currentPlayer].filter(p => p.type !== 'pawn');
-        if (capturedNonPawns.length > 0) {
-            const randomPiece = capturedNonPawns[Math.floor(Math.random() * capturedNonPawns.length)];
-            this.board[riftRow][riftCol] = randomPiece;
-            this.capturedPieces[this.currentPlayer] = this.capturedPieces[this.currentPlayer].filter(p => p !== randomPiece);
-            this.addToGameLog(`${randomPiece.type} revived on rift!`, 'effect');
-        }
-
-        setTimeout(() => {
-            this.closeModal();
-        }, 2000);
+        
+        this.addToGameLog(`Reality Split: ${capturedPiece.color} ${capturedPiece.type} vanished with its duplicate!`, 'effect');
     }
 
     showPortalChoice(riftRow, riftCol, activatingPiece) {
@@ -2275,37 +2289,6 @@ class ChessGame {
         this.addToGameLog(`Time Distortion: ${radius} radius - pieces frozen!`, 'effect');
     }
 
-    applyCrossroadDemonDeal(riftRow, riftCol, activatingPiece) {
-        // Remove activating piece
-        this.board[riftRow][riftCol] = null;
-        this.capturedPieces[activatingPiece.color].push(activatingPiece);
-        
-        // Roll D20 for additional pieces to remove
-        const additionalRoll = Math.floor(Math.random() * 20) + 1;
-        const piecesToRemove = additionalRoll % 2 === 0 ? 2 : 1;
-        
-        // Remove additional pieces (simplified - just remove random pieces)
-        let removed = 0;
-        for (let row = 0; row < 8 && removed < piecesToRemove; row++) {
-            for (let col = 0; col < 8 && removed < piecesToRemove; col++) {
-                if (this.board[row][col] && this.board[row][col].color === this.currentPlayer && 
-                    this.board[row][col].type !== 'king') {
-                    this.capturedPieces[this.currentPlayer].push(this.board[row][col]);
-                    this.board[row][col] = null;
-                    removed++;
-                }
-            }
-        }
-        
-        // Place opponent's captured piece
-        const opponentColor = this.currentPlayer === 'white' ? 'black' : 'white';
-        const nonPawnPieces = this.capturedPieces[opponentColor].filter(p => p.type !== 'pawn');
-        if (nonPawnPieces.length > 0) {
-            const pieceIndex = this.capturedPieces[opponentColor].findIndex(p => p.type !== 'pawn');
-            const piece = this.capturedPieces[opponentColor].splice(pieceIndex, 1)[0];
-            this.board[riftRow][riftCol] = piece;
-        }
-    }
 
     applyFairyFountain(riftRow, riftCol, activatingPiece) {
         // Give pawn enhanced movement abilities
