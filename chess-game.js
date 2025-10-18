@@ -85,6 +85,7 @@ class ChessGame {
         
         // D20 Side Panel controls
         document.getElementById('roll-d20-btn').addEventListener('click', () => this.rollD20SidePanel());
+        document.getElementById('d20-display').addEventListener('click', () => this.rollD20SidePanel());
         // Collapse functionality removed
         
         // Chat controls
