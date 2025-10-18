@@ -1823,6 +1823,13 @@ body.dark-mode .d20-panel-content {
     position: relative;
     padding-top: 8px;
     margin: 0 auto;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    cursor: pointer;
+}
+
+.d20-display:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .roll-d20-btn {

@@ -1400,10 +1400,10 @@ class ChessGame {
         this.updateFieldEffects();
         
         // Handle turn switching based on rift effect
-        // Effects that already handle their own turn switching: 1, 5, 12, 18, 20
+        // Effects that already handle their own turn switching: 1, 5, 12, 20
         // Effects that don't switch turns: 6 (Foot Soldier's Gambit), 14 (Conqueror's Tale)
         // All other effects should end the turn
-        const effectsWithOwnTurnSwitching = [1, 5, 12, 18, 20];
+        const effectsWithOwnTurnSwitching = [1, 5, 12, 20];
         const effectsThatDontSwitchTurns = [6, 14];
         
         if (!effectsWithOwnTurnSwitching.includes(roll) && !effectsThatDontSwitchTurns.includes(roll)) {
