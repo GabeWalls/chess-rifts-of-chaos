@@ -2587,6 +2587,7 @@ class ChessGame {
         }
         
         this.updateCapturedPieces();
+        this.updateFieldEffects();
         this.renderBoard();
         
         if (frozenPieces.length > 0) {
@@ -2755,6 +2756,9 @@ class ChessGame {
         } else {
             this.addToGameLog(`Field effect activated: Blank (Pawns may capture sideways)`, 'effect');
         }
+        
+        // Update the field effects display
+        this.updateFieldEffects();
     }
 
     showSandstormOverlay() {
