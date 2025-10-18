@@ -1236,7 +1236,7 @@ class ChessGame {
             1: { name: "Necromancer's Trap", type: "special", rating: 1, description: "The activating piece is removed. If the opponent has captured pieces, the highest ranking piece is revived onto the rift." },
             2: { name: "Archer's Precision", type: "special", rating: 5, description: "When activated, all enemy pieces within 5 squares of the rift — in any direction (straight or diagonal) — are highlighted blue. You may select one of the highlighted pieces to snipe off the board. If no enemy pieces are within range, the game will recognize there are no valid targets and automatically skip to the next turn." },
             3: { name: "Sandworm", type: "special", rating: 3, description: "Remove all pieces within 1 square of the rift, plus the activating piece." },
-            4: { name: "Honorable Sacrifice", type: "special", rating: 3, description: "Remove your activating piece and any one piece within 1 square." },
+            4: { name: "Honorable Sacrifice", type: "special", rating: 3, description: "Removes the activating piece. If there are any enemy pieces within 1 square they are also removed." },
             5: { name: "Demotion", type: "special", rating: 1, description: "The activating piece transforms into a Pawn immediately (retain color, same position). If it was already a Pawn, it is removed instead." },
             6: { name: "Foot Soldier's Gambit", type: "special", rating: 4, description: "The activating piece must immediately move again." },
             7: { name: "Famine", type: "field", rating: 2, description: "Pawns cannot move." },
@@ -2128,8 +2128,10 @@ class ChessGame {
         this.capturedPieces[activatingPiece.color].push(activatingPiece);
         this.removePieceWithAnimation(riftRow, riftCol);
         
-        // Remove any enemy piece within 1 square with animation
+        // Remove ALL enemy pieces within 1 square with animation
         const directions = [[-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [1, 0], [1, 1]];
+        let enemyPiecesRemoved = 0;
+        
         for (const [rowOffset, colOffset] of directions) {
             const targetRow = riftRow + rowOffset;
             const targetCol = riftCol + colOffset;
@@ -2139,11 +2141,16 @@ class ChessGame {
                 if (piece.color !== this.currentPlayer) {
                     this.capturedPieces[piece.color].push(piece);
                     this.board[targetRow][targetCol] = null;
-                    this.removePieceWithAnimation(targetRow, targetCol, 500);
-                    this.addToGameLog(`Honorable Sacrifice: Enemy piece removed!`, 'effect');
-                    break; // Only remove one piece
+                    this.removePieceWithAnimation(targetRow, targetCol, 500 + (enemyPiecesRemoved * 300));
+                    enemyPiecesRemoved++;
                 }
             }
+        }
+        
+        if (enemyPiecesRemoved > 0) {
+            this.addToGameLog(`Honorable Sacrifice: ${enemyPiecesRemoved} enemy piece${enemyPiecesRemoved > 1 ? 's' : ''} removed!`, 'effect');
+        } else {
+            this.addToGameLog(`Honorable Sacrifice: No enemy pieces in range.`, 'effect');
         }
     }
 
