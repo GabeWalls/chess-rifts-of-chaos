@@ -322,7 +322,7 @@ class ChessGame {
         this.renderBoard();
         
         // Clear the options area instead of closing modal
-        const optionsDiv = document.getElementById('rift-effect-options');
+        const optionsDiv = document.getElementById('d20-options-area');
         if (optionsDiv) {
             optionsDiv.innerHTML = '';
         }
@@ -1361,7 +1361,7 @@ class ChessGame {
                     break;
                 case 11: // Glacial Cross
                     this.showGlacialCrossDice();
-                    return; // Don't close modal yet
+                    break;
                 case 12: // Portal in the Rift
                     this.showPortalChoice(riftRow, riftCol, activatingPiece);
                     return; // Don't close modal yet
@@ -1699,7 +1699,10 @@ class ChessGame {
             return;
         }
         
-        // Highlight valid targets in blue
+        // Enable archer shot selection mode first
+        this.archerShotMode = { active: true, riftRow, riftCol, playerColor };
+        
+        // Highlight valid targets in blue (do this after setting mode)
         validTargets.forEach(({ row, col }) => {
             const square = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
             if (square) {
@@ -1707,16 +1710,14 @@ class ChessGame {
             }
         });
         
-        // Enable archer shot selection mode
-        this.archerShotMode = { active: true, riftRow, riftCol, playerColor };
-        
-        const optionsDiv = document.getElementById('rift-effect-options');
+        const optionsDiv = document.getElementById('d20-options-area');
+        optionsDiv.style.display = 'block';
         optionsDiv.innerHTML = `
             <div class="effect-choices">
                 <p style="color: #333; margin-bottom: 10px; text-align: center;">
                     Archer's Precision! Click on a blue highlighted enemy piece to snipe it.
                 </p>
-                <button class="effect-choice" onclick="game.cancelArcherPrecision()">
+                <button class="cancel-btn" onclick="game.cancelArcherPrecision()">
                     Cancel
                 </button>
             </div>
@@ -1732,7 +1733,7 @@ class ChessGame {
         });
         
         // Clear the options area
-        const optionsDiv = document.getElementById('rift-effect-options');
+        const optionsDiv = document.getElementById('d20-options-area');
         if (optionsDiv) {
             optionsDiv.innerHTML = '';
         }
@@ -2425,7 +2426,8 @@ class ChessGame {
     }
 
     showGlacialCrossDice() {
-        const optionsDiv = document.getElementById('rift-effect-options');
+        const optionsDiv = document.getElementById('d20-options-area');
+        optionsDiv.style.display = 'block';
         optionsDiv.innerHTML = `
             <div class="effect-choices">
                 <p style="color: #333; margin-bottom: 10px;">Glacial Cross! Roll 2D8:</p>
@@ -2434,7 +2436,7 @@ class ChessGame {
                     <div style="font-size: 2rem; font-weight: bold; color: #667eea;">?</div>
                     <div style="font-size: 2rem; font-weight: bold; color: #667eea;">?</div>
                 </div>
-                <button class="effect-choice" onclick="game.rollGlacialCross()">
+                <button class="action-btn" onclick="game.rollGlacialCross()">
                     Roll 2D8
                 </button>
             </div>
@@ -2447,7 +2449,7 @@ class ChessGame {
         const columnRoll = Math.floor(Math.random() * 8) + 1; // 1-8 for A-H
         const rowRoll = Math.floor(Math.random() * 8) + 1; // 1-8 for rows
         
-        const optionsDiv = document.getElementById('rift-effect-options');
+        const optionsDiv = document.getElementById('d20-options-area');
         optionsDiv.innerHTML = `
             <div class="effect-choices">
                 <p style="color: #333; margin-bottom: 10px;">Rolling...</p>
@@ -2476,7 +2478,8 @@ class ChessGame {
                 this.applyGlacialCross(columnRoll - 1, rowRoll - 1); // Convert to 0-based indexing
                 
                 setTimeout(() => {
-                    this.closeModal();
+                    // Clear the options area instead of closing modal
+                    optionsDiv.innerHTML = '';
                     this.clearD20Highlighting();
                     this.switchPlayer();
                 }, 2000);
