@@ -261,11 +261,17 @@ class ChessGame {
             this.updateCapturedPieces();
             const coords = String.fromCharCode(65 + toCol) + (8 - toRow);
             this.addToGameLog(`Piece teleported to ${coords}!`, 'effect');
+            
+            // Clear the options area instead of closing modal
+            const optionsDiv = document.getElementById('rift-effect-options');
+            if (optionsDiv) {
+                optionsDiv.innerHTML = '';
+            }
+            
+            // Switch player after teleport
+            this.clearD20Highlighting();
+            this.switchPlayer();
         }, 1000);
-
-        setTimeout(() => {
-            this.closeModal();
-        }, 2000);
     }
 
     handleArcherTarget(row, col) {
@@ -285,13 +291,13 @@ class ChessGame {
             return;
         }
         
-        // Validate target is within 3 squares in a straight line
-        const dr = Math.sign(row - riftRow);
-        const dc = Math.sign(col - riftCol);
-        const distance = Math.max(Math.abs(row - riftRow), Math.abs(col - riftCol));
+        // Validate target is within 5 squares (using Chebyshev distance)
+        const rowDist = Math.abs(row - riftRow);
+        const colDist = Math.abs(col - riftCol);
+        const distance = Math.max(rowDist, colDist);
         
-        if (distance > 3 || (dr === 0 && dc === 0)) {
-            this.addToGameLog(`Invalid target! Must be within 3 squares in a straight line.`, 'effect');
+        if (distance > 5) {
+            this.addToGameLog(`Invalid target! Must be within 5 squares.`, 'effect');
             return;
         }
         
@@ -310,14 +316,22 @@ class ChessGame {
         this.capturedPieces[piece.color].push(piece);
         this.board[targetRow][targetCol] = null;
         this.removePieceWithAnimation(targetRow, targetCol);
-        this.addToGameLog(`Archer's Trick Shot removed ${piece.color} ${piece.type}!`, 'effect');
+        this.addToGameLog(`Archer's Precision removed ${piece.color} ${piece.type}!`, 'effect');
         
         this.updateCapturedPieces();
         this.renderBoard();
         
+        // Clear the options area instead of closing modal
+        const optionsDiv = document.getElementById('rift-effect-options');
+        if (optionsDiv) {
+            optionsDiv.innerHTML = '';
+        }
+        
+        // Switch player after shot
         setTimeout(() => {
-            this.closeModal();
-        }, 1500);
+            this.clearD20Highlighting();
+            this.switchPlayer();
+        }, 1000);
     }
 
     handleSpringOfRevivalPlacement(row, col) {
@@ -1220,7 +1234,7 @@ class ChessGame {
     getRiftEffect(roll) {
         const effects = {
             1: { name: "Necromancer's Trap", type: "special", rating: 1, description: "The activating piece is removed. If the opponent has captured pieces, the highest ranking piece is revived onto the rift." },
-            2: { name: "Archer's Trick Shot", type: "special", rating: 5, description: "Choose a direction from the rift; also applies to two adjacent directions. Range: 3 squares per direction. Remove the first piece encountered." },
+            2: { name: "Archer's Precision", type: "special", rating: 5, description: "When activated, all enemy pieces within 5 squares of the rift — in any direction (straight or diagonal) — are highlighted blue. You may select one of the highlighted pieces to snipe off the board. If no enemy pieces are within range, the game will recognize there are no valid targets and automatically skip to the next turn." },
             3: { name: "Sandworm", type: "special", rating: 3, description: "Remove all pieces within 1 square of the rift, plus the activating piece." },
             4: { name: "Honorable Sacrifice", type: "special", rating: 3, description: "Remove your activating piece and any one piece within 1 square." },
             5: { name: "Demotion", type: "special", rating: 1, description: "The activating piece transforms into a Pawn immediately (retain color, same position). If it was already a Pawn, it is removed instead." },
@@ -1228,7 +1242,7 @@ class ChessGame {
             7: { name: "Famine", type: "field", rating: 2, description: "Pawns cannot move." },
             8: { name: "Holiday's Rejuvenation", type: "field", rating: 4, description: "Pawns may move two spaces forward. Castles, Bishops, Queens can jump over 1 friendly piece. Knights move 3+1 instead of 2+1." },
             9: { name: "Sandstorm", type: "field", rating: 2, description: "Pawns cannot move. Knights move only 1 square. Castles, Bishops, Queens max range: 3 squares. Exception: Kings caught in the sandstorm may still move only if they possess Conqueror's Tale." },
-            10: { name: "Dragon's Breath", type: "special", rating: 4, description: "Choose a direction; remove any piece up to 3 squares away in a straight line." },
+            10: { name: "Dragon's Breath", type: "special", rating: 4, description: "When activated, all squares within 3 spaces of the rift are highlighted red. Choose one of the eight directions (shown in the D20 window). The three squares extending from the rift in that direction are then struck by Dragon's Breath. Any pieces—enemy or your own—caught in this path are captured and removed from play." },
             11: { name: "Glacial Cross", type: "field", rating: 2, description: "Roll 2D8 to randomly select a row and column. All pieces in that row and column become frozen until the effect ends." },
             12: { name: "Portal in the Rift", type: "special", rating: 4, description: "Move the activating piece to another unactivated rift." },
             13: { name: "Catapult Roulette", type: "special", rating: 3, description: "Roll 2D8 to choose a random square (column A–H, row 1–8). Remove any piece on that square." },
@@ -1312,9 +1326,9 @@ class ChessGame {
                         this.switchPlayer();
                     }
                     break;
-                case 2: // Archer's Trick Shot
-                    this.showArcherTargetSelection(riftRow, riftCol, activatingPiece.color);
-                    return; // Don't close modal yet
+                case 2: // Archer's Precision
+                    this.showArcherPrecisionTargets(riftRow, riftCol, activatingPiece.color);
+                    break;
                 case 3: // Sandworm
                     this.applySandworm(riftRow, riftCol);
                     break;
@@ -1344,7 +1358,7 @@ class ChessGame {
                     break;
                 case 10: // Dragon's Breath
                     this.showDragonDirectionChoice(riftRow, riftCol);
-                    return; // Don't close modal yet
+                    break;
                 case 11: // Glacial Cross
                     this.showGlacialCrossDice();
                     return; // Don't close modal yet
@@ -1619,7 +1633,17 @@ class ChessGame {
         document.querySelectorAll('.portal-target').forEach(square => {
             square.classList.remove('portal-target');
         });
-        this.closeModal();
+        
+        // Clear the options area instead of closing modal
+        const optionsDiv = document.getElementById('rift-effect-options');
+        if (optionsDiv) {
+            optionsDiv.innerHTML = '';
+        }
+        
+        // Cancel means no effect, switch turn
+        this.addToGameLog(`Portal in the Rift: Teleport canceled.`, 'effect');
+        this.clearD20Highlighting();
+        this.switchPlayer();
     }
 
     teleportToRift(fromRow, fromCol, toRow, toCol, color) {
@@ -1646,57 +1670,76 @@ class ChessGame {
         }, 2000);
     }
 
-    showArcherTargetSelection(riftRow, riftCol, playerColor) {
-        const optionsDiv = document.getElementById('rift-effect-options');
-        optionsDiv.innerHTML = `
-            <div class="effect-choices">
-                <p style="color: #333; margin-bottom: 10px; text-align: center;">
-                    Click on an ENEMY piece within 3 squares to target it with Archer's Trick Shot. Close this window to see the board.
-                </p>
-                <button class="effect-choice" onclick="game.closeArcherModal()">
-                    Close (View Board)
-                </button>
-            </div>
-        `;
+    showArcherPrecisionTargets(riftRow, riftCol, playerColor) {
+        const opponentColor = playerColor === 'white' ? 'black' : 'white';
+        const validTargets = [];
+        
+        // Find all enemy pieces within 5 squares in any direction
+        for (let row = 0; row < 8; row++) {
+            for (let col = 0; col < 8; col++) {
+                const piece = this.board[row][col];
+                if (piece && piece.color === opponentColor) {
+                    // Calculate distance (Chebyshev distance - max of row/col difference)
+                    const rowDist = Math.abs(row - riftRow);
+                    const colDist = Math.abs(col - riftCol);
+                    const distance = Math.max(rowDist, colDist);
+                    
+                    if (distance <= 5) {
+                        validTargets.push({ row, col, piece });
+                    }
+                }
+            }
+        }
+        
+        // If no valid targets, skip turn
+        if (validTargets.length === 0) {
+            this.addToGameLog(`Archer's Precision: No enemy pieces within range!`, 'effect');
+            this.clearD20Highlighting();
+            this.switchPlayer();
+            return;
+        }
+        
+        // Highlight valid targets in blue
+        validTargets.forEach(({ row, col }) => {
+            const square = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+            if (square) {
+                square.classList.add('archer-target');
+            }
+        });
         
         // Enable archer shot selection mode
         this.archerShotMode = { active: true, riftRow, riftCol, playerColor };
         
-        // Highlight valid targets (opponent pieces only)
-        this.highlightArcherTargets(riftRow, riftCol, playerColor);
+        const optionsDiv = document.getElementById('rift-effect-options');
+        optionsDiv.innerHTML = `
+            <div class="effect-choices">
+                <p style="color: #333; margin-bottom: 10px; text-align: center;">
+                    Archer's Precision! Click on a blue highlighted enemy piece to snipe it.
+                </p>
+                <button class="effect-choice" onclick="game.cancelArcherPrecision()">
+                    Cancel
+                </button>
+            </div>
+        `;
         
-        this.addToGameLog(`Archer's Trick Shot activated! Select an enemy target.`, 'effect');
+        this.addToGameLog(`Archer's Precision activated! ${validTargets.length} enemy pieces in range.`, 'effect');
     }
 
-    closeArcherModal() {
-        document.getElementById('rift-effects-modal').style.display = 'none';
-        // Don't switch players - they need to select a target
-    }
-
-    highlightArcherTargets(riftRow, riftCol, playerColor) {
-        const directions = [
-            [-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [1, 0], [1, 1]
-        ];
-        
-        const opponentColor = playerColor === 'white' ? 'black' : 'white';
-        
-        directions.forEach(([dr, dc]) => {
-            for (let distance = 1; distance <= 3; distance++) {
-                const targetRow = riftRow + (dr * distance);
-                const targetCol = riftCol + (dc * distance);
-                
-                if (targetRow >= 0 && targetRow < 8 && targetCol >= 0 && targetCol < 8) {
-                    const piece = this.board[targetRow][targetCol];
-                    // Only highlight OPPONENT pieces
-                    if (piece && piece.color === opponentColor) {
-                        const square = document.querySelector(`[data-row="${targetRow}"][data-col="${targetCol}"]`);
-                        if (square) {
-                            square.classList.add('archer-target');
-                        }
-                    }
-                }
-            }
+    cancelArcherPrecision() {
+        this.archerShotMode = null;
+        document.querySelectorAll('.archer-target').forEach(square => {
+            square.classList.remove('archer-target');
         });
+        
+        // Clear the options area
+        const optionsDiv = document.getElementById('rift-effect-options');
+        if (optionsDiv) {
+            optionsDiv.innerHTML = '';
+        }
+        
+        this.addToGameLog(`Archer's Precision: Shot canceled.`, 'effect');
+        this.clearD20Highlighting();
+        this.switchPlayer();
     }
 
     cancelArcherShot() {
@@ -1741,6 +1784,9 @@ class ChessGame {
     }
 
     showDragonDirectionChoice(riftRow, riftCol) {
+        // Highlight all squares within 3 spaces in red
+        this.highlightDragonBreathArea(riftRow, riftCol);
+        
         const directions = [
             { name: 'North', dr: -1, dc: 0 },
             { name: 'Northeast', dr: -1, dc: 1 },
@@ -1754,57 +1800,75 @@ class ChessGame {
 
         const optionsDiv = document.getElementById('d20-options-area');
         optionsDiv.style.display = 'block';
-        let buttonsHtml = '<p style="margin-bottom: 10px; font-weight: bold;">Choose a direction:</p>';
+        let buttonsHtml = '<p style="margin-bottom: 10px; font-weight: bold;">Dragon\'s Breath! Choose a direction:</p>';
         
-        let hasValidDirections = false;
         directions.forEach((dir, index) => {
-            // Check if this direction has enemy pieces
-            const hasEnemyInDirection = this.hasEnemyInDirection(riftRow, riftCol, dir.dr, dir.dc);
-            if (hasEnemyInDirection) {
-                hasValidDirections = true;
-                buttonsHtml += `
-                    <button class="action-btn" onclick="game.executeDragonBreathFromPanel(${riftRow}, ${riftCol}, ${dir.dr}, ${dir.dc})">
-                        ${dir.name}
-                    </button>
-                `;
-            }
+            buttonsHtml += `
+                <button class="action-btn" onclick="game.executeDragonBreathFromPanel(${riftRow}, ${riftCol}, ${dir.dr}, ${dir.dc})">
+                    ${dir.name}
+                </button>
+            `;
         });
         
-        if (!hasValidDirections) {
-            buttonsHtml += '<p style="color: #666; text-align: center; margin: 15px 0;">No enemy pieces in range!</p>';
-        }
-        
-        buttonsHtml += `<br><button class="cancel-btn" onclick="game.cancelRiftEffect()">Cancel</button>`;
+        buttonsHtml += `<br><button class="cancel-btn" onclick="game.cancelDragonBreath()">Cancel</button>`;
         
         optionsDiv.innerHTML = buttonsHtml;
-        this.addToGameLog(`Dragon's Breath activated! Choose direction.`, 'effect');
+        this.addToGameLog(`Dragon's Breath activated! Choose direction to strike.`, 'effect');
     }
 
-    hasEnemyInDirection(riftRow, riftCol, dr, dc) {
-        for (let distance = 1; distance <= 3; distance++) {
-            const targetRow = riftRow + (dr * distance);
-            const targetCol = riftCol + (dc * distance);
-            
-            if (targetRow >= 0 && targetRow < 8 && targetCol >= 0 && targetCol < 8) {
-                const piece = this.board[targetRow][targetCol];
-                if (piece && piece.color !== this.currentPlayer) {
-                    return true;
-                }
-                // If there's a friendly piece blocking, stop checking this direction
-                if (piece && piece.color === this.currentPlayer) {
-                    break;
+    highlightDragonBreathArea(riftRow, riftCol) {
+        // Highlight all squares within 3 spaces of the rift in red
+        const directions = [
+            [-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [1, 0], [1, 1]
+        ];
+        
+        directions.forEach(([dr, dc]) => {
+            for (let distance = 1; distance <= 3; distance++) {
+                const targetRow = riftRow + (dr * distance);
+                const targetCol = riftCol + (dc * distance);
+                
+                if (targetRow >= 0 && targetRow < 8 && targetCol >= 0 && targetCol < 8) {
+                    const square = document.querySelector(`[data-row="${targetRow}"][data-col="${targetCol}"]`);
+                    if (square) {
+                        square.classList.add('dragon-target');
+                    }
                 }
             }
+        });
+    }
+
+    cancelDragonBreath() {
+        // Remove highlights
+        document.querySelectorAll('.dragon-target').forEach(square => {
+            square.classList.remove('dragon-target');
+        });
+        
+        // Clear the options area
+        const optionsDiv = document.getElementById('d20-options-area');
+        if (optionsDiv) {
+            optionsDiv.innerHTML = '';
         }
-        return false;
+        
+        this.addToGameLog(`Dragon's Breath: Attack canceled.`, 'effect');
+        this.clearD20Highlighting();
+        this.switchPlayer();
     }
 
     executeDragonBreathFromPanel(riftRow, riftCol, dr, dc) {
+        // Remove dragon breath highlights
+        document.querySelectorAll('.dragon-target').forEach(square => {
+            square.classList.remove('dragon-target');
+        });
+        
         // Hide options area
-        document.getElementById('d20-options-area').style.display = 'none';
+        const optionsDiv = document.getElementById('d20-options-area');
+        if (optionsDiv) {
+            optionsDiv.innerHTML = '';
+        }
         
         let piecesRemoved = 0;
         
+        // Remove ALL pieces in the chosen direction (3 squares)
         for (let distance = 1; distance <= 3; distance++) {
             const targetRow = riftRow + (dr * distance);
             const targetCol = riftCol + (dc * distance);
@@ -1812,21 +1876,22 @@ class ChessGame {
             if (targetRow >= 0 && targetRow < 8 && targetCol >= 0 && targetCol < 8) {
                 const piece = this.board[targetRow][targetCol];
                 
-                // Stop at first piece (friendly or enemy)
+                // Remove ANY piece (enemy or friendly) in this direction
                 if (piece) {
-                    if (piece.color !== this.currentPlayer) {
-                        this.capturedPieces[piece.color].push(piece);
-                        this.board[targetRow][targetCol] = null;
-                        this.removePieceWithAnimation(targetRow, targetCol, piecesRemoved * 400);
-                        this.addToGameLog(`Dragon's Breath removed ${piece.color} ${piece.type}!`, 'effect');
-                        piecesRemoved++;
-                    }
-                    break; // Stop at first piece in this direction
+                    this.capturedPieces[piece.color].push(piece);
+                    this.board[targetRow][targetCol] = null;
+                    this.removePieceWithAnimation(targetRow, targetCol, piecesRemoved * 400);
+                    this.addToGameLog(`Dragon's Breath removed ${piece.color} ${piece.type}!`, 'effect');
+                    piecesRemoved++;
                 }
             }
         }
 
-        this.addToGameLog(`Dragon's Breath fired! ${piecesRemoved} enemy pieces removed.`, 'effect');
+        if (piecesRemoved > 0) {
+            this.addToGameLog(`Dragon's Breath fired! ${piecesRemoved} pieces removed.`, 'effect');
+        } else {
+            this.addToGameLog(`Dragon's Breath fired! No pieces in path.`, 'effect');
+        }
         
         this.updateCapturedPieces();
         this.renderBoard();
@@ -1834,7 +1899,7 @@ class ChessGame {
         setTimeout(() => {
             this.clearD20Highlighting();
             this.switchPlayer();
-        }, 2000);
+        }, 1500);
     }
 
     executeDragonBreath(riftRow, riftCol, dr, dc) {
@@ -3173,3 +3238,4 @@ document.addEventListener('DOMContentLoaded', () => {
     game = new ChessGame();
     window.game = game; // Expose globally for onclick handlers
 });
+
