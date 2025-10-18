@@ -2038,7 +2038,10 @@ class ChessGame {
         
         if (capturedPieces.length === 0) {
             this.addToGameLog(`Necromancer's Trap: Opponent has no captured pieces to resurrect!`, 'effect');
-            setTimeout(() => this.closeModal(), 1500);
+            setTimeout(() => {
+                this.clearD20Highlighting();
+                this.switchPlayer();
+            }, 1500);
             return;
         }
         
@@ -2070,7 +2073,10 @@ class ChessGame {
             this.updateCapturedPieces();
             this.renderBoard();
             this.addToGameLog(`Necromancer's Trap: Highest ranking ${pieceToResurrect.color} ${pieceToResurrect.type} resurrected!`, 'effect');
-            this.closeModal();
+            
+            // Switch player turn instead of closing modal
+            this.clearD20Highlighting();
+            this.switchPlayer();
         }, 1500);
     }
 
@@ -2843,17 +2849,27 @@ class ChessGame {
 
         const description = effectDescriptions[effectName] || 'Unknown field effect.';
         
-        // Show in modal - DISPLAY ONLY, no rolling allowed
-        document.getElementById('rift-effect-title').textContent = `Field Effect: ${this.formatEffectName(effectName)}`;
-        document.getElementById('rift-effect-description').textContent = description;
-        document.getElementById('rift-effect-options').innerHTML = '';
-        
-        // Hide dice roll section for field effect display
-        document.querySelector('.dice-roll').style.display = 'none';
-        
-        document.getElementById('rift-effects-modal').style.display = 'flex';
+        // Show in D20 options area (doesn't interfere with D20 window)
+        const optionsDiv = document.getElementById('d20-options-area');
+        optionsDiv.style.display = 'block';
+        optionsDiv.innerHTML = `
+            <div class="effect-choices">
+                <h4 style="margin-bottom: 10px; color: #333;">Field Effect: ${this.formatEffectName(effectName)}</h4>
+                <p style="color: #666; margin-bottom: 15px; line-height: 1.5;">${description}</p>
+                <button class="cancel-btn" onclick="game.closeFieldEffectDetails()">
+                    Close
+                </button>
+            </div>
+        `;
         
         this.addToGameLog(`Field effect "${effectName.replace(/_/g, ' ')}" viewed: ${description}`, 'effect');
+    }
+
+    closeFieldEffectDetails() {
+        const optionsDiv = document.getElementById('d20-options-area');
+        if (optionsDiv) {
+            optionsDiv.innerHTML = '';
+        }
     }
 
     resign() {
