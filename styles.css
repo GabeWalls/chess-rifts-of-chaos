@@ -1252,6 +1252,114 @@ body.dark-mode .room-spectator-item {
     color: #1e40af;
 }
 
+/* Pawn Promotion Modal */
+.promotion-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 3000;
+    animation: fadeIn 0.3s ease;
+}
+
+.promotion-modal .modal-content {
+    background: white;
+    border-radius: 15px;
+    padding: 30px;
+    max-width: 500px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+body.dark-mode .promotion-modal .modal-content {
+    background: #2a2a2a;
+    color: #fff;
+}
+
+.promotion-modal .modal-header {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.promotion-modal .modal-header h3 {
+    font-size: 1.8rem;
+    color: #667eea;
+    margin: 0;
+}
+
+body.dark-mode .promotion-modal .modal-header h3 {
+    color: #88a0ff;
+}
+
+.promotion-choices {
+    text-align: center;
+}
+
+.promotion-choices p {
+    margin-bottom: 20px;
+    font-size: 1.1rem;
+    color: #555;
+}
+
+body.dark-mode .promotion-choices p {
+    color: #ccc;
+}
+
+.promotion-pieces {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+}
+
+.promotion-piece-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    border-radius: 12px;
+    padding: 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.promotion-piece-btn:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.5);
+}
+
+.promotion-piece-btn:active {
+    transform: translateY(-2px);
+}
+
+.promotion-piece-btn .piece-display {
+    font-size: 3rem;
+    color: white;
+    line-height: 1;
+}
+
+.promotion-piece-btn .piece-name {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: white;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+body.dark-mode .promotion-piece-btn {
+    background: linear-gradient(135deg, #4a5899 0%, #5a3a7a 100%);
+}
+
+body.dark-mode .promotion-piece-btn:hover {
+    box-shadow: 0 8px 25px rgba(74, 88, 153, 0.6);
+}
+
 /* Settings Menu */
 .settings-menu {
     position: fixed;

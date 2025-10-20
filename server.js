@@ -193,6 +193,25 @@ io.on('connection', (socket) => {
     }
   });
 
+  // Pawn promotion
+  socket.on('pawn-promoted', (data) => {
+    const { roomCode, promotion } = data;
+    const room = rooms.get(roomCode);
+    
+    if (room && room.gamePhase === 'playing') {
+      // Update game state on server
+      room.gameState = promotion.gameState;
+      
+      console.log(`Pawn promoted in room ${roomCode}: ${promotion.playerName} promoted to ${promotion.newPieceType}`);
+      
+      // Broadcast promotion to all players in room
+      io.to(roomCode).emit('pawn-promoted', {
+        promotion: promotion,
+        gameState: room.gameState
+      });
+    }
+  });
+
   // Handle rift effects
   socket.on('rift-effect', (data) => {
     const { roomCode, effect, gameState } = data;

@@ -1050,6 +1050,16 @@ class ChessGame {
         // Always render the board first to show the piece on the rift
         this.renderBoard();
         
+        // Check for pawn promotion (before rift activation)
+        if (piece.type === 'pawn') {
+            const promotionRow = piece.color === 'white' ? 0 : 7;
+            if (toRow === promotionRow) {
+                // Pawn reached the opposite end - show promotion modal
+                this.showPromotionModal(toRow, toCol, piece);
+                return; // Wait for promotion choice before continuing
+            }
+        }
+        
         // Check for rift activation (kings cannot activate rifts)
         if (this.isRift(toRow, toCol) && !this.riftActivatedThisTurn && piece.type !== 'king') {
             this.activateRift(toRow, toCol);
@@ -2149,6 +2159,83 @@ class ChessGame {
         });
     }
 
+    // Pawn Promotion
+    showPromotionModal(row, col, pawn) {
+        const modal = document.getElementById('promotion-modal');
+        modal.style.display = 'flex';
+        
+        // Store promotion context
+        this.promotionContext = { row, col, pawn };
+        
+        // Set up promotion piece buttons
+        const promotionButtons = document.querySelectorAll('.promotion-piece-btn');
+        promotionButtons.forEach(btn => {
+            // Remove any existing listeners
+            const newBtn = btn.cloneNode(true);
+            btn.parentNode.replaceChild(newBtn, btn);
+            
+            // Add new listener
+            newBtn.addEventListener('click', () => {
+                const pieceType = newBtn.getAttribute('data-piece');
+                this.promotePawn(pieceType);
+            });
+        });
+        
+        this.addToGameLog(`${pawn.color} pawn reached the opposite end! Choose promotion piece.`, 'system');
+    }
+    
+    promotePawn(newPieceType) {
+        const { row, col, pawn } = this.promotionContext;
+        
+        // Promote the pawn
+        pawn.type = newPieceType;
+        this.addToGameLog(`${pawn.color} pawn promoted to ${newPieceType}!`, 'system');
+        
+        // If this pawn has a Reality Split pair, promote it too
+        if (pawn.realitySplit && pawn.pairedPiece) {
+            const pairedPiece = pawn.pairedPiece;
+            pairedPiece.type = newPieceType;
+            this.addToGameLog(`Reality Split: ${pairedPiece.color} ${newPieceType} duplicate also promoted!`, 'effect');
+        }
+        
+        // Close the modal
+        const modal = document.getElementById('promotion-modal');
+        modal.style.display = 'none';
+        this.promotionContext = null;
+        
+        // Render the board with promoted piece
+        this.renderBoard();
+        
+        // In multiplayer, send promotion to server
+        if (this.isMultiplayer && this.socket) {
+            this.socket.emit('pawn-promoted', {
+                roomCode: this.roomCode,
+                promotion: {
+                    row, col,
+                    newPieceType,
+                    playerName: this.playerName,
+                    gameState: {
+                        board: this.board,
+                        currentPlayer: this.currentPlayer,
+                        capturedPieces: this.capturedPieces,
+                        activeFieldEffects: this.activeFieldEffects,
+                        rifts: this.rifts
+                    }
+                }
+            });
+        }
+        
+        // Continue with game flow - check for rifts
+        const piece = this.board[row][col];
+        if (this.isRift(row, col) && !this.riftActivatedThisTurn && piece.type !== 'king') {
+            this.activateRift(row, col);
+            this.riftActivatedThisTurn = true;
+        } else {
+            // No rift or rift already activated - switch player
+            this.switchPlayer();
+        }
+    }
+
     // Individual Rift Effect Implementations
     showNecromancerTrapChoice(riftRow, riftCol, activatingPiece) {
         const opponentColor = activatingPiece.color === 'white' ? 'black' : 'white';
@@ -3211,6 +3298,10 @@ class ChessGame {
             this.handleMoveMade(data);
         });
 
+        this.socket.on('pawn-promoted', (data) => {
+            this.handlePawnPromotion(data);
+        });
+
         this.socket.on('rift-effect-applied', (data) => {
             this.handleRiftEffect(data);
         });
@@ -3340,6 +3431,21 @@ class ChessGame {
         this.updateFieldEffects();
         this.addToGameLog(`${move.playerName} moved ${move.piece} from ${move.from} to ${move.to}`, 'move');
         console.log(`Move received: ${move.playerName} moved ${move.piece} from ${move.from} to ${move.to}, Current player: ${currentPlayer}`);
+    }
+
+    handlePawnPromotion(data) {
+        const { promotion, gameState } = data;
+        this.board = gameState.board;
+        this.currentPlayer = gameState.currentPlayer;
+        this.capturedPieces = gameState.capturedPieces;
+        this.activeFieldEffects = gameState.activeFieldEffects;
+        this.rifts = gameState.rifts;
+        this.renderBoard();
+        this.updateUI();
+        this.updateCapturedPieces();
+        this.updateFieldEffects();
+        this.addToGameLog(`${promotion.playerName}'s pawn promoted to ${promotion.newPieceType}!`, 'system');
+        console.log(`Promotion received: ${promotion.playerName} promoted pawn to ${promotion.newPieceType}`);
     }
 
     handleRiftEffect(data) {
