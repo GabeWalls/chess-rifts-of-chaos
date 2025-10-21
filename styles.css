@@ -2609,8 +2609,8 @@ body.dark-mode .rules-icon {
     content: url('assets/Rulebook/SVG/Rulebook White.svg');
 }
 
-/* Contact Icon Styling */
-.contact-icon {
+/* Contact Icon Styling in Settings Menu */
+.setting-item .contact-icon {
     width: 20px;
     height: 20px;
     margin-right: 8px;
