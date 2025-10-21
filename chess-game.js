@@ -12,6 +12,7 @@ class ChessGame {
         this.frozenPieces = new Set();
         this.riftActivatedThisTurn = false;
         this.diceRolledThisTurn = false;
+        this.processingRiftEffect = false; // Flag to prevent moves while rift effect is being processed
         this.kingMovedThisTurn = { white: 0, black: 0 }; // Track number of king moves (0, 1, or 2)
         this.kingMovedFirst = false; // Track if king moved first this turn
         this.playerHasMoved = { white: false, black: false }; // Track if each player has moved at least once
@@ -1122,7 +1123,7 @@ class ChessGame {
     rollD20SidePanel() {
         // Validate conditions before allowing roll
         // Must be player's turn AND must have activated a rift
-        if (!this.gameStarted) {
+        if (this.gamePhase !== 'playing') {
             return; // Game hasn't started
         }
         
