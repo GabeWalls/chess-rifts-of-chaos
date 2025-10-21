@@ -102,6 +102,8 @@ class ChessGame {
         document.getElementById('dark-mode-toggle').addEventListener('click', () => this.toggleDarkMode());
         document.getElementById('rules-btn').addEventListener('click', () => this.showRulesModal());
         document.getElementById('close-rules-modal').addEventListener('click', () => this.closeRulesModal());
+        document.getElementById('contact-btn').addEventListener('click', () => this.showContactModal());
+        document.getElementById('close-contact-modal').addEventListener('click', () => this.closeContactModal());
         
         // Tab event listeners
         document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -2113,6 +2115,16 @@ class ChessGame {
 
     closeRulesModal() {
         document.getElementById('rules-modal').style.display = 'none';
+    }
+
+    showContactModal() {
+        document.getElementById('contact-modal').style.display = 'flex';
+        // Close settings panel
+        document.getElementById('settings-panel').classList.remove('show');
+    }
+
+    closeContactModal() {
+        document.getElementById('contact-modal').style.display = 'none';
     }
 
     showRulesTab(tabName) {

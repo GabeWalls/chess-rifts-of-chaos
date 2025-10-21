@@ -38,6 +38,10 @@
                 <img src="assets/Rulebook/SVG/Rulebook Black.svg" alt="Rules" class="rules-icon">
                 <span>Rules</span>
             </div>
+            <div class="setting-item clickable" id="contact-btn">
+                <img src="assets/Contact/SVG/Contact Black.svg" alt="Contact" class="contact-icon">
+                <span>Contact</span>
+            </div>
         </div>
     </div>
 
@@ -300,10 +304,6 @@
                         <button class="tab-btn" data-tab="effects">Effects</button>
                         <button class="tab-btn" data-tab="rules">Rules</button>
                         <button class="tab-btn" data-tab="rifts">Rift Effects</button>
-                        <button class="tab-btn" data-tab="contact">
-                            <img src="assets/Contact/SVG/Contact White.svg" alt="Contact" class="tab-icon">
-                            Contact
-                        </button>
                     </div>
 
                     <!-- Tab Content -->
@@ -648,42 +648,50 @@
                         </div>
                     </div>
 
-                    <!-- Tab 7: Contact -->
-                    <div class="rules-tab-content" id="rules-tab-contact">
-                        <div class="contact-section">
-                            <img src="assets/Contact/SVG/Contact Black.svg" alt="Contact" class="contact-icon">
-                            <h3>Get in Touch</h3>
-                            <p>We'd love to hear from you! Whether you have feedback, found a bug, or just want to share your experience with Chess: Rifts of Chaos.</p>
-                            
-                            <div class="contact-methods">
-                                <div class="contact-item">
-                                    <h4>Email</h4>
-                                    <p><a href="mailto:contact@riftsofchaos.com">contact@riftsofchaos.com</a></p>
-                                </div>
-                                
-                                <div class="contact-item">
-                                    <h4>Report a Bug</h4>
-                                    <p>Found something broken? Let us know at:</p>
-                                    <p><a href="mailto:bugs@riftsofchaos.com">bugs@riftsofchaos.com</a></p>
-                                </div>
-                                
-                                <div class="contact-item">
-                                    <h4>Feedback & Suggestions</h4>
-                                    <p>Have ideas for new rift effects or improvements?</p>
-                                    <p><a href="mailto:feedback@riftsofchaos.com">feedback@riftsofchaos.com</a></p>
-                                </div>
-                                
-                                <div class="contact-item">
-                                    <h4>Follow Development</h4>
-                                    <p>Stay updated on new features and updates:</p>
-                                    <p><a href="https://github.com/GabeWalls/chess-rifts-of-chaos" target="_blank" rel="noopener">GitHub Repository</a></p>
-                                </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contact Modal -->
+        <div class="contact-modal" id="contact-modal" style="display: none;">
+            <div class="modal-content contact-content">
+                <div class="modal-header">
+                    <img src="assets/Contact/SVG/Contact White.svg" alt="Contact" class="contact-header-icon">
+                    <h2>Contact Us</h2>
+                    <button class="close-btn" id="close-contact-modal">&times;</button>
+                </div>
+                <div class="contact-body">
+                    <div class="contact-section">
+                        <img src="assets/Contact/SVG/Contact Black.svg" alt="Contact" class="contact-icon">
+                        <h3>Get in Touch</h3>
+                        <p>We'd love to hear from you! Whether you have feedback, found a bug, or just want to share your experience with Chess: Rifts of Chaos.</p>
+                        
+                        <div class="contact-methods">
+                            <div class="contact-item">
+                                <h4>Email</h4>
+                                <p><a href="mailto:riftsofchaos@gmail.com">riftsofchaos@gmail.com</a></p>
                             </div>
                             
-                            <div class="contact-footer">
-                                <p><strong>Chess: Rifts of Chaos</strong> is currently in Beta.</p>
-                                <p>Thank you for playing and helping us improve the game!</p>
+                            <div class="contact-item">
+                                <h4>Report a Bug</h4>
+                                <p>Found something broken? Let us know!</p>
                             </div>
+                            
+                            <div class="contact-item">
+                                <h4>Feedback & Suggestions</h4>
+                                <p>Have ideas for new rift effects or improvements? We'd love to hear them!</p>
+                            </div>
+                            
+                            <div class="contact-item">
+                                <h4>Follow Development</h4>
+                                <p>Stay updated on new features and updates:</p>
+                                <p><a href="https://github.com/GabeWalls/chess-rifts-of-chaos" target="_blank" rel="noopener">GitHub Repository</a></p>
+                            </div>
+                        </div>
+                        
+                        <div class="contact-footer">
+                            <p><strong>Chess: Rifts of Chaos</strong> is currently in Beta.</p>
+                            <p>Thank you for playing and helping us improve the game!</p>
                         </div>
                     </div>
                 </div>
