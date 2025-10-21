@@ -636,6 +636,51 @@ body.dark-mode #field-effects-list {
     
 }
 
+/* Tablet optimizations (between desktop and mobile) */
+@media (max-width: 900px) and (min-width: 601px) {
+    .chess-board {
+        width: 400px;
+        height: 400px;
+    }
+    
+    .chess-square {
+        width: 50px;
+        height: 50px;
+        font-size: 2rem;
+    }
+    
+    .board-coordinates.bottom-coords .coord-label,
+    .board-coordinates.top-coords .coord-label {
+        width: 50px;
+        height: 22px;
+        font-size: 0.8rem;
+        line-height: 22px;
+    }
+    
+    .board-coordinates.left-coords .coord-label,
+    .board-coordinates.right-coords .coord-label {
+        width: 22px;
+        height: 50px;
+        font-size: 0.8rem;
+        line-height: 50px;
+    }
+    
+    .d20-panel {
+        max-width: 350px;
+    }
+    
+    .d20-display {
+        width: 100px;
+        height: 100px;
+        font-size: 3rem;
+    }
+    
+    .game-controls,
+    .setup-controls {
+        max-width: 500px;
+    }
+}
+
 @media (max-width: 600px) {
     .chess-board {
         width: 320px;
@@ -648,24 +693,187 @@ body.dark-mode #field-effects-list {
         font-size: 1.5rem;
     }
     
-    .board-coordinates.bottom-coords .coord-label {
+    /* Coordinate labels - make them smaller and more visible */
+    .board-coordinates.bottom-coords .coord-label,
+    .board-coordinates.top-coords .coord-label {
         width: 40px;
-        height: 20px;
+        height: 18px;
+        font-size: 0.7rem;
+        line-height: 18px;
     }
     
-    .board-coordinates.left-coords .coord-label {
-        width: 20px;
+    .board-coordinates.left-coords .coord-label,
+    .board-coordinates.right-coords .coord-label {
+        width: 18px;
         height: 40px;
+        font-size: 0.7rem;
+        line-height: 40px;
     }
-    
     
     .game-header h1 {
-        font-size: 2rem;
+        font-size: 1.5rem;
     }
     
     .game-info {
         flex-direction: column;
         gap: 10px;
+    }
+    
+    /* D20 Panel - make more compact on mobile */
+    .d20-panel {
+        padding: 12px;
+        max-width: 100%;
+        margin: 0;
+    }
+    
+    .d20-panel-header {
+        font-size: 1rem;
+        padding: 8px;
+    }
+    
+    .d20-display {
+        width: 80px;
+        height: 80px;
+        font-size: 2.5rem;
+    }
+    
+    .roll-d20-btn {
+        padding: 10px 20px;
+        font-size: 0.9rem;
+    }
+    
+    .d20-result-number {
+        font-size: 3rem;
+    }
+    
+    .effect-name {
+        font-size: 1.2rem;
+    }
+    
+    .effect-description {
+        font-size: 0.85rem;
+    }
+    
+    /* Game Controls - stack vertically on mobile */
+    .game-controls {
+        padding: 15px;
+    }
+    
+    .game-controls h3 {
+        font-size: 1.2rem;
+    }
+    
+    .captured-pieces {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .captured-white,
+    .captured-black {
+        padding: 8px;
+        font-size: 0.85rem;
+    }
+    
+    .active-effects {
+        margin-top: 15px;
+    }
+    
+    .active-effects h4 {
+        font-size: 1rem;
+    }
+    
+    #field-effects-list {
+        font-size: 0.85rem;
+        padding: 8px;
+    }
+    
+    /* Setup Controls - more compact */
+    .setup-controls {
+        padding: 15px;
+    }
+    
+    .setup-controls h3 {
+        font-size: 1.2rem;
+    }
+    
+    .setup-controls button {
+        padding: 10px;
+        font-size: 0.9rem;
+    }
+    
+    /* Chat window - smaller on mobile */
+    .chat-window {
+        max-height: 200px;
+    }
+    
+    .chat-input {
+        font-size: 0.9rem;
+    }
+    
+    /* Promotion modal - better mobile layout */
+    .promotion-modal .modal-content {
+        padding: 20px;
+        max-width: 90%;
+    }
+    
+    .promotion-pieces {
+        gap: 10px;
+    }
+    
+    .promotion-piece-btn {
+        padding: 15px;
+    }
+    
+    .promotion-piece-btn .piece-display {
+        font-size: 2rem;
+    }
+    
+    .promotion-piece-btn .piece-name {
+        font-size: 0.9rem;
+    }
+}
+
+/* Extra small screens (phones in portrait) */
+@media (max-width: 400px) {
+    .chess-board {
+        width: 280px;
+        height: 280px;
+    }
+    
+    .chess-square {
+        width: 35px;
+        height: 35px;
+        font-size: 1.3rem;
+    }
+    
+    .board-coordinates.bottom-coords .coord-label,
+    .board-coordinates.top-coords .coord-label {
+        width: 35px;
+        height: 16px;
+        font-size: 0.65rem;
+        line-height: 16px;
+    }
+    
+    .board-coordinates.left-coords .coord-label,
+    .board-coordinates.right-coords .coord-label {
+        width: 16px;
+        height: 35px;
+        font-size: 0.65rem;
+        line-height: 35px;
+    }
+    
+    .game-header h1 {
+        font-size: 1.3rem;
+    }
+    
+    .d20-display {
+        width: 70px;
+        height: 70px;
+        font-size: 2rem;
+    }
+    
+    .effect-name {
+        font-size: 1rem;
     }
 }
 

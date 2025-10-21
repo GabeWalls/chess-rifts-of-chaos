@@ -926,6 +926,11 @@ class ChessGame {
     }
 
     makeMove(fromRow, fromCol, toRow, toCol) {
+        // Prevent moves while rift effect is being processed
+        if (this.processingRiftEffect) {
+            return;
+        }
+        
         // In multiplayer, only allow moves for the current player's color
         if (this.isMultiplayer && !this.isSpectator) {
             if (this.currentPlayer !== this.playerColor) {
@@ -1115,6 +1120,20 @@ class ChessGame {
     }
 
     rollD20SidePanel() {
+        // Validate conditions before allowing roll
+        // Must be player's turn AND must have activated a rift
+        if (!this.gameStarted) {
+            return; // Game hasn't started
+        }
+        
+        if (this.isMultiplayer && this.currentPlayer !== this.playerColor) {
+            return; // Not player's turn in multiplayer
+        }
+        
+        if (!this.riftActivatedThisTurn) {
+            return; // No rift was activated - cannot roll
+        }
+        
         // Prevent multiple rolls per turn
         if (this.diceRolledThisTurn) {
             return;
@@ -1325,6 +1344,9 @@ class ChessGame {
         const riftCol = this.lastMovedPiece.toCol;
         const activatingPiece = this.lastMovedPiece.piece;
         
+        // Set flag to prevent moves while effect is being processed
+        this.processingRiftEffect = true;
+        
         // In multiplayer, send rift effect to server
         if (this.isMultiplayer && this.socket) {
             this.socket.emit('rift-effect', {
@@ -1452,10 +1474,10 @@ class ChessGame {
         
         // Handle turn switching based on rift effect
         // Effects that already handle their own turn switching: 1, 2, 5, 10, 11, 12, 17, 20
-        // Effects that don't switch turns: 6 (Foot Soldier's Gambit), 14 (Conqueror's Tale)
+        // Effects that don't switch turns: 6 (Foot Soldier's Gambit)
         // All other effects should end the turn
         const effectsWithOwnTurnSwitching = [1, 2, 5, 10, 11, 12, 17, 20];
-        const effectsThatDontSwitchTurns = [6, 14];
+        const effectsThatDontSwitchTurns = [6];
         
         if (!effectsWithOwnTurnSwitching.includes(roll) && !effectsThatDontSwitchTurns.includes(roll)) {
             // End turn for rift effects that don't handle their own turn switching
@@ -3023,6 +3045,7 @@ class ChessGame {
         this.currentPlayer = this.currentPlayer === 'white' ? 'black' : 'white';
         this.riftActivatedThisTurn = false;
         this.diceRolledThisTurn = false;
+        this.processingRiftEffect = false; // Clear rift effect processing flag
         this.kingMovedThisTurn = { white: 0, black: 0 }; // Reset king move tracking
         this.kingMovedFirst = false; // Reset king moved first flag
         
