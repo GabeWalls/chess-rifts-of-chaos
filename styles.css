@@ -2619,7 +2619,7 @@ body.dark-mode .rules-icon {
     vertical-align: middle;
     display: inline-block;
     position: relative;
-    top: 2px; /* Better alignment with text */
+    top: 3px; /* Further adjustment to center with text */
 }
 
 body.dark-mode .setting-item .contact-icon {
