@@ -1885,36 +1885,15 @@ class ChessGame {
     }
 
     showDragonDirectionChoice(riftRow, riftCol) {
-        // Highlight all squares within 3 spaces in red
+        // Highlight all squares within 3 spaces in red and add clickable arrows
         this.highlightDragonBreathArea(riftRow, riftCol);
         
-        const directions = [
-            { name: 'North', dr: -1, dc: 0 },
-            { name: 'Northeast', dr: -1, dc: 1 },
-            { name: 'East', dr: 0, dc: 1 },
-            { name: 'Southeast', dr: 1, dc: 1 },
-            { name: 'South', dr: 1, dc: 0 },
-            { name: 'Southwest', dr: 1, dc: -1 },
-            { name: 'West', dr: 0, dc: -1 },
-            { name: 'Northwest', dr: -1, dc: -1 }
-        ];
-
+        // Show simple instruction in D20 panel
         const optionsDiv = document.getElementById('d20-options-area');
         optionsDiv.style.display = 'block';
-        let buttonsHtml = '<p style="margin-bottom: 10px; font-weight: bold;">Dragon\'s Breath! Choose a direction:</p>';
+        optionsDiv.innerHTML = '<p style="margin-bottom: 10px; font-weight: bold;">Dragon\'s Breath! Click an arrow on the board to choose direction:</p><button class="cancel-btn" onclick="game.cancelDragonBreath()">Cancel</button>';
         
-        directions.forEach((dir, index) => {
-            buttonsHtml += `
-                <button class="action-btn" onclick="game.executeDragonBreathFromPanel(${riftRow}, ${riftCol}, ${dir.dr}, ${dir.dc})">
-                    ${dir.name}
-                </button>
-            `;
-        });
-        
-        buttonsHtml += `<br><button class="cancel-btn" onclick="game.cancelDragonBreath()">Cancel</button>`;
-        
-        optionsDiv.innerHTML = buttonsHtml;
-        this.addToGameLog(`Dragon's Breath activated! Choose direction to strike.`, 'effect');
+        this.addToGameLog(`Dragon's Breath activated! Click an arrow on the board to choose direction.`, 'effect');
     }
 
     highlightDragonBreathArea(riftRow, riftCol) {
@@ -1948,7 +1927,21 @@ class ChessGame {
                             arrowDiv.dataset.direction = name;
                             arrowDiv.dataset.dr = dr;
                             arrowDiv.dataset.dc = dc;
-                            arrowDiv.style.cssText = 'position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 2rem; color: #ff4500; font-weight: bold; cursor: pointer; z-index: 10; text-shadow: 0 0 10px rgba(255, 69, 0, 0.8);';
+                            arrowDiv.style.cssText = 'position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 2.5rem; color: #ff4500; font-weight: bold; cursor: pointer; z-index: 10; text-shadow: 0 0 15px rgba(255, 69, 0, 1); transition: all 0.3s ease;';
+                            
+                            // Add hover effect
+                            arrowDiv.addEventListener('mouseenter', () => {
+                                arrowDiv.style.transform = 'translate(-50%, -50%) scale(1.3)';
+                                arrowDiv.style.textShadow = '0 0 25px rgba(255, 69, 0, 1)';
+                                arrowDiv.style.color = '#ff6600';
+                            });
+                            
+                            arrowDiv.addEventListener('mouseleave', () => {
+                                arrowDiv.style.transform = 'translate(-50%, -50%) scale(1)';
+                                arrowDiv.style.textShadow = '0 0 15px rgba(255, 69, 0, 1)';
+                                arrowDiv.style.color = '#ff4500';
+                            });
+                            
                             arrowDiv.onclick = (e) => {
                                 e.stopPropagation();
                                 this.executeDragonBreathFromPanel(riftRow, riftCol, dr, dc);

@@ -2154,22 +2154,24 @@ body.dark-mode .sandstorm-overlay.active {
 }
 
 .dragon-arrow {
-    animation: arrowPulse 1s ease-in-out infinite;
+    animation: arrowPulse 1.5s ease-in-out infinite;
+    transition: all 0.3s ease;
 }
 
 .dragon-arrow:hover {
-    transform: translate(-50%, -50%) scale(1.3) !important;
-    text-shadow: 0 0 20px rgba(255, 69, 0, 1) !important;
+    transform: translate(-50%, -50%) scale(1.4) !important;
+    text-shadow: 0 0 30px rgba(255, 69, 0, 1) !important;
+    color: #ff6600 !important;
 }
 
 @keyframes arrowPulse {
     0%, 100% { 
-        opacity: 0.8;
-        text-shadow: 0 0 10px rgba(255, 69, 0, 0.8);
+        opacity: 0.9;
+        text-shadow: 0 0 15px rgba(255, 69, 0, 0.8);
     }
     50% { 
         opacity: 1;
-        text-shadow: 0 0 20px rgba(255, 69, 0, 1), 0 0 30px rgba(255, 69, 0, 0.6);
+        text-shadow: 0 0 25px rgba(255, 69, 0, 1), 0 0 35px rgba(255, 69, 0, 0.8);
     }
 }
 
@@ -2613,11 +2615,11 @@ body.dark-mode .rules-icon {
 .setting-item .contact-icon {
     width: 20px;
     height: 20px;
-    margin-right: 8px;
+    margin-right: 10px;
     vertical-align: middle;
     display: inline-block;
     position: relative;
-    top: 1px; /* Slight adjustment to center with text */
+    top: 2px; /* Better alignment with text */
 }
 
 body.dark-mode .setting-item .contact-icon {
