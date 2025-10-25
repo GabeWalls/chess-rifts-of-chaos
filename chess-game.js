@@ -900,6 +900,7 @@ class ChessGame {
         }
         
         if (this.activeFieldEffects.includes('sandstorm')) {
+            console.log(`Sandstorm active - restricting moves for ${piece.color} ${piece.type}`);
             if (piece.type === 'pawn') return []; // Pawns cannot move
             if (piece.type === 'king') {
                 // Kings with Conqueror's Tale can move once in sandstorm
@@ -925,11 +926,29 @@ class ChessGame {
             }
             // Other pieces have max range of 3 squares
             if (['rook', 'bishop', 'queen'].includes(piece.type)) {
-                const moves = this.getLinearMoves(row, col, 
-                    piece.type === 'rook' ? [[0, 1], [0, -1], [1, 0], [-1, 0]] :
+                const moves = [];
+                const directions = piece.type === 'rook' ? [[0, 1], [0, -1], [1, 0], [-1, 0]] :
                     piece.type === 'bishop' ? [[1, 1], [1, -1], [-1, 1], [-1, -1]] :
-                    [[0, 1], [0, -1], [1, 0], [-1, 0], [1, 1], [1, -1], [-1, 1], [-1, -1]]);
-                return moves.filter(([r, c]) => Math.abs(r - row) <= 3 && Math.abs(c - col) <= 3);
+                    [[0, 1], [0, -1], [1, 0], [-1, 0], [1, 1], [1, -1], [-1, 1], [-1, -1]];
+                
+                for (const [rowOffset, colOffset] of directions) {
+                    for (let i = 1; i <= 3; i++) { // Max range of 3 squares
+                        const newRow = row + rowOffset * i;
+                        const newCol = col + colOffset * i;
+                        
+                        if (!this.isInBounds(newRow, newCol)) break;
+                        
+                        if (!this.board[newRow][newCol]) {
+                            moves.push([newRow, newCol]);
+                        } else {
+                            if (this.board[newRow][newCol].color !== piece.color) {
+                                moves.push([newRow, newCol]);
+                            }
+                            break;
+                        }
+                    }
+                }
+                return moves;
             }
         }
         
@@ -2792,8 +2811,8 @@ class ChessGame {
         else if (radiusRoll >= 15 && radiusRoll <= 18) radius = 3;
         else if (radiusRoll >= 19) radius = 4;
         
-        // Clear any existing field effects first
-        this.clearFieldEffects();
+        // Don't clear existing field effects - allow multiple effects to coexist
+        // this.clearFieldEffects();
         
         // Freeze all pieces within radius
         for (let rowOffset = -radius; rowOffset <= radius; rowOffset++) {
@@ -3141,11 +3160,15 @@ class ChessGame {
     }
 
     applyFieldEffect(effectName) {
-        // Remove any existing field effects and clear frozen pieces from field effects
-        this.clearFieldEffects();
+        // Only clear field effects if this is a new field effect that should replace others
+        // For now, we'll allow multiple field effects to coexist
+        // TODO: Define which effects should replace others vs coexist
         
-        // Add the new field effect
-        if (effectName !== 'blank') {
+        console.log(`Applying field effect: ${effectName}`);
+        console.log(`Current active field effects:`, this.activeFieldEffects);
+        
+        // Add the new field effect (avoid duplicates)
+        if (effectName !== 'blank' && !this.activeFieldEffects.includes(effectName)) {
             this.activeFieldEffects.push(effectName);
             this.addToGameLog(`Field effect activated: ${this.formatEffectName(effectName)}`, 'effect');
             
@@ -3153,9 +3176,13 @@ class ChessGame {
             if (effectName === 'sandstorm') {
                 this.showSandstormOverlay();
             }
-        } else {
+        } else if (effectName === 'blank') {
             this.addToGameLog(`Field effect activated: Blank (Pawns may capture sideways)`, 'effect');
+        } else {
+            this.addToGameLog(`Field effect already active: ${this.formatEffectName(effectName)}`, 'effect');
         }
+        
+        console.log(`After applying, active field effects:`, this.activeFieldEffects);
         
         // Update the field effects display
         this.updateFieldEffects();
@@ -3227,7 +3254,8 @@ class ChessGame {
         // Check for Eerie Fog turn skip AFTER switching
         if (this.activeFieldEffects.includes('eerie_fog_turmoil') && this.eerieFogSkipPlayer === this.currentPlayer) {
             this.addToGameLog(`${this.currentPlayer} skips turn due to Eerie Fog's Turmoil!`, 'effect');
-            this.clearFieldEffects(); // Clear the field effect after skipping
+            // Don't clear field effects - Eerie Fog should persist
+            // this.clearFieldEffects(); // Clear the field effect after skipping
             this.eerieFogSkipPlayer = null;
             // Switch player again to skip their turn
             this.currentPlayer = this.currentPlayer === 'white' ? 'black' : 'white';
@@ -3307,7 +3335,13 @@ class ChessGame {
 
     updateFieldEffects() {
         const effectsList = document.getElementById('field-effects-list');
+        if (!effectsList) {
+            console.error('Field effects list element not found!');
+            return;
+        }
+        
         effectsList.innerHTML = '';
+        console.log(`Updating field effects display. Active effects:`, this.activeFieldEffects);
         
         this.activeFieldEffects.forEach(effect => {
             const effectElement = document.createElement('div');
@@ -3315,6 +3349,7 @@ class ChessGame {
             effectElement.textContent = this.formatEffectName(effect);
             effectElement.addEventListener('click', () => this.showFieldEffectDetails(effect));
             effectsList.appendChild(effectElement);
+            console.log(`Added field effect to display: ${effect}`);
         });
     }
 
