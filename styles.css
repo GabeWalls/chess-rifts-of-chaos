@@ -2084,6 +2084,25 @@ body.dark-mode .reality-split-piece {
     animation: purpleAura 2s ease-in-out infinite;
 }
 
+/* Rift's Blessing immunity gold aura */
+.rifts-blessing-immunity {
+    position: relative;
+    background: linear-gradient(45deg, #ffd700, #ffed4e, #ffd700);
+    background-size: 200% 200%;
+    animation: goldAura 2s ease-in-out infinite;
+    border-radius: 50%;
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
+}
+
+/* Ensure gold immunity aura stays gold in dark mode */
+body.dark-mode .rifts-blessing-immunity {
+    background: linear-gradient(45deg, #ffd700, #ffed4e, #ffd700) !important;
+    box-shadow: 0 0 25px rgba(255, 215, 0, 1) !important;
+    background-size: 200% 200%;
+    animation: goldAura 2s ease-in-out infinite;
+    border-radius: 50%;
+}
+
 /* Ensure ALL visual effects are not affected by dark mode */
 body.dark-mode .frozen-piece {
     opacity: 0.5 !important;

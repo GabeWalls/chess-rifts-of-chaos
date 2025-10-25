@@ -179,6 +179,11 @@ class ChessGame {
                     if (piece.realitySplit) {
                         square.classList.add('reality-split-piece');
                     }
+                    
+                    // Add rift's blessing immunity class if piece has immunity
+                    if (piece.riftsBlessingImmunity) {
+                        square.classList.add('rifts-blessing-immunity');
+                    }
                 }
                 
                 square.addEventListener('click', () => this.handleSquareClick(row, col));
@@ -208,9 +213,9 @@ class ChessGame {
             return;
         }
         
-        // Handle Spring of Revival piece placement
-        if (this.springOfRevivalMode && this.springOfRevivalMode.active && this.springOfRevivalMode.piece) {
-            this.handleSpringOfRevivalPlacement(row, col);
+        // Handle Rift's Blessing piece placement
+        if (this.riftsBlessingMode && this.riftsBlessingMode.active && this.riftsBlessingMode.piece) {
+            this.handleRiftsBlessingPlacement(row, col);
             return;
         }
         
@@ -389,13 +394,13 @@ class ChessGame {
         }, 1000);
     }
 
-    handleSpringOfRevivalPlacement(row, col) {
-        const { playerColor, piece } = this.springOfRevivalMode;
-        const startRows = playerColor === 'white' ? [6, 7] : [0, 1];
+    handleRiftsBlessingPlacement(row, col) {
+        const { playerColor, piece } = this.riftsBlessingMode;
+        const playerHalfRows = playerColor === 'white' ? [4, 5, 6, 7] : [0, 1, 2, 3];
         
-        // Validate the target is a valid starting square
-        if (!startRows.includes(row)) {
-            this.addToGameLog(`Invalid placement! Must place on starting rows.`, 'effect');
+        // Validate the target is on the player's half of the board
+        if (!playerHalfRows.includes(row)) {
+            this.addToGameLog(`Invalid placement! Must place on your half of the board.`, 'effect');
             return;
         }
         
@@ -410,17 +415,62 @@ class ChessGame {
         this.updateCapturedPieces();
         
         const coords = String.fromCharCode(97 + col) + (8 - row);
-        this.addToGameLog(`Spring of Revival: ${piece.color} ${piece.type} revived at ${coords}!`, 'effect');
+        this.addToGameLog(`Rift's Blessing: ${piece.color} ${piece.type} revived at ${coords}!`, 'effect');
         
         // Cleanup
-        this.springOfRevivalMode = null;
-        document.querySelectorAll('.revival-target').forEach(square => {
-            square.classList.remove('revival-target');
+        this.riftsBlessingMode = null;
+        document.querySelectorAll('.rifts-blessing-target').forEach(square => {
+            square.classList.remove('rifts-blessing-target');
         });
         
         setTimeout(() => {
             this.closeModal();
-        }, 1500);
+            this.switchPlayer();
+        }, 1000);
+    }
+
+    applyRiftsBlessingImmunity(playerColor) {
+        // Give immunity for one turn - none of the player's pieces can be captured
+        this.riftsBlessingImmunity = { 
+            active: true, 
+            playerColor: playerColor,
+            turnApplied: this.turnCount 
+        };
+        
+        // Add gold aura to all player's pieces
+        for (let row = 0; row < 8; row++) {
+            for (let col = 0; col < 8; col++) {
+                const piece = this.board[row][col];
+                if (piece && piece.color === playerColor) {
+                    piece.riftsBlessingImmunity = true;
+                }
+            }
+        }
+        
+        this.renderBoard();
+        this.addToGameLog(`Rift's Blessing: ${playerColor} gains immunity for one turn!`, 'effect');
+    }
+
+    removeRiftsBlessingImmunity() {
+        if (!this.riftsBlessingImmunity || !this.riftsBlessingImmunity.active) return;
+        
+        const playerColor = this.riftsBlessingImmunity.playerColor;
+        
+        // Remove immunity from all player's pieces
+        for (let row = 0; row < 8; row++) {
+            for (let col = 0; col < 8; col++) {
+                const piece = this.board[row][col];
+                if (piece && piece.color === playerColor && piece.riftsBlessingImmunity) {
+                    piece.riftsBlessingImmunity = false;
+                }
+            }
+        }
+        
+        // Clear immunity tracking
+        this.riftsBlessingImmunity = null;
+        
+        this.renderBoard();
+        this.addToGameLog(`Rift's Blessing: ${playerColor} immunity expires!`, 'effect');
     }
 
     handleDragonBreathTarget(row, col) {
@@ -1345,7 +1395,7 @@ class ChessGame {
             17: { name: "Reality Split", type: "special", rating: 2, description: "The activating piece duplicates itself; both versions can move independently, but if either dies, both vanish. Both pieces are highlighted with a purple phantom aura. The duplicate piece is spawned on the original piece's starting square." },
             18: { name: "Fairy Fountain", type: "special", rating: 2, description: "Activating Pawn gains new movement: Forward 2 spaces, plus 1 space left/right." },
             19: { name: "Eerie Fog's Turmoil", type: "field", rating: 2, description: "At the start of your turn, roll a D20: 3–20 = play normally. 1–2 = skip your turn." },
-            20: { name: "Spring of Revival", type: "special", rating: 5, description: "Place one of your captured pieces onto a starting square." },
+            20: { name: "Rift's Blessing", type: "special", rating: 6, description: "Choose any one of your captured pieces (except King) and revive it instantly on any empty square on your half of the board. If you have no captured pieces, gain immunity for one turn, none of your pieces can be captured until your next turn." },
             21: { name: "Blank", type: "field", rating: 3, description: "Pawns may now move sideways to capture." }
         };
         
@@ -1374,9 +1424,8 @@ class ChessGame {
             case 18: // Fairy Fountain - must be activated by a pawn
                 return activatingPiece.type === 'pawn';
                 
-            case 20: // Spring of Revival - requires player to have captured pieces
-                const playerCaptured = this.capturedPieces[playerColor];
-                return playerCaptured && playerCaptured.length > 0;
+            case 20: // Rift's Blessing - always available (either revive piece or gain immunity)
+                return true;
                 
             default:
                 return true; // No requirements
@@ -1487,14 +1536,17 @@ class ChessGame {
                 case 19: // Eerie Fog's Turmoil
                     this.showEerieFogRoll(activatingPiece.color);
                     return; // Don't close modal yet
-                case 20: // Spring of Revival
-                    // Check if player has any captured pieces of their own color
+                case 20: // Rift's Blessing
+                    // Check if player has any captured pieces of their own color (excluding kings)
                     const playerCapturedPieces = this.capturedPieces[activatingPiece.color];
-                    if (playerCapturedPieces && playerCapturedPieces.length > 0) {
-                        this.showSpringOfRevivalChoice(activatingPiece.color);
+                    const availablePieces = playerCapturedPieces ? playerCapturedPieces.filter(p => p.type !== 'king') : [];
+                    
+                    if (availablePieces.length > 0) {
+                        this.showRiftsBlessingChoice(activatingPiece.color);
                         return; // Don't close modal yet
                     } else {
-                        this.addToGameLog(`Spring of Revival: You have no captured pieces to revive!`, 'effect');
+                        // No captured pieces - give immunity for one turn
+                        this.applyRiftsBlessingImmunity(activatingPiece.color);
                         this.switchPlayer();
                     }
                     break;
@@ -1709,6 +1761,12 @@ class ChessGame {
         // Check if this piece was already removed (e.g., as part of Reality Split pair)
         if (this.board[row][col] !== piece) {
             // Piece already removed from board, skip
+            return { kingCaptured: false };
+        }
+        
+        // Check if piece has Rift's Blessing immunity
+        if (piece.riftsBlessingImmunity) {
+            this.addToGameLog(`Cannot capture ${piece.color} ${piece.type} - protected by Rift's Blessing!`, 'effect');
             return { kingCaptured: false };
         }
         
@@ -2766,11 +2824,12 @@ class ChessGame {
         this.addToGameLog(`Fairy Fountain: ${activatingPiece.color} pawn gains enhanced movement!`, 'effect');
     }
 
-    showSpringOfRevivalChoice(playerColor) {
+    showRiftsBlessingChoice(playerColor) {
         const capturedPieces = this.capturedPieces[playerColor];
+        const availablePieces = capturedPieces ? capturedPieces.filter(p => p.type !== 'king') : [];
         
-        if (capturedPieces.length === 0) {
-            this.addToGameLog(`Spring of Revival: No captured pieces to revive!`, 'effect');
+        if (availablePieces.length === 0) {
+            this.addToGameLog(`Rift's Blessing: No captured pieces to revive!`, 'effect');
             setTimeout(() => this.closeModal(), 1500);
             return;
         }
@@ -2778,9 +2837,9 @@ class ChessGame {
         const optionsDiv = document.getElementById('rift-effect-options');
         let buttonsHtml = '<div class="effect-choices"><p style="color: #333; margin-bottom: 10px;">Select a piece to revive:</p>';
         
-        capturedPieces.forEach((piece, index) => {
+        availablePieces.forEach((piece, index) => {
             buttonsHtml += `
-                <button class="effect-choice" onclick="game.revivePiece('${playerColor}', ${index})">
+                <button class="effect-choice" onclick="game.reviveRiftsBlessingPiece('${playerColor}', ${index})">
                     ${this.getPieceSymbol(piece)} ${piece.type}
                 </button>
             `;
@@ -2789,33 +2848,41 @@ class ChessGame {
         buttonsHtml += '</div>';
         optionsDiv.innerHTML = buttonsHtml;
         
-        this.addToGameLog(`Spring of Revival activated! Choose a piece to revive.`, 'effect');
-        this.springOfRevivalMode = { active: true, playerColor };
+        this.addToGameLog(`Rift's Blessing activated! Choose a piece to revive.`, 'effect');
+        this.riftsBlessingMode = { active: true, playerColor };
     }
 
-    revivePiece(playerColor, pieceIndex) {
-        const piece = this.capturedPieces[playerColor].splice(pieceIndex, 1)[0];
+    reviveRiftsBlessingPiece(playerColor, pieceIndex) {
+        const capturedPieces = this.capturedPieces[playerColor];
+        const availablePieces = capturedPieces ? capturedPieces.filter(p => p.type !== 'king') : [];
+        const piece = availablePieces.splice(pieceIndex, 1)[0];
+        
+        // Remove from captured pieces
+        const originalIndex = capturedPieces.indexOf(piece);
+        if (originalIndex !== -1) {
+            capturedPieces.splice(originalIndex, 1);
+        }
         
         const optionsDiv = document.getElementById('rift-effect-options');
         optionsDiv.innerHTML = `
             <div class="effect-choices">
-                <p style="color: #333; margin-bottom: 10px;">Click on a starting square (row ${playerColor === 'white' ? '1 or 2' : '7 or 8'}) to place ${piece.type}</p>
+                <p style="color: #333; margin-bottom: 10px;">Click on any empty square on your half of the board to place ${piece.type}</p>
             </div>
         `;
         
-        this.springOfRevivalMode = { active: true, playerColor, piece };
-        this.highlightStartingSquares(playerColor);
+        this.riftsBlessingMode = { active: true, playerColor, piece };
+        this.highlightPlayerHalf(playerColor);
     }
 
-    highlightStartingSquares(playerColor) {
-        const startRows = playerColor === 'white' ? [6, 7] : [0, 1]; // Rows 1-2 for white, 7-8 for black
+    highlightPlayerHalf(playerColor) {
+        const playerHalfRows = playerColor === 'white' ? [4, 5, 6, 7] : [0, 1, 2, 3]; // Player's half of the board
         
-        startRows.forEach(row => {
+        playerHalfRows.forEach(row => {
             for (let col = 0; col < 8; col++) {
                 if (!this.board[row][col]) {
                     const square = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
                     if (square) {
-                        square.classList.add('revival-target');
+                        square.classList.add('rifts-blessing-target');
                     }
                 }
             }
@@ -3136,6 +3203,15 @@ class ChessGame {
     }
 
     switchPlayer() {
+        // Check if Rift's Blessing immunity should be removed
+        if (this.riftsBlessingImmunity && this.riftsBlessingImmunity.active) {
+            const previousPlayer = this.currentPlayer;
+            if (this.riftsBlessingImmunity.playerColor === previousPlayer) {
+                // Remove immunity after the player's turn
+                this.removeRiftsBlessingImmunity();
+            }
+        }
+        
         // Switch to next player
         this.currentPlayer = this.currentPlayer === 'white' ? 'black' : 'white';
         this.riftActivatedThisTurn = false;
