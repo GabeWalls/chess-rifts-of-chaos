@@ -294,14 +294,37 @@ class ChessGame {
             return;
         }
         
-        // Validate target is within 5 squares (using Chebyshev distance)
-        const rowDist = Math.abs(row - riftRow);
-        const colDist = Math.abs(col - riftCol);
-        const distance = Math.max(rowDist, colDist);
+        // Validate target is within line of sight (check if there's a clear path)
+        const dr = row - riftRow;
+        const dc = col - riftCol;
+        
+        // Check if target is in a straight line (diagonal or orthogonal)
+        if (dr !== 0 && dc !== 0 && Math.abs(dr) !== Math.abs(dc)) {
+            this.addToGameLog(`Invalid target! Must be in a straight line from the rift.`, 'effect');
+            return;
+        }
+        
+        // Calculate distance
+        const distance = Math.max(Math.abs(dr), Math.abs(dc));
         
         if (distance > 5) {
             this.addToGameLog(`Invalid target! Must be within 5 squares (distance: ${distance}).`, 'effect');
             return;
+        }
+        
+        // Check line of sight - no pieces should block the path
+        const stepRow = dr === 0 ? 0 : (dr > 0 ? 1 : -1);
+        const stepCol = dc === 0 ? 0 : (dc > 0 ? 1 : -1);
+        
+        for (let i = 1; i < distance; i++) {
+            const checkRow = riftRow + (stepRow * i);
+            const checkCol = riftCol + (stepCol * i);
+            const blockingPiece = this.board[checkRow][checkCol];
+            
+            if (blockingPiece) {
+                this.addToGameLog(`Invalid target! ${blockingPiece.color} ${blockingPiece.type} blocks line of sight.`, 'effect');
+                return;
+            }
         }
         
         // Additional validation: Check if the target square has the archer-target class
@@ -1795,27 +1818,57 @@ class ChessGame {
         const opponentColor = playerColor === 'white' ? 'black' : 'white';
         const validTargets = [];
         
-        // Find all enemy pieces within 5 squares in any direction
-        for (let row = 0; row < 8; row++) {
-            for (let col = 0; col < 8; col++) {
-                const piece = this.board[row][col];
-                if (piece && piece.color === opponentColor) {
-                    // Calculate distance (Chebyshev distance - max of row/col difference)
-                    const rowDist = Math.abs(row - riftRow);
-                    const colDist = Math.abs(col - riftCol);
-                    const distance = Math.max(rowDist, colDist);
+        // Check all 8 directions from the rift for line of sight
+        const directions = [
+            { dr: -1, dc: -1, name: 'Northwest' }, // ↖
+            { dr: -1, dc: 0, name: 'North' },      // ↑
+            { dr: -1, dc: 1, name: 'Northeast' },  // ↗
+            { dr: 0, dc: -1, name: 'West' },       // ←
+            { dr: 0, dc: 1, name: 'East' },        // →
+            { dr: 1, dc: -1, name: 'Southwest' },  // ↙
+            { dr: 1, dc: 0, name: 'South' },       // ↓
+            { dr: 1, dc: 1, name: 'Southeast' }    // ↘
+        ];
+        
+        // Check each direction for the first enemy piece within 5 squares
+        directions.forEach(({ dr, dc, name }) => {
+            for (let distance = 1; distance <= 5; distance++) {
+                const targetRow = riftRow + (dr * distance);
+                const targetCol = riftCol + (dc * distance);
+                
+                // Check if target is within board bounds
+                if (targetRow >= 0 && targetRow < 8 && targetCol >= 0 && targetCol < 8) {
+                    const piece = this.board[targetRow][targetCol];
                     
-                    if (distance <= 5) {
-                        validTargets.push({ row, col, piece, distance });
-                        this.addToGameLog(`Archer's Precision: Found ${piece.type} at distance ${distance}`, 'debug');
+                    if (piece) {
+                        if (piece.color === opponentColor) {
+                            // Found first enemy piece in this direction
+                            validTargets.push({ 
+                                row: targetRow, 
+                                col: targetCol, 
+                                piece, 
+                                distance, 
+                                direction: name 
+                            });
+                            this.addToGameLog(`Archer's Precision: Found ${piece.type} at distance ${distance} (${name})`, 'debug');
+                            break; // Stop checking this direction
+                        } else {
+                            // Friendly piece blocks line of sight
+                            this.addToGameLog(`Archer's Precision: ${piece.color} ${piece.type} blocks line of sight (${name})`, 'debug');
+                            break; // Stop checking this direction
+                        }
                     }
+                    // Empty square - continue checking this direction
+                } else {
+                    // Out of bounds - stop checking this direction
+                    break;
                 }
             }
-        }
+        });
         
         // If no valid targets, skip turn
         if (validTargets.length === 0) {
-            this.addToGameLog(`Archer's Precision: No enemy pieces within range!`, 'effect');
+            this.addToGameLog(`Archer's Precision: No enemy pieces within line of sight!`, 'effect');
             this.clearD20Highlighting();
             this.switchPlayer();
             return;
@@ -1846,7 +1899,7 @@ class ChessGame {
             </div>
         `;
         
-        this.addToGameLog(`Archer's Precision activated! ${validTargets.length} enemy pieces in range.`, 'effect');
+        this.addToGameLog(`Archer's Precision activated! Found ${validTargets.length} enemy pieces in line of sight.`, 'effect');
     }
 
     cancelArcherPrecision() {
