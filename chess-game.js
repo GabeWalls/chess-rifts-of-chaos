@@ -2831,6 +2831,12 @@ class ChessGame {
         // Permanently freeze the piece on the rift for the rest of the game
         const piece = this.board[riftRow][riftCol];
         if (piece) {
+            // Check if piece has Rift's Blessing immunity
+            if (piece.riftsBlessingImmunity) {
+                this.addToGameLog(`Medusa's Gaze: ${piece.color} ${piece.type} is protected by Rift's Blessing immunity!`, 'effect');
+                return;
+            }
+            
             piece.frozen = true;
             piece.frozenByMedusa = true; // Special flag for permanent freeze
             this.frozenPieces.add(piece);
@@ -2858,6 +2864,12 @@ class ChessGame {
                 if (this.isInBounds(targetRow, targetCol) && this.board[targetRow][targetCol]) {
                     const piece = this.board[targetRow][targetCol];
                     if (!piece.frozen) {
+                        // Check if piece has Rift's Blessing immunity
+                        if (piece.riftsBlessingImmunity) {
+                            this.addToGameLog(`Time Distortion: ${piece.color} ${piece.type} is protected by Rift's Blessing immunity!`, 'effect');
+                            continue;
+                        }
+                        
                         piece.frozen = true;
                         piece.frozenByFieldEffect = true;
                         this.frozenPieces.add(piece);
@@ -3004,6 +3016,12 @@ class ChessGame {
         for (let r = 0; r < 8; r++) {
             if (this.board[r][columnIndex]) {
                 const piece = this.board[r][columnIndex];
+                // Check if piece has Rift's Blessing immunity
+                if (piece.riftsBlessingImmunity) {
+                    this.addToGameLog(`Glacial Cross: ${piece.color} ${piece.type} is protected by Rift's Blessing immunity!`, 'effect');
+                    continue;
+                }
+                
                 // Check if king has Conqueror's Tale
                 if (piece.type === 'king' && this.kingAbilities[piece.color]?.doubleMove) {
                     // King with Conqueror's Tale can still move
@@ -3026,6 +3044,13 @@ class ChessGame {
                 if (piece.frozen || this.frozenPieces.has(piece)) {
                     continue;
                 }
+                
+                // Check if piece has Rift's Blessing immunity
+                if (piece.riftsBlessingImmunity) {
+                    this.addToGameLog(`Glacial Cross: ${piece.color} ${piece.type} is protected by Rift's Blessing immunity!`, 'effect');
+                    continue;
+                }
+                
                 // Check if king has Conqueror's Tale
                 if (piece.type === 'king' && this.kingAbilities[piece.color]?.doubleMove) {
                     // King with Conqueror's Tale can still move
