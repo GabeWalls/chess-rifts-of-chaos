@@ -300,9 +300,18 @@ class ChessGame {
         const distance = Math.max(rowDist, colDist);
         
         if (distance > 5) {
-            this.addToGameLog(`Invalid target! Must be within 5 squares.`, 'effect');
+            this.addToGameLog(`Invalid target! Must be within 5 squares (distance: ${distance}).`, 'effect');
             return;
         }
+        
+        // Additional validation: Check if the target square has the archer-target class
+        const targetSquare = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+        if (!targetSquare || !targetSquare.classList.contains('archer-target')) {
+            this.addToGameLog(`Invalid target! Must select a highlighted enemy piece.`, 'effect');
+            return;
+        }
+        
+        this.addToGameLog(`Archer's Precision: Targeting ${targetPiece.color} ${targetPiece.type} at distance ${distance}`, 'effect');
         
         // Execute archer shot
         this.executeArcherShotOnTarget(riftRow, riftCol, row, col);
@@ -1794,7 +1803,8 @@ class ChessGame {
                     const distance = Math.max(rowDist, colDist);
                     
                     if (distance <= 5) {
-                        validTargets.push({ row, col, piece });
+                        validTargets.push({ row, col, piece, distance });
+                        this.addToGameLog(`Archer's Precision: Found ${piece.type} at distance ${distance}`, 'debug');
                     }
                 }
             }
@@ -1812,10 +1822,11 @@ class ChessGame {
         this.archerShotMode = { active: true, riftRow, riftCol, playerColor };
         
         // Highlight valid targets in blue (do this after setting mode)
-        validTargets.forEach(({ row, col }) => {
+        validTargets.forEach(({ row, col, piece, distance }) => {
             const square = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
             if (square) {
                 square.classList.add('archer-target');
+                this.addToGameLog(`Archer's Precision: Highlighted ${piece.color} ${piece.type} at distance ${distance}`, 'debug');
             }
         });
         
