@@ -641,9 +641,16 @@ class ChessGame {
         const piece = this.board[fromRow][fromCol];
         if (!piece || piece.color !== this.currentPlayer) return false;
         
-        // Check if piece is frozen (kings with Conqueror's Tale can move despite being frozen)
-        if ((piece.frozen || this.frozenPieces.has(piece)) && !(piece.type === 'king' && this.kingAbilities[piece.color]?.doubleMove)) {
-            return false;
+        // Check if piece is frozen (kings with Conqueror's Tale can move despite being frozen, but NOT if frozen by Medusa's Gaze)
+        if (piece.frozen || this.frozenPieces.has(piece)) {
+            // Medusa's Gaze frozen pieces cannot move even with Conqueror's Tale
+            if (piece.frozenByMedusa) {
+                return false;
+            }
+            // Other frozen pieces can move if king has Conqueror's Tale
+            if (!(piece.type === 'king' && this.kingAbilities[piece.color]?.doubleMove)) {
+                return false;
+            }
         }
         
         // Basic bounds check
@@ -990,6 +997,8 @@ class ChessGame {
             if (capturedPiece.frozen || this.frozenPieces.has(capturedPiece)) {
                 this.frozenPieces.delete(capturedPiece);
                 capturedPiece.frozen = false;
+                capturedPiece.frozenByMedusa = false; // Clear Medusa's Gaze flag
+                capturedPiece.frozenByFieldEffect = false; // Clear field effect flag
             }
             
             // Handle Reality Split - if either piece is captured, remove both
@@ -2641,8 +2650,14 @@ class ChessGame {
     }
 
     applyMedusaGaze(riftRow, riftCol) {
-        // Freeze the piece on the rift
-        this.frozenPieces.add(`${riftRow}-${riftCol}`);
+        // Permanently freeze the piece on the rift for the rest of the game
+        const piece = this.board[riftRow][riftCol];
+        if (piece) {
+            piece.frozen = true;
+            piece.frozenByMedusa = true; // Special flag for permanent freeze
+            this.frozenPieces.add(piece);
+            this.addToGameLog(`Medusa's Gaze: ${piece.color} ${piece.type} is permanently frozen!`, 'effect');
+        }
     }
 
     applyTimeDistortionFieldEffect(riftRow, riftCol) {
@@ -3035,12 +3050,20 @@ class ChessGame {
         
         // Clear frozen pieces that were frozen by field effects (not by Medusa's Gaze)
         this.frozenPieces.forEach(piece => {
-            if (piece.frozen && piece.frozenByFieldEffect) {
+            if (piece.frozen && piece.frozenByFieldEffect && !piece.frozenByMedusa) {
                 piece.frozen = false;
                 piece.frozenByFieldEffect = false;
             }
         });
-        this.frozenPieces.clear();
+        
+        // Only clear pieces that were frozen by field effects, keep Medusa's Gaze frozen pieces
+        const piecesToKeep = new Set();
+        this.frozenPieces.forEach(piece => {
+            if (piece.frozenByMedusa) {
+                piecesToKeep.add(piece);
+            }
+        });
+        this.frozenPieces = piecesToKeep;
         
         // Clear active field effects
         this.activeFieldEffects = [];
