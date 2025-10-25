@@ -1908,7 +1908,9 @@ class ChessGame {
         ];
         
         // Check each direction for the first enemy piece within 5 squares
+        console.log(`Archer's Precision: Checking from rift at ${riftRow},${riftCol} for ${opponentColor} pieces`);
         directions.forEach(({ dr, dc, name }) => {
+            console.log(`Checking direction ${name} (${dr},${dc})`);
             for (let distance = 1; distance <= 5; distance++) {
                 const targetRow = riftRow + (dr * distance);
                 const targetCol = riftCol + (dc * distance);
@@ -1916,6 +1918,7 @@ class ChessGame {
                 // Check if target is within board bounds
                 if (targetRow >= 0 && targetRow < 8 && targetCol >= 0 && targetCol < 8) {
                     const piece = this.board[targetRow][targetCol];
+                    console.log(`  Distance ${distance}: square ${targetRow},${targetCol} has ${piece ? piece.color + ' ' + piece.type : 'no piece'}`);
                     
                     if (piece) {
                         if (piece.color === opponentColor) {
@@ -1927,10 +1930,12 @@ class ChessGame {
                                 distance, 
                                 direction: name 
                             });
+                            console.log(`  Found enemy target: ${piece.color} ${piece.type} at distance ${distance} (${name})`);
                             this.addToGameLog(`Archer's Precision: Found ${piece.type} at distance ${distance} (${name})`, 'debug');
                             break; // Stop checking this direction
                         } else {
                             // Friendly piece blocks line of sight
+                            console.log(`  Friendly piece blocks line of sight: ${piece.color} ${piece.type}`);
                             this.addToGameLog(`Archer's Precision: ${piece.color} ${piece.type} blocks line of sight (${name})`, 'debug');
                             break; // Stop checking this direction
                         }
@@ -1938,6 +1943,7 @@ class ChessGame {
                     // Empty square - continue checking this direction
                 } else {
                     // Out of bounds - stop checking this direction
+                    console.log(`  Out of bounds at distance ${distance}`);
                     break;
                 }
             }
@@ -1955,13 +1961,22 @@ class ChessGame {
         this.archerShotMode = { active: true, riftRow, riftCol, playerColor };
         
         // Highlight valid targets in blue (do this after setting mode)
-        validTargets.forEach(({ row, col, piece, distance }) => {
-            const square = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
-            if (square) {
-                square.classList.add('archer-target');
-                this.addToGameLog(`Archer's Precision: Highlighted ${piece.color} ${piece.type} at distance ${distance}`, 'debug');
-            }
-        });
+        console.log(`Archer's Precision: Found ${validTargets.length} valid targets`);
+        
+        // Add a small delay to ensure the board is fully rendered
+        setTimeout(() => {
+            validTargets.forEach(({ row, col, piece, distance }) => {
+                const square = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+                console.log(`Looking for square at row ${row}, col ${col}:`, square);
+                if (square) {
+                    square.classList.add('archer-target');
+                    console.log(`Added archer-target class to square at ${row},${col}`);
+                    this.addToGameLog(`Archer's Precision: Highlighted ${piece.color} ${piece.type} at distance ${distance}`, 'debug');
+                } else {
+                    console.error(`Could not find square element at row ${row}, col ${col}`);
+                }
+            });
+        }, 100);
         
         const optionsDiv = document.getElementById('d20-options-area');
         optionsDiv.style.display = 'block';
