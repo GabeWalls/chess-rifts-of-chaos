@@ -3175,15 +3175,14 @@ class ChessGame {
     }
 
     applyFieldEffect(effectName) {
-        // Only clear field effects if this is a new field effect that should replace others
-        // For now, we'll allow multiple field effects to coexist
-        // TODO: Define which effects should replace others vs coexist
-        
         console.log(`Applying field effect: ${effectName}`);
         console.log(`Current active field effects:`, this.activeFieldEffects);
         
-        // Add the new field effect (avoid duplicates)
-        if (effectName !== 'blank' && !this.activeFieldEffects.includes(effectName)) {
+        // Clear any existing field effects first (only one field effect at a time)
+        this.clearFieldEffects();
+        
+        // Add the new field effect
+        if (effectName !== 'blank') {
             this.activeFieldEffects.push(effectName);
             this.addToGameLog(`Field effect activated: ${this.formatEffectName(effectName)}`, 'effect');
             
@@ -3191,10 +3190,8 @@ class ChessGame {
             if (effectName === 'sandstorm') {
                 this.showSandstormOverlay();
             }
-        } else if (effectName === 'blank') {
-            this.addToGameLog(`Field effect activated: Blank (Pawns may capture sideways)`, 'effect');
         } else {
-            this.addToGameLog(`Field effect already active: ${this.formatEffectName(effectName)}`, 'effect');
+            this.addToGameLog(`Field effect activated: Blank (Pawns may capture sideways)`, 'effect');
         }
         
         console.log(`After applying, active field effects:`, this.activeFieldEffects);
