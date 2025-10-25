@@ -1655,6 +1655,9 @@ class ChessGame {
         
         this.renderBoard();
         this.updateCapturedPieces();
+        
+        // Switch player after Reality Split
+        this.switchPlayer();
     }
 
     removeRealitySplitPieces(capturedPiece) {
