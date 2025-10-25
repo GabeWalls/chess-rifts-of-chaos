@@ -661,13 +661,24 @@ class ChessGame {
             // If a square is already selected and clicking on a valid move
             if (this.selectedSquare && this.selectedSquare[0] === pieceRow && this.selectedSquare[1] === pieceCol) {
                 if (this.isValidMove(pieceRow, pieceCol, row, col)) {
+                    // Execute the move
                     this.makeMove(pieceRow, pieceCol, row, col);
+                    
+                    // Clear foot soldier mode and selection
                     this.footSoldierMode = null;
                     this.selectedSquare = null;
                     this.clearHighlights();
                     this.clearCoordinateHighlights();
+                    
+                    // Clear the D20 options area
+                    const optionsDiv = document.getElementById('d20-options-area');
+                    if (optionsDiv) {
+                        optionsDiv.innerHTML = '';
+                    }
+                    
                     this.addToGameLog(`Foot Soldier's Gambit: ${piece.type} completed second move!`, 'effect');
-                    // Now switch players after the second move is complete
+                    
+                    // Switch to opponent's turn after the second move
                     this.switchPlayer();
                     return;
                 } else {
@@ -2648,25 +2659,36 @@ class ChessGame {
         // Enable foot soldier mode for second move
         this.footSoldierMode = { active: true, pieceRow: riftRow, pieceCol: riftCol };
         
-        const optionsDiv = document.getElementById('rift-effect-options');
+        // Show instruction in D20 panel
+        const optionsDiv = document.getElementById('d20-options-area');
+        optionsDiv.style.display = 'block';
         optionsDiv.innerHTML = `
             <div class="effect-choices">
                 <p style="color: #333; margin-bottom: 10px; text-align: center;">
-                    Foot Soldier's Gambit! Your piece must move again immediately.
+                    Foot Soldier's Gambit! Click on your ${activatingPiece.type} to move it again.
                 </p>
-                <button class="effect-choice" onclick="game.closeFootSoldierModal()">
-                    Continue (select next move)
+                <button class="cancel-btn" onclick="game.cancelFootSoldierGambit()">
+                    Cancel
                 </button>
             </div>
         `;
         
-        this.addToGameLog(`Foot Soldier's Gambit: ${activatingPiece.type} must move again!`, 'effect');
+        this.addToGameLog(`Foot Soldier's Gambit: ${activatingPiece.type} must move again! Click on the piece to select it.`, 'effect');
     }
 
-    closeFootSoldierModal() {
-        document.getElementById('rift-effects-modal').style.display = 'none';
-        // DO NOT switch player - they need to move the piece again
-        this.addToGameLog(`Click on your ${this.board[this.footSoldierMode.pieceRow][this.footSoldierMode.pieceCol].type} to select it for the second move.`, 'effect');
+    cancelFootSoldierGambit() {
+        // Clear foot soldier mode
+        this.footSoldierMode = null;
+        
+        // Clear the options area
+        const optionsDiv = document.getElementById('d20-options-area');
+        if (optionsDiv) {
+            optionsDiv.innerHTML = '';
+        }
+        
+        this.addToGameLog(`Foot Soldier's Gambit: Cancelled.`, 'effect');
+        this.clearD20Highlighting();
+        this.switchPlayer();
     }
 
     applyDragonBreath(riftRow, riftCol) {
