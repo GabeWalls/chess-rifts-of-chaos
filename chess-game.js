@@ -10,6 +10,7 @@ class ChessGame {
         this.activeFieldEffects = [];
         this.kingAbilities = { white: {}, black: {} };
         this.frozenPieces = new Set();
+        this.voidSpaces = []; // Track void spaces created by Warp Collapse
         this.riftActivatedThisTurn = false;
         this.diceRolledThisTurn = false;
         this.processingRiftEffect = false; // Flag to prevent moves while rift effect is being processed
@@ -151,6 +152,11 @@ class ChessGame {
                 // Add rift class if this is a rift square
                 if (this.isRift(row, col)) {
                     square.classList.add('rift');
+                }
+                
+                // Add void space class if this square is a void
+                if (this.voidSpaces.some(v => v.row === row && v.col === col)) {
+                    square.classList.add('void-space');
                 }
                 
                 // Add piece if present
@@ -749,6 +755,11 @@ class ChessGame {
         // Basic bounds check
         if (toRow < 0 || toRow > 7 || toCol < 0 || toCol > 7) return false;
         
+        // Can't move into void spaces
+        if (this.voidSpaces.some(v => v.row === toRow && v.col === toCol)) {
+            return false;
+        }
+        
         // Can't capture own piece
         const targetPiece = this.board[toRow][toCol];
         if (targetPiece && targetPiece.color === this.currentPlayer) return false;
@@ -890,6 +901,11 @@ class ChessGame {
                 
                 if (!this.isInBounds(newRow, newCol)) break;
                 
+                // Can't move through or into void spaces
+                if (this.voidSpaces.some(v => v.row === newRow && v.col === newCol)) {
+                    break;
+                }
+                
                 if (!this.board[newRow][newCol]) {
                     moves.push([newRow, newCol]);
                 } else {
@@ -963,36 +979,6 @@ class ChessGame {
             }
         }
         
-        if (this.activeFieldEffects.includes('holiday_rejuvenation')) {
-            if (piece.type === 'pawn') {
-                // Pawns may move two spaces forward
-                const moves = this.getPawnMoves(row, col);
-                const direction = piece.color === 'white' ? -1 : 1;
-                const newRow = row + 2 * direction;
-                if (this.isInBounds(newRow, col) && !this.board[row + direction][col] && !this.board[newRow][col]) {
-                    moves.push([newRow, col]);
-                }
-                return moves;
-            }
-            // Other pieces can jump over 1 friendly piece
-            if (['rook', 'bishop', 'queen'].includes(piece.type)) {
-                // This would require more complex logic to implement jumping
-                return null; // Use default moves for now
-            }
-            if (piece.type === 'knight') {
-                // Knights move 3+1 instead of 2+1
-                const moves = [];
-                const knightMoves = [[-3, -1], [-3, 1], [-1, -3], [-1, 3], [1, -3], [1, 3], [3, -1], [3, 1]];
-                for (const [rowOffset, colOffset] of knightMoves) {
-                    const newRow = row + rowOffset;
-                    const newCol = col + colOffset;
-                    if (this.isInBounds(newRow, newCol)) {
-                        moves.push([newRow, newCol]);
-                    }
-                }
-                return moves;
-            }
-        }
         
         return null; // Use default moves
     }
@@ -1413,7 +1399,7 @@ class ChessGame {
             5: { name: "Demotion", type: "special", rating: 1, description: "The activating piece transforms into a Pawn immediately (retain color, same position). If it was already a Pawn, it is removed instead." },
             6: { name: "Foot Soldier's Gambit", type: "special", rating: 4, description: "The activating piece must immediately move again." },
             7: { name: "Famine", type: "field", rating: 2, description: "Pawns cannot move." },
-            8: { name: "Holiday's Rejuvenation", type: "field", rating: 4, description: "Pawns may move two spaces forward. Castles, Bishops, Queens can jump over 1 friendly piece. Knights move 3+1 instead of 2+1." },
+            8: { name: "Warp Collapse", type: "field", rating: 4, description: "The unstable rift implodes, devouring everything caught in its gravity well. Upon activation, the rift consumes itself and all adjacent squares; any pieces within this area are instantly removed from play. The affected tiles become void spaces, blacked out and impassable for the duration of the field effect. No piece may enter, cross, or be placed on these void tiles until the rift's influence ends." },
             9: { name: "Sandstorm", type: "field", rating: 2, description: "Pawns cannot move. Knights move only 1 square. Castles, Bishops, Queens max range: 3 squares. Exception: Kings caught in the sandstorm may still move only if they possess Conqueror's Tale." },
             10: { name: "Dragon's Breath", type: "special", rating: 4, description: "When activated, all squares within 3 spaces of the rift are highlighted red. Choose one of the eight directions (shown in the D20 window). The three squares extending from the rift in that direction are then struck by Dragon's Breath. Any pieces—enemy or your own—caught in this path are captured and removed from play." },
             11: { name: "Glacial Cross", type: "field", rating: 2, description: "Roll 2D8 to randomly select a row and column. All pieces in that row and column become frozen until the effect ends." },
@@ -1519,8 +1505,8 @@ class ChessGame {
                 case 7: // Famine
                     this.applyFieldEffect('famine');
                     break;
-                case 8: // Holiday's Rejuvenation
-                    this.applyFieldEffect('holiday_rejuvenation');
+                case 8: // Warp Collapse
+                    this.applyWarpCollapse(riftRow, riftCol);
                     break;
                 case 9: // Sandstorm
                     // Check if both players have moved at least once
@@ -2691,6 +2677,63 @@ class ChessGame {
         this.switchPlayer();
     }
 
+    applyWarpCollapse(riftRow, riftCol) {
+        // The rift implodes, devouring itself and all adjacent squares
+        const affectedSquares = [
+            { row: riftRow, col: riftCol }, // The rift itself
+            { row: riftRow - 1, col: riftCol - 1 }, // Northwest
+            { row: riftRow - 1, col: riftCol }, // North
+            { row: riftRow - 1, col: riftCol + 1 }, // Northeast
+            { row: riftRow, col: riftCol - 1 }, // West
+            { row: riftRow, col: riftCol + 1 }, // East
+            { row: riftRow + 1, col: riftCol - 1 }, // Southwest
+            { row: riftRow + 1, col: riftCol }, // South
+            { row: riftRow + 1, col: riftCol + 1 } // Southeast
+        ];
+        
+        let piecesRemoved = 0;
+        let kingCaptured = false;
+        
+        // Remove pieces and mark spaces as void
+        affectedSquares.forEach(({ row, col }) => {
+            if (this.isInBounds(row, col)) {
+                const piece = this.board[row][col];
+                
+                // Remove any piece on this square
+                if (piece) {
+                    // Capture the piece
+                    const captured = this.capturePiece(piece, row, col);
+                    if (captured.kingCaptured) {
+                        kingCaptured = true;
+                    }
+                    this.board[row][col] = null;
+                    this.removePieceWithAnimation(row, col, piecesRemoved * 100);
+                    piecesRemoved++;
+                }
+                
+                // Mark as void space (store for rendering)
+                if (!this.voidSpaces.some(v => v.row === row && v.col === col)) {
+                    this.voidSpaces.push({ row, col });
+                }
+            }
+        });
+        
+        // Activate as field effect
+        this.activeFieldEffects.push('warp_collapse');
+        
+        this.addToGameLog(`Warp Collapse: ${piecesRemoved} pieces consumed! ${affectedSquares.length} squares become void spaces.`, 'effect');
+        
+        // Render board to show void spaces
+        this.renderBoard();
+        
+        // Check if king was captured
+        if (kingCaptured) {
+            setTimeout(() => {
+                this.checkGameEnd();
+            }, 500);
+        }
+    }
+
     applyDragonBreath(riftRow, riftCol) {
         // Remove pieces in all 4 cardinal directions up to 3 squares
         const directions = [[-1, 0], [1, 0], [0, -1], [0, 1]];
@@ -3287,6 +3330,11 @@ class ChessGame {
             this.hideSandstormOverlay();
         }
         
+        // Clear void spaces if warp collapse was active
+        if (this.activeFieldEffects.includes('warp_collapse')) {
+            this.voidSpaces = [];
+        }
+        
         // Clear frozen pieces that were frozen by field effects (not by Medusa's Gaze)
         this.frozenPieces.forEach(piece => {
             if (piece.frozen && piece.frozenByFieldEffect && !piece.frozenByMedusa) {
@@ -3435,7 +3483,7 @@ class ChessGame {
     showFieldEffectDetails(effectName) {
         const effectDescriptions = {
             'famine': 'Pawns cannot move while this effect is active.',
-            'holiday_rejuvenation': 'Pawns may advance two spaces forward. Castles, Bishops, and Queens may jump over one friendly piece. Knights move in a "3 + 1" pattern.',
+            'warp_collapse': 'The unstable rift implodes, devouring everything caught in its gravity well. Affected tiles become void spaces, blacked out and impassable until the effect ends.',
             'sandstorm': 'Pawns cannot move. Knights move only 1 square. Castles, Bishops, Queens max range: 3 squares. Exception: Kings caught in the sandstorm may still move only if they possess Conqueror\'s Tale.',
             'glacial_cross': 'All pieces in the selected row and column are frozen and cannot move. Exception: Kings with Conqueror\'s Tale can still move.',
             'time_distortion': 'All pieces within a radius are frozen. Radius is based on a D20 roll: 1–8 = 1 square, 9–14 = 2 squares, 15–18 = 3 squares, 19–20 = 4 squares. Exception: Kings caught in the stasis may still move only if they possess Conqueror\'s Tale.',
