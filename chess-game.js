@@ -3046,12 +3046,14 @@ class ChessGame {
     }
     
     applyTimeDistortionFieldEffect(riftRow, riftCol, radius) {
-        // Apply field effect first (this clears any existing field effects)
+        // Apply field effect first (this clears any existing field effects including Warp Collapse void spaces)
         this.applyFieldEffect('time_distortion');
         
-        // Use the provided radius (from D20 roll)
+        // Re-render board to visually clear void spaces from Warp Collapse
+        this.renderBoard();
         
         // Freeze all pieces within radius
+        let frozenCount = 0;
         for (let rowOffset = -radius; rowOffset <= radius; rowOffset++) {
             for (let colOffset = -radius; colOffset <= radius; colOffset++) {
                 const targetRow = riftRow + rowOffset;
@@ -3066,13 +3068,22 @@ class ChessGame {
                             continue;
                         }
                         
+                        // Check if piece is permanently frozen by Medusa's Gaze (shouldn't apply again, but check anyway)
+                        if (piece.frozenByMedusa) {
+                            continue;
+                        }
+                        
                         piece.frozen = true;
                         piece.frozenByFieldEffect = true;
                         this.frozenPieces.add(piece);
+                        frozenCount++;
                     }
                 }
             }
         }
+        
+        // Re-render board to show frozen pieces
+        this.renderBoard();
         
         // Clear time distortion context
         this.timeDistortionContext = null;
@@ -3084,7 +3095,7 @@ class ChessGame {
             optionsDiv.style.display = 'none';
         }
         
-        this.addToGameLog(`Time Distortion: ${radius} radius - pieces frozen!`, 'effect');
+        this.addToGameLog(`Time Distortion: ${radius} radius - ${frozenCount} pieces frozen!`, 'effect');
         this.switchPlayer();
     }
 
@@ -3511,6 +3522,7 @@ class ChessGame {
         }
         
         // Always clear void spaces when field effects change (new field effect replaces old one)
+        const hadVoidSpaces = this.voidSpaces.length > 0;
         this.voidSpaces = [];
         
         // Clear frozen pieces that were frozen by field effects (not by Medusa's Gaze)
@@ -3532,6 +3544,11 @@ class ChessGame {
         
         // Clear active field effects
         this.activeFieldEffects = [];
+        
+        // Re-render board if void spaces were cleared to visually update
+        if (hadVoidSpaces) {
+            this.renderBoard();
+        }
     }
 
     switchPlayer() {
