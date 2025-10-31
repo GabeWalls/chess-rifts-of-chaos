@@ -3330,10 +3330,8 @@ class ChessGame {
             this.hideSandstormOverlay();
         }
         
-        // Clear void spaces if warp collapse was active
-        if (this.activeFieldEffects.includes('warp_collapse')) {
-            this.voidSpaces = [];
-        }
+        // Always clear void spaces when field effects change (new field effect replaces old one)
+        this.voidSpaces = [];
         
         // Clear frozen pieces that were frozen by field effects (not by Medusa's Gaze)
         this.frozenPieces.forEach(piece => {
@@ -3542,6 +3540,7 @@ class ChessGame {
         this.capturedPieces = { white: [], black: [] };
         this.activeFieldEffects = [];
         this.frozenPieces.clear();
+        this.voidSpaces = []; // Clear void spaces on new game
         this.riftActivatedThisTurn = false;
         this.diceRolledThisTurn = false;
         this.kingMovedThisTurn = { white: 0, black: 0 };
