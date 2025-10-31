@@ -2690,7 +2690,7 @@ body.dark-mode .rules-icon {
 }
 
 body.dark-mode .setting-item .contact-icon {
-    content: url('assets/Contact/SVG/Contact White.svg');
+    content: url('assets/Contact/SVG/Contact White (new).svg');
 }
 
 /* Force reload of contact icons in case of cache issues */

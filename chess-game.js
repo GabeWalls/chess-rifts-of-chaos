@@ -432,14 +432,19 @@ class ChessGame {
         
         // Cleanup
         this.riftsBlessingMode = null;
+        this.processingRiftEffect = false; // Clear processing flag
         document.querySelectorAll('.rifts-blessing-target').forEach(square => {
             square.classList.remove('rifts-blessing-target');
         });
         
-        setTimeout(() => {
-            this.closeModal();
-            this.switchPlayer();
-        }, 1000);
+        // Clear D20 options area but keep it visible
+        const optionsDiv = document.getElementById('d20-options-area');
+        if (optionsDiv) {
+            optionsDiv.innerHTML = '';
+        }
+        
+        // Switch player - don't close modal
+        this.switchPlayer();
     }
 
     applyRiftsBlessingImmunity(playerColor, pieceRow = null, pieceCol = null) {
@@ -665,55 +670,7 @@ class ChessGame {
         // Highlight coordinates for this square
         this.highlightCoordinates(row, col);
         
-        // Handle Foot Soldier's Gambit second move
-        if (this.footSoldierMode && this.footSoldierMode.active) {
-            const { pieceRow, pieceCol } = this.footSoldierMode;
-            const piece = this.board[pieceRow][pieceCol];
-            
-            // If clicking on the foot soldier piece, select it and show moves
-            if (row === pieceRow && col === pieceCol) {
-                this.selectedSquare = [row, col];
-                this.clearHighlights();
-                this.highlightCoordinates(row, col);
-                this.highlightMoves(row, col);
-                this.addToGameLog(`Foot Soldier's Gambit: Select where to move ${piece.type}.`, 'effect');
-                return;
-            }
-            
-            // If a square is already selected and clicking on a valid move
-            if (this.selectedSquare && this.selectedSquare[0] === pieceRow && this.selectedSquare[1] === pieceCol) {
-                if (this.isValidMove(pieceRow, pieceCol, row, col)) {
-                    // Execute the move
-                    this.makeMove(pieceRow, pieceCol, row, col);
-                    
-                    // Clear foot soldier mode and selection
-                    this.footSoldierMode = null;
-                    this.selectedSquare = null;
-                    this.clearHighlights();
-                    this.clearCoordinateHighlights();
-                    
-                    // Clear the D20 options area
-                    const optionsDiv = document.getElementById('d20-options-area');
-                    if (optionsDiv) {
-                        optionsDiv.innerHTML = '';
-                    }
-                    
-                    this.addToGameLog(`Foot Soldier's Gambit: ${piece.type} completed second move!`, 'effect');
-                    
-                    // Switch to opponent's turn after the second move
-                    this.switchPlayer();
-                    return;
-                } else {
-                    this.addToGameLog(`Invalid move for Foot Soldier's Gambit!`, 'effect');
-                    return;
-                }
-            }
-            
-            // If clicking elsewhere, clear selection
-            this.selectedSquare = null;
-            this.clearHighlights();
-            return;
-        }
+        // Foot Soldier's Gambit handling is now in handleSquareClick (above) to check first
         
         const square = this.board[row][col];
         const squareElement = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
@@ -1208,7 +1165,8 @@ class ChessGame {
         }
         
         // Check for rift activation (kings cannot activate rifts)
-        if (this.isRift(toRow, toCol) && !this.riftActivatedThisTurn && piece.type !== 'king') {
+        // Don't activate rift during Foot Soldier's Gambit second move
+        if (this.isRift(toRow, toCol) && !this.riftActivatedThisTurn && piece.type !== 'king' && !this.footSoldierMode) {
             this.activateRift(toRow, toCol);
             this.riftActivatedThisTurn = true;
         } else {
@@ -1800,8 +1758,30 @@ class ChessGame {
         if (activatingPiece.type === 'pawn') {
             // Pawn starting row is 6 for white, 1 for black
             startRow = activatingPiece.color === 'white' ? 6 : 1;
-            // Use the current column where the pawn is located (riftCol)
-            startCol = riftCol;
+            // For pawns, find the original starting column
+            // Check if we have the original column stored, otherwise try to find an empty spot in the starting row
+            if (activatingPiece.originalStartCol !== undefined) {
+                startCol = activatingPiece.originalStartCol;
+            } else {
+                // Try current column first, then search for empty spot in starting row
+                startCol = riftCol;
+                if (this.board[startRow][startCol]) {
+                    // Current column occupied, try adjacent columns
+                    let found = false;
+                    for (let offset = 1; offset < 8 && !found; offset++) {
+                        // Try columns to the right
+                        if (riftCol + offset < 8 && !this.board[startRow][riftCol + offset]) {
+                            startCol = riftCol + offset;
+                            found = true;
+                        }
+                        // Try columns to the left
+                        else if (riftCol - offset >= 0 && !this.board[startRow][riftCol - offset]) {
+                            startCol = riftCol - offset;
+                            found = true;
+                        }
+                    }
+                }
+            }
         } else if (activatingPiece.type === 'rook') {
             // Rook starts on row 7 (white) or 0 (black), columns 0 or 7
             startRow = activatingPiece.color === 'white' ? 7 : 0;
@@ -1830,13 +1810,14 @@ class ChessGame {
         
         // Check if the starting position is empty
         if (!this.board[startRow][startCol]) {
-            // Create a duplicate piece
+            // Create a duplicate piece - copy all properties including Fairy Fountain
             const duplicatePiece = {
                 type: activatingPiece.type,
                 color: activatingPiece.color,
                 hasMoved: false,
                 realitySplit: true,
-                pairedPiece: activatingPiece  // Direct reference to paired piece
+                pairedPiece: activatingPiece,  // Direct reference to paired piece
+                fairyFountain: activatingPiece.fairyFountain || false  // Copy Fairy Fountain ability
             };
             
             // Link pieces together with direct references
@@ -2575,53 +2556,6 @@ class ChessGame {
     }
 
     // Individual Rift Effect Implementations
-    showNecromancerTrapChoice(riftRow, riftCol, activatingPiece) {
-        const opponentColor = activatingPiece.color === 'white' ? 'black' : 'white';
-        const capturedPieces = this.capturedPieces[opponentColor];
-        
-        if (capturedPieces.length === 0) {
-            this.addToGameLog(`Necromancer's Trap: Opponent has no captured pieces to resurrect!`, 'effect');
-            setTimeout(() => {
-                this.clearD20Highlighting();
-                this.switchPlayer();
-            }, 1500);
-            return;
-        }
-        
-        // Find the highest ranking piece
-        const pieceRanking = { 'queen': 9, 'rook': 5, 'bishop': 3, 'knight': 3, 'pawn': 1, 'king': 10 };
-        let highestRankingPiece = capturedPieces[0];
-        let highestRank = pieceRanking[capturedPieces[0].type] || 0;
-        
-        for (let i = 1; i < capturedPieces.length; i++) {
-            const currentRank = pieceRanking[capturedPieces[i].type] || 0;
-            if (currentRank > highestRank) {
-                highestRank = currentRank;
-                highestRankingPiece = capturedPieces[i];
-            }
-        }
-        
-        // Remove the highest ranking piece from captured pieces
-        const pieceIndex = capturedPieces.indexOf(highestRankingPiece);
-        this.resurrectEnemyPiece(riftRow, riftCol, opponentColor, pieceIndex, highestRankingPiece);
-    }
-
-    resurrectEnemyPiece(riftRow, riftCol, opponentColor, pieceIndex, pieceToResurrect) {
-        // Remove activating piece immediately
-        this.capturedPieces[opponentColor].splice(pieceIndex, 1);
-        this.removePieceWithAnimation(riftRow, riftCol);
-        
-        setTimeout(() => {
-            this.board[riftRow][riftCol] = pieceToResurrect;
-            this.updateCapturedPieces();
-            this.renderBoard();
-            this.addToGameLog(`Necromancer's Trap: Highest ranking ${pieceToResurrect.color} ${pieceToResurrect.type} resurrected!`, 'effect');
-            
-            // Switch player turn instead of closing modal
-            this.clearD20Highlighting();
-            this.switchPlayer();
-        }, 1500);
-    }
 
     applyArcherTrickShot(riftRow, riftCol) {
         // This would need UI to select direction - for now, remove pieces in all 8 directions
@@ -2752,7 +2686,14 @@ class ChessGame {
     applyDemotion(riftRow, riftCol, activatingPiece) {
         if (activatingPiece.type === 'pawn') {
             // If it's already a pawn, remove it
-            this.capturePiece(activatingPiece, riftRow, riftCol);
+            const captured = this.capturePiece(activatingPiece, riftRow, riftCol);
+            if (captured.kingCaptured) {
+                setTimeout(() => {
+                    this.checkGameEnd();
+                }, 500);
+                return;
+            }
+            this.board[riftRow][riftCol] = null;
             this.removePieceWithAnimation(riftRow, riftCol);
             this.addToGameLog(`Demotion: Pawn removed!`, 'effect');
         } else {
@@ -2765,6 +2706,9 @@ class ChessGame {
         }
         
         this.updateCapturedPieces();
+        this.renderBoard();
+        // Switch player after demotion
+        this.switchPlayer();
     }
 
     applyFootSoldierGambit(activatingPiece, riftRow, riftCol) {
@@ -2794,11 +2738,18 @@ class ChessGame {
     cancelFootSoldierGambit() {
         // Clear foot soldier mode
         this.footSoldierMode = null;
+        this.selectedSquare = null;
+        this.clearHighlights();
+        this.clearCoordinateHighlights();
+        
+        // Clear processing flag
+        this.processingRiftEffect = false;
         
         // Clear the options area
         const optionsDiv = document.getElementById('d20-options-area');
         if (optionsDiv) {
             optionsDiv.innerHTML = '';
+            optionsDiv.style.display = 'none';
         }
         
         this.addToGameLog(`Foot Soldier's Gambit: Cancelled.`, 'effect');
@@ -3039,15 +2990,15 @@ class ChessGame {
     }
 
     applyTimeDistortionFieldEffect(riftRow, riftCol) {
+        // Apply field effect first (this clears any existing field effects)
+        this.applyFieldEffect('time_distortion');
+        
         // Roll for radius
         const radiusRoll = Math.floor(Math.random() * 20) + 1;
         let radius = 1;
         if (radiusRoll >= 9 && radiusRoll <= 14) radius = 2;
         else if (radiusRoll >= 15 && radiusRoll <= 18) radius = 3;
         else if (radiusRoll >= 19) radius = 4;
-        
-        // Don't clear existing field effects - allow multiple effects to coexist
-        // this.clearFieldEffects();
         
         // Freeze all pieces within radius
         for (let rowOffset = -radius; rowOffset <= radius; rowOffset++) {
@@ -3072,8 +3023,7 @@ class ChessGame {
             }
         }
         
-        // Set as active field effect
-        this.activeFieldEffects.push('time_distortion');
+        // Set as active field effect        
         this.addToGameLog(`Time Distortion: ${radius} radius - pieces frozen!`, 'effect');
     }
 
