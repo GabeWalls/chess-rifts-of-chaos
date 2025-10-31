@@ -1313,17 +1313,21 @@ class ChessGame {
             if (animationCount >= 15) {
                 clearInterval(animationInterval);
                 
-                // Final result - keep rolling until requirements are met
+                // Final result - keep rolling until requirements are met and effect 19 is disabled
                 let roll = Math.floor(Math.random() * 20) + 1;
                 const activatingPiece = this.lastMovedPiece.piece;
                 let rerollCount = 0;
                 const maxRerolls = 100; // Prevent infinite loop
                 
-                // Re-roll if requirements aren't met
-                while (!this.checkRiftRequirements(roll, activatingPiece) && rerollCount < maxRerolls) {
+                // Re-roll if requirements aren't met or if effect 19 (Eerie Fog's Turmoil) is rolled (disabled temporarily)
+                while ((!this.checkRiftRequirements(roll, activatingPiece) || roll === 19) && rerollCount < maxRerolls) {
                     const oldRoll = roll;
                     roll = Math.floor(Math.random() * 20) + 1;
-                    this.addToGameLog(`Rolled ${oldRoll} but requirements not met - re-rolling...`, 'system');
+                    if (oldRoll === 19) {
+                        this.addToGameLog(`Effect 19 (Eerie Fog's Turmoil) is temporarily disabled - re-rolling...`, 'system');
+                    } else {
+                        this.addToGameLog(`Rolled ${oldRoll} but requirements not met - re-rolling...`, 'system');
+                    }
                     rerollCount++;
                 }
                 
@@ -1428,17 +1432,21 @@ class ChessGame {
             if (animationCount >= 10) {
                 clearInterval(animationInterval);
                 
-                // Final result - keep rolling until requirements are met
+                // Final result - keep rolling until requirements are met and effect 19 is disabled
                 let roll = Math.floor(Math.random() * 20) + 1;
                 const activatingPiece = this.lastMovedPiece.piece;
                 let rerollCount = 0;
                 const maxRerolls = 100; // Prevent infinite loop
                 
-                // Re-roll if requirements aren't met
-                while (!this.checkRiftRequirements(roll, activatingPiece) && rerollCount < maxRerolls) {
+                // Re-roll if requirements aren't met or if effect 19 (Eerie Fog's Turmoil) is rolled (disabled temporarily)
+                while ((!this.checkRiftRequirements(roll, activatingPiece) || roll === 19) && rerollCount < maxRerolls) {
                     const oldRoll = roll;
                     roll = Math.floor(Math.random() * 20) + 1;
-                    this.addToGameLog(`Rolled ${oldRoll} but requirements not met - re-rolling...`, 'system');
+                    if (oldRoll === 19) {
+                        this.addToGameLog(`Effect 19 (Eerie Fog's Turmoil) is temporarily disabled - re-rolling...`, 'system');
+                    } else {
+                        this.addToGameLog(`Rolled ${oldRoll} but requirements not met - re-rolling...`, 'system');
+                    }
                     rerollCount++;
                 }
                 
