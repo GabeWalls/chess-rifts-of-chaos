@@ -2700,6 +2700,11 @@ body.dark-mode .setting-item .contact-icon {
     image-rendering: crisp-edges;
 }
 
+/* Ensure contact icon switches correctly in dark mode */
+body:not(.dark-mode) .setting-item .contact-icon {
+    content: url('assets/Contact/SVG/Contact Black (new).svg') !important;
+}
+
 /* Rules Header Icon Styling */
 .rules-header-icon {
     width: 40px;
