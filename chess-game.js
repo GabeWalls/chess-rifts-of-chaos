@@ -1030,6 +1030,44 @@ class ChessGame {
         return row >= 0 && row < 8 && col >= 0 && col < 8;
     }
 
+    sanitizePieceForSerialization(piece) {
+        // Create a safe copy of a piece without circular references for socket.io transmission
+        if (!piece) return null;
+        
+        const sanitized = {
+            type: piece.type,
+            color: piece.color,
+            hasMoved: piece.hasMoved,
+            realitySplit: piece.realitySplit || false,
+            fairyFountain: piece.fairyFountain || false,
+            frozen: piece.frozen || false,
+            frozenByFieldEffect: piece.frozenByFieldEffect || false,
+            frozenByMedusa: piece.frozenByMedusa || false,
+            riftsBlessingImmunity: piece.riftsBlessingImmunity || false,
+            originalStartCol: piece.originalStartCol,
+            // Deliberately exclude pairedPiece to avoid circular references
+            // The paired piece reference will be lost in transmission but it's not needed on the other side
+        };
+        
+        return sanitized;
+    }
+
+    sanitizeBoardForSerialization(board) {
+        // Create a safe copy of the board without circular references
+        return board.map(row => 
+            row.map(piece => this.sanitizePieceForSerialization(piece))
+        );
+    }
+
+    sanitizeCapturedPiecesForSerialization(capturedPieces) {
+        // Create a safe copy of captured pieces without circular references
+        const sanitized = {};
+        for (const color in capturedPieces) {
+            sanitized[color] = capturedPieces[color].map(piece => this.sanitizePieceForSerialization(piece));
+        }
+        return sanitized;
+    }
+
     highlightMoves(row, col) {
         const moves = this.getPieceMoves(row, col);
         const squareElement = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
@@ -1184,6 +1222,9 @@ class ChessGame {
         
         // In multiplayer, send move to server
         if (this.isMultiplayer && this.socket) {
+            const sanitizedBoard = this.sanitizeBoardForSerialization(this.board);
+            const sanitizedCapturedPieces = this.sanitizeCapturedPiecesForSerialization(this.capturedPieces);
+            
             const move = {
                 fromRow, fromCol, toRow, toCol,
                 piece: piece.type,
@@ -1191,9 +1232,9 @@ class ChessGame {
                 to: toCoords,
                 playerName: this.playerName,
                 gameState: {
-                    board: this.board,
+                    board: sanitizedBoard,
                     currentPlayer: this.currentPlayer,
-                    capturedPieces: this.capturedPieces,
+                    capturedPieces: sanitizedCapturedPieces,
                     activeFieldEffects: this.activeFieldEffects,
                     rifts: this.rifts
                 }
@@ -1540,13 +1581,18 @@ class ChessGame {
         
         // In multiplayer, send rift effect to server
         if (this.isMultiplayer && this.socket) {
+            // Create sanitized copies without circular references
+            const sanitizedActivatingPiece = this.sanitizePieceForSerialization(activatingPiece);
+            const sanitizedBoard = this.sanitizeBoardForSerialization(this.board);
+            const sanitizedCapturedPieces = this.sanitizeCapturedPiecesForSerialization(this.capturedPieces);
+            
             this.socket.emit('rift-effect', {
                 roomCode: this.roomCode,
-                effect: { ...effect, roll: roll, riftRow, riftCol, activatingPiece },
+                effect: { ...effect, roll: roll, riftRow, riftCol, activatingPiece: sanitizedActivatingPiece },
                 gameState: {
-                    board: this.board,
+                    board: sanitizedBoard,
                     currentPlayer: this.currentPlayer,
-                    capturedPieces: this.capturedPieces,
+                    capturedPieces: sanitizedCapturedPieces,
                     activeFieldEffects: this.activeFieldEffects,
                     rifts: this.rifts
                 }
@@ -2616,6 +2662,9 @@ class ChessGame {
         
         // In multiplayer, send promotion to server
         if (this.isMultiplayer && this.socket) {
+            const sanitizedBoard = this.sanitizeBoardForSerialization(this.board);
+            const sanitizedCapturedPieces = this.sanitizeCapturedPiecesForSerialization(this.capturedPieces);
+            
             this.socket.emit('pawn-promoted', {
                 roomCode: this.roomCode,
                 promotion: {
@@ -2623,9 +2672,9 @@ class ChessGame {
                     newPieceType,
                     playerName: this.playerName,
                     gameState: {
-                        board: this.board,
+                        board: sanitizedBoard,
                         currentPlayer: this.currentPlayer,
-                        capturedPieces: this.capturedPieces,
+                        capturedPieces: sanitizedCapturedPieces,
                         activeFieldEffects: this.activeFieldEffects,
                         rifts: this.rifts
                     }
