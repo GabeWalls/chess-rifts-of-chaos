@@ -1982,7 +1982,17 @@ class ChessGame {
         } else if (activatingPiece.type === 'bishop') {
             // Bishop starts on row 7 (white) or 0 (black), columns 2 or 5
             startRow = activatingPiece.color === 'white' ? 7 : 0;
-            startCol = riftCol <= 3 ? 2 : 5; // Choose closest bishop position
+            const preferredCol = riftCol <= 3 ? 2 : 5;
+            
+            // Check if preferred position is available, try the other bishop position if not
+            if (!this.board[startRow][preferredCol]) {
+                startCol = preferredCol;
+            } else if (!this.board[startRow][preferredCol === 2 ? 5 : 2]) {
+                startCol = preferredCol === 2 ? 5 : 2;
+            } else {
+                // Both bishop positions occupied, we'll search for another spot
+                startCol = preferredCol;
+            }
         } else if (activatingPiece.type === 'queen') {
             // Queen starts on row 7 (white) or 0 (black), column 3
             startRow = activatingPiece.color === 'white' ? 7 : 0;
@@ -1997,7 +2007,31 @@ class ChessGame {
             startCol = riftCol;
         }
         
-        // Check if the starting position is empty
+        // Check if the starting position is empty - if not, search for any empty spot in the starting row
+        if (this.board[startRow][startCol]) {
+            // Starting position occupied, search for any empty spot in the starting row
+            let foundAlternative = false;
+            for (let col = 0; col < 8 && !foundAlternative; col++) {
+                if (!this.board[startRow][col]) {
+                    startCol = col;
+                    foundAlternative = true;
+                }
+            }
+            
+            // If still no spot found, try the entire opposite starting row
+            if (!foundAlternative) {
+                const alternativeRow = startRow === 7 ? 0 : 7;
+                for (let col = 0; col < 8 && !foundAlternative; col++) {
+                    if (!this.board[alternativeRow][col]) {
+                        startRow = alternativeRow;
+                        startCol = col;
+                        foundAlternative = true;
+                    }
+                }
+            }
+        }
+        
+        // Now try to place the duplicate
         if (!this.board[startRow][startCol]) {
             // Create a duplicate piece - copy all properties including Fairy Fountain
             const duplicatePiece = {
