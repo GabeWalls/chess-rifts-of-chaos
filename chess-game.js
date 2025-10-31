@@ -1588,7 +1588,7 @@ class ChessGame {
             17: { name: "Reality Split", type: "special", rating: 2, description: "The activating piece duplicates itself; both versions can move independently, but if either dies, both vanish. Both pieces are highlighted with a purple phantom aura. The duplicate piece is spawned on the original piece's starting square." },
             18: { name: "Fairy Fountain", type: "special", rating: 2, description: "Activating Pawn gains new movement: Forward 2 spaces, plus 1 space left/right." },
             19: { name: "Eerie Fog's Turmoil", type: "field", rating: 2, description: "At the start of your turn, roll a D20: 3–20 = play normally. 1–2 = skip your turn." },
-            20: { name: "Rift's Blessing", type: "special", rating: 6, description: "Choose any one of your captured pieces (except King) and revive it instantly on any empty square on your half of the board. If you have no captured pieces, gain immunity for one turn, none of your pieces can be captured until your next turn." },
+            20: { name: "Rift's Blessing", type: "special", rating: 6, description: "Choose any one of your captured pieces (except King) and revive it instantly on any empty square on your half of the board. If you have no captured pieces, promote your current piece to the next highest ranking piece. If your piece is a queen, nothing happens." },
             21: { name: "Blank", type: "field", rating: 3, description: "Pawns may now move sideways to capture." }
         };
         
@@ -1810,8 +1810,8 @@ class ChessGame {
                         this.showRiftsBlessingChoice(activatingPiece.color);
                         return; // Don't close modal yet
                     } else {
-                        // No captured pieces - give immunity for one turn on the activating piece only
-                        this.applyRiftsBlessingImmunity(activatingPiece.color, riftRow, riftCol);
+                        // No captured pieces - promote the activating piece to the next highest rank
+                        this.promotePieceWithRiftsBlessing(activatingPiece, riftRow, riftCol);
                         this.switchPlayer();
                     }
                     break;
@@ -3500,6 +3500,36 @@ class ChessGame {
                 }
             }
         });
+    }
+
+    promotePieceWithRiftsBlessing(activatingPiece, riftRow, riftCol) {
+        const pieceRanking = { 'pawn': 1, 'bishop': 3, 'knight': 3, 'rook': 5, 'queen': 9 };
+        const currentRank = pieceRanking[activatingPiece.type] || 0;
+        
+        // If already a queen, nothing happens
+        if (activatingPiece.type === 'queen') {
+            this.addToGameLog(`Rift's Blessing: ${activatingPiece.color} ${activatingPiece.type} is already at maximum rank - nothing happens.`, 'effect');
+            return;
+        }
+        
+        // Find the next highest ranking piece type
+        let nextPieceType = null;
+        let nextRank = 0;
+        for (const [pieceType, rank] of Object.entries(pieceRanking)) {
+            if (rank > currentRank && (nextRank === 0 || rank < nextRank)) {
+                nextRank = rank;
+                nextPieceType = pieceType;
+            }
+        }
+        
+        if (nextPieceType) {
+            const oldPieceType = activatingPiece.type;
+            activatingPiece.type = nextPieceType;
+            this.renderBoard();
+            this.addToGameLog(`Rift's Blessing: ${activatingPiece.color} ${oldPieceType} promoted to ${nextPieceType}!`, 'effect');
+        } else {
+            this.addToGameLog(`Rift's Blessing: Could not promote ${activatingPiece.color} ${activatingPiece.type}.`, 'effect');
+        }
     }
 
     showGlacialCrossDice() {
