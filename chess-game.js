@@ -755,9 +755,11 @@ class ChessGame {
         // Basic bounds check
         if (toRow < 0 || toRow > 7 || toCol < 0 || toCol > 7) return false;
         
-        // Can't move into void spaces
+        // Can't move into void spaces (Exception: Kings with Conqueror's Tale can move through)
         if (this.voidSpaces.some(v => v.row === toRow && v.col === toCol)) {
-            return false;
+            if (!(piece.type === 'king' && this.kingAbilities[piece.color]?.doubleMove)) {
+                return false;
+            }
         }
         
         // Can't capture own piece
@@ -863,13 +865,19 @@ class ChessGame {
 
     getKingMoves(row, col) {
         const moves = [];
+        const piece = this.board[row][col];
+        const hasConquerorTale = piece.type === 'king' && this.kingAbilities[piece.color]?.doubleMove;
         const directions = [[-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [1, 0], [1, 1]];
         
         for (const [rowOffset, colOffset] of directions) {
             const newRow = row + rowOffset;
             const newCol = col + colOffset;
             if (this.isInBounds(newRow, newCol)) {
-                moves.push([newRow, newCol]);
+                // Filter void spaces (Exception: Kings with Conqueror's Tale can move through)
+                const isVoidSpace = this.voidSpaces.some(v => v.row === newRow && v.col === newCol);
+                if (!isVoidSpace || hasConquerorTale) {
+                    moves.push([newRow, newCol]);
+                }
             }
         }
         
@@ -893,6 +901,8 @@ class ChessGame {
 
     getLinearMoves(row, col, directions) {
         const moves = [];
+        const piece = this.board[row][col];
+        const hasConquerorTale = piece.type === 'king' && this.kingAbilities[piece.color]?.doubleMove;
         
         for (const [rowOffset, colOffset] of directions) {
             for (let i = 1; i < 8; i++) {
@@ -901,9 +911,15 @@ class ChessGame {
                 
                 if (!this.isInBounds(newRow, newCol)) break;
                 
-                // Can't move through or into void spaces
+                // Can't move through or into void spaces (Exception: Kings with Conqueror's Tale can move through)
                 if (this.voidSpaces.some(v => v.row === newRow && v.col === newCol)) {
-                    break;
+                    if (hasConquerorTale) {
+                        // King with Conqueror's Tale can move through void spaces
+                        // Continue checking this direction
+                    } else {
+                        // Other pieces cannot move through void spaces
+                        break;
+                    }
                 }
                 
                 if (!this.board[newRow][newCol]) {
@@ -1399,7 +1415,7 @@ class ChessGame {
             5: { name: "Demotion", type: "special", rating: 1, description: "The activating piece transforms into a Pawn immediately (retain color, same position). If it was already a Pawn, it is removed instead." },
             6: { name: "Foot Soldier's Gambit", type: "special", rating: 4, description: "The activating piece must immediately move again." },
             7: { name: "Famine", type: "field", rating: 2, description: "Pawns cannot move." },
-            8: { name: "Warp Collapse", type: "field", rating: 4, description: "The unstable rift implodes, devouring everything caught in its gravity well. Upon activation, the rift consumes itself and all adjacent squares; any pieces within this area are instantly removed from play. The affected tiles become void spaces, blacked out and impassable for the duration of the field effect. No piece may enter, cross, or be placed on these void tiles until the rift's influence ends." },
+            8: { name: "Warp Collapse", type: "field", rating: 4, description: "The unstable rift implodes, devouring everything caught in its gravity well. Upon activation, the rift consumes itself and all adjacent squares; any pieces within this area are instantly removed from play. The affected tiles become void spaces, blacked out and impassable for the duration of the field effect. No piece may enter, cross, or be placed on these void tiles until the rift's influence ends. Exception: Kings caught in the void may still freely move through it, only if they possess Conqueror's Tale." },
             9: { name: "Sandstorm", type: "field", rating: 2, description: "Pawns cannot move. Knights move only 1 square. Castles, Bishops, Queens max range: 3 squares. Exception: Kings caught in the sandstorm may still move only if they possess Conqueror's Tale." },
             10: { name: "Dragon's Breath", type: "special", rating: 4, description: "When activated, all squares within 3 spaces of the rift are highlighted red. Choose one of the eight directions (shown in the D20 window). The three squares extending from the rift in that direction are then struck by Dragon's Breath. Any pieces—enemy or your own—caught in this path are captured and removed from play." },
             11: { name: "Glacial Cross", type: "field", rating: 2, description: "Roll 2D8 to randomly select a row and column. All pieces in that row and column become frozen until the effect ends." },
@@ -3481,7 +3497,7 @@ class ChessGame {
     showFieldEffectDetails(effectName) {
         const effectDescriptions = {
             'famine': 'Pawns cannot move while this effect is active.',
-            'warp_collapse': 'The unstable rift implodes, devouring everything caught in its gravity well. Affected tiles become void spaces, blacked out and impassable until the effect ends.',
+            'warp_collapse': 'The unstable rift implodes, devouring everything caught in its gravity well. Affected tiles become void spaces, blacked out and impassable until the effect ends. Exception: Kings with Conqueror\'s Tale can freely move through void spaces.',
             'sandstorm': 'Pawns cannot move. Knights move only 1 square. Castles, Bishops, Queens max range: 3 squares. Exception: Kings caught in the sandstorm may still move only if they possess Conqueror\'s Tale.',
             'glacial_cross': 'All pieces in the selected row and column are frozen and cannot move. Exception: Kings with Conqueror\'s Tale can still move.',
             'time_distortion': 'All pieces within a radius are frozen. Radius is based on a D20 roll: 1–8 = 1 square, 9–14 = 2 squares, 15–18 = 3 squares, 19–20 = 4 squares. Exception: Kings caught in the stasis may still move only if they possess Conqueror\'s Tale.',
