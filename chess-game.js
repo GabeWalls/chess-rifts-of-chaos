@@ -2858,6 +2858,9 @@ class ChessGame {
     }
 
     applyWarpCollapse(riftRow, riftCol) {
+        // First, clear any existing field effects (including void spaces from previous Warp Collapse)
+        this.clearFieldEffects();
+        
         // The rift implodes, devouring itself and all adjacent squares
         const affectedSquares = [
             { row: riftRow, col: riftCol }, // The rift itself
@@ -2898,8 +2901,9 @@ class ChessGame {
             }
         });
         
-        // Activate as field effect
+        // Activate as field effect AFTER removing pieces and creating void spaces
         this.activeFieldEffects.push('warp_collapse');
+        this.updateFieldEffects();
         
         this.addToGameLog(`Warp Collapse: ${piecesRemoved} pieces consumed! ${affectedSquares.length} squares become void spaces.`, 'effect');
         
