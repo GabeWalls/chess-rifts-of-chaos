@@ -2027,21 +2027,59 @@ class ChessGame {
     }
 
     removeRealitySplitPieces(capturedPiece) {
-        // If the captured piece has a paired piece, find and remove it
-        if (capturedPiece.pairedPiece) {
-            const pairedPiece = capturedPiece.pairedPiece;
+        // Collect all Reality Split pieces connected to this piece
+        // When Reality Split is applied multiple times, pieces form a chain
+        // We need to find all pieces in this chain and remove them
+        const allRealitySplitPieces = new Set([capturedPiece]);
+        const processedPieces = new Set();
+        
+        // Function to recursively collect all connected Reality Split pieces
+        const collectAllSplitPieces = (piece) => {
+            if (!piece || processedPieces.has(piece)) return;
+            processedPieces.add(piece);
             
-            // Find the paired piece on the board
-            for (let row = 0; row < 8; row++) {
-                for (let col = 0; col < 8; col++) {
-                    if (this.board[row][col] === pairedPiece) {
-                        this.capturedPieces[pairedPiece.color].push(pairedPiece);
+            // Add this piece to our set
+            allRealitySplitPieces.add(piece);
+            
+            // If this piece has a paired piece, collect it too
+            if (piece.pairedPiece && piece.pairedPiece !== piece) {
+                collectAllSplitPieces(piece.pairedPiece);
+            }
+        };
+        
+        // Start collecting from the captured piece's pair
+        if (capturedPiece.pairedPiece) {
+            collectAllSplitPieces(capturedPiece.pairedPiece);
+        }
+        
+        // Also check if any piece on the board pairs to our captured piece
+        for (let row = 0; row < 8; row++) {
+            for (let col = 0; col < 8; col++) {
+                const piece = this.board[row][col];
+                if (piece && piece.pairedPiece === capturedPiece && !allRealitySplitPieces.has(piece)) {
+                    collectAllSplitPieces(piece);
+                }
+            }
+        }
+        
+        // Remove all collected pieces from the board
+        for (let row = 0; row < 8; row++) {
+            for (let col = 0; col < 8; col++) {
+                const piece = this.board[row][col];
+                if (piece && allRealitySplitPieces.has(piece)) {
+                    // Skip the captured piece itself, it's already handled
+                    if (piece !== capturedPiece) {
+                        this.capturedPieces[piece.color].push(piece);
                         this.board[row][col] = null;
-                        this.addToGameLog(`Reality Split: ${pairedPiece.color} ${pairedPiece.type} vanished with its duplicate!`, 'effect');
-                        return;
                     }
                 }
             }
+        }
+        
+        // Log appropriate message based on how many pieces vanished
+        const vanishedCount = allRealitySplitPieces.size - 1; // -1 for the captured piece itself
+        if (vanishedCount > 0) {
+            this.addToGameLog(`Reality Split: ${vanishedCount} duplicate${vanishedCount > 1 ? 's' : ''} vanished with the captured piece!`, 'effect');
         }
     }
 
