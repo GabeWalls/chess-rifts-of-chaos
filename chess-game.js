@@ -1598,8 +1598,8 @@ class ChessGame {
                     this.applyMedusaGaze(riftRow, riftCol);
                     break;
                 case 16: // Time Distortion/Stasis
-                    this.applyTimeDistortionFieldEffect(riftRow, riftCol);
-                    break;
+                    this.showTimeDistortionDice(riftRow, riftCol);
+                    return; // Don't close modal yet
                 case 17: // Reality Split
                     this.applyRealitySplit(riftRow, riftCol, activatingPiece);
                     break;
@@ -2989,16 +2989,67 @@ class ChessGame {
         }
     }
 
-    applyTimeDistortionFieldEffect(riftRow, riftCol) {
+    showTimeDistortionDice(riftRow, riftCol) {
+        // Store rift position for later use
+        this.timeDistortionContext = { riftRow, riftCol };
+        
+        const optionsDiv = document.getElementById('d20-options-area');
+        optionsDiv.style.display = 'block';
+        optionsDiv.innerHTML = `
+            <p style="font-weight: bold; margin-bottom: 10px;">Time Distortion! Roll D20 to determine radius</p>
+            <div style="text-align: center; margin: 20px 0;">
+                <div style="font-size: 3rem; font-weight: bold; color: #667eea;">?</div>
+                <div>Radius: 1–8 = 1 square<br>9–14 = 2 squares<br>15–18 = 3 squares<br>19–20 = 4 squares</div>
+            </div>
+            <button class="action-btn" onclick="game.rollTimeDistortionDice()">
+                Roll D20
+            </button>
+        `;
+        
+        this.addToGameLog(`Time Distortion activated! Roll D20 to determine the stasis radius.`, 'effect');
+    }
+    
+    rollTimeDistortionDice() {
+        const { riftRow, riftCol } = this.timeDistortionContext;
+        
+        // Roll D20 for radius
+        const radiusRoll = Math.floor(Math.random() * 20) + 1;
+        let radius = 1;
+        let radiusText = '1 square';
+        if (radiusRoll >= 9 && radiusRoll <= 14) {
+            radius = 2;
+            radiusText = '2 squares';
+        } else if (radiusRoll >= 15 && radiusRoll <= 18) {
+            radius = 3;
+            radiusText = '3 squares';
+        } else if (radiusRoll >= 19) {
+            radius = 4;
+            radiusText = '4 squares';
+        }
+        
+        // Show the roll result
+        const optionsDiv = document.getElementById('d20-options-area');
+        optionsDiv.innerHTML = `
+            <p style="font-weight: bold; margin-bottom: 10px;">Rolled: ${radiusRoll}</p>
+            <div style="text-align: center; margin: 20px 0;">
+                <div style="font-size: 3rem; font-weight: bold; color: #667eea;">${radius}</div>
+                <div>Radius: ${radiusText}</div>
+            </div>
+        `;
+        
+        this.addToGameLog(`Time Distortion: Rolled ${radiusRoll} - Radius: ${radiusText}`, 'effect');
+        
+        // Apply the effect after showing the result
+        setTimeout(() => {
+            this.applyTimeDistortionFieldEffect(riftRow, riftCol, radius);
+        }, 1500);
+    }
+    
+    applyTimeDistortionFieldEffect(riftRow, riftCol, radius) {
         // Apply field effect first (this clears any existing field effects)
         this.applyFieldEffect('time_distortion');
         
-        // Roll for radius
-        const radiusRoll = Math.floor(Math.random() * 20) + 1;
-        let radius = 1;
-        if (radiusRoll >= 9 && radiusRoll <= 14) radius = 2;
-        else if (radiusRoll >= 15 && radiusRoll <= 18) radius = 3;
-        else if (radiusRoll >= 19) radius = 4;
+        // Use the provided radius (from D20 roll)
         
         // Freeze all pieces within radius
         for (let rowOffset = -radius; rowOffset <= radius; rowOffset++) {
@@ -3023,8 +3074,18 @@ class ChessGame {
             }
         }
         
-        // Set as active field effect        
+        // Clear time distortion context
+        this.timeDistortionContext = null;
+        
+        // Clear D20 options area
+        const optionsDiv = document.getElementById('d20-options-area');
+        if (optionsDiv) {
+            optionsDiv.innerHTML = '';
+            optionsDiv.style.display = 'none';
+        }
+        
         this.addToGameLog(`Time Distortion: ${radius} radius - pieces frozen!`, 'effect');
+        this.switchPlayer();
     }
 
 
