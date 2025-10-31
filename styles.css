@@ -3260,16 +3260,7 @@ body.dark-mode .contact-modal .modal-header .close-btn:hover {
     text-align: center;
 }
 
-.contact-icon {
-    width: 80px;
-    height: 80px;
-    margin: 0 auto 20px;
-    display: block;
-}
-
-body.dark-mode .contact-icon {
-    filter: brightness(0) invert(1);
-}
+/* Removed conflicting .contact-icon style - now only .setting-item .contact-icon is used */
 
 .contact-section h3 {
     color: #667eea;
