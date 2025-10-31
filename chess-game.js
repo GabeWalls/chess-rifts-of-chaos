@@ -1541,11 +1541,53 @@ class ChessGame {
             switch (roll) {
                 case 1: // Necromancer's Trap
                     const opponentColor = activatingPiece.color === 'white' ? 'black' : 'white';
-                    if (this.capturedPieces[opponentColor].length > 0) {
-                        this.showNecromancerTrapChoice(riftRow, riftCol, activatingPiece);
-                        return; // Don't close modal yet
+                    const playerColor = activatingPiece.color;
+                    
+                    // Remove activating piece first
+                    const captured = this.capturePiece(activatingPiece, riftRow, riftCol);
+                    if (captured.kingCaptured) {
+                        setTimeout(() => {
+                            this.checkGameEnd();
+                        }, 500);
+                        return;
+                    }
+                    this.board[riftRow][riftCol] = null;
+                    this.removePieceWithAnimation(riftRow, riftCol);
+                    
+                    // Check if opponent has captured pieces of YOUR color
+                    const opponentCapturedPieces = this.capturedPieces[opponentColor];
+                    const yourCapturedPieces = opponentCapturedPieces.filter(p => p.color === playerColor);
+                    
+                    if (yourCapturedPieces.length > 0) {
+                        // Find highest ranking piece
+                        const pieceRanking = { 'queen': 9, 'rook': 5, 'bishop': 3, 'knight': 3, 'pawn': 1, 'king': 10 };
+                        let highestRankingPiece = yourCapturedPieces[0];
+                        let highestRank = pieceRanking[yourCapturedPieces[0].type] || 0;
+                        
+                        for (let i = 1; i < yourCapturedPieces.length; i++) {
+                            const currentRank = pieceRanking[yourCapturedPieces[i].type] || 0;
+                            if (currentRank > highestRank) {
+                                highestRank = currentRank;
+                                highestRankingPiece = yourCapturedPieces[i];
+                            }
+                        }
+                        
+                        // Remove from captured pieces
+                        const pieceIndex = opponentCapturedPieces.indexOf(highestRankingPiece);
+                        opponentCapturedPieces.splice(pieceIndex, 1);
+                        this.updateCapturedPieces();
+                        
+                        // Resurrect on rift
+                        setTimeout(() => {
+                            this.board[riftRow][riftCol] = highestRankingPiece;
+                            this.renderBoard();
+                            this.addToGameLog(`Necromancer's Trap: Highest ranking ${highestRankingPiece.color} ${highestRankingPiece.type} resurrected!`, 'effect');
+                            this.switchPlayer();
+                        }, 1500);
                     } else {
-                        this.addToGameLog(`Necromancer's Trap: Opponent has no captured pieces to resurrect!`, 'effect');
+                        // No captured pieces - just remove activating piece
+                        this.addToGameLog(`Necromancer's Trap: No captured pieces to resurrect. Activating piece removed.`, 'effect');
+                        this.renderBoard();
                         this.switchPlayer();
                     }
                     break;
@@ -2728,6 +2770,9 @@ class ChessGame {
     applyFootSoldierGambit(activatingPiece, riftRow, riftCol) {
         // Enable foot soldier mode for second move
         this.footSoldierMode = { active: true, pieceRow: riftRow, pieceCol: riftCol };
+        
+        // Clear processing flag to allow the extra move
+        this.processingRiftEffect = false;
         
         // Show instruction in D20 panel
         const optionsDiv = document.getElementById('d20-options-area');
