@@ -1068,6 +1068,60 @@ class ChessGame {
         return sanitized;
     }
 
+    deepCopyBoardWithRealitySplit(board) {
+        // Create a deep copy of the board, handling Reality Split circular references
+        const copiedPieces = new WeakMap(); // Track which pieces we've already copied
+        
+        const copyPiece = (piece) => {
+            if (!piece) return null;
+            if (copiedPieces.has(piece)) {
+                // Already copied this piece, return the reference
+                return copiedPieces.get(piece);
+            }
+            
+            const copied = { ...piece };
+            copiedPieces.set(piece, copied);
+            
+            // Recursively copy any nested pairedPiece reference
+            if (piece.pairedPiece) {
+                copied.pairedPiece = copyPiece(piece.pairedPiece);
+            }
+            
+            return copied;
+        };
+        
+        return board.map(row => 
+            row.map(piece => copyPiece(piece))
+        );
+    }
+
+    deepCopyCapturedPiecesWithRealitySplit(capturedPieces) {
+        // Create a deep copy of captured pieces, handling Reality Split circular references
+        const copiedPieces = new WeakMap();
+        
+        const copyPiece = (piece) => {
+            if (!piece) return null;
+            if (copiedPieces.has(piece)) {
+                return copiedPieces.get(piece);
+            }
+            
+            const copied = { ...piece };
+            copiedPieces.set(piece, copied);
+            
+            if (piece.pairedPiece) {
+                copied.pairedPiece = copyPiece(piece.pairedPiece);
+            }
+            
+            return copied;
+        };
+        
+        const sanitized = {};
+        for (const color in capturedPieces) {
+            sanitized[color] = capturedPieces[color].map(piece => copyPiece(piece));
+        }
+        return sanitized;
+    }
+
     highlightMoves(row, col) {
         const moves = this.getPieceMoves(row, col);
         const squareElement = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
@@ -1600,8 +1654,9 @@ class ChessGame {
         }
         
         // Store current game state for potential reversals
-        const previousBoard = JSON.parse(JSON.stringify(this.board));
-        const previousCaptured = JSON.parse(JSON.stringify(this.capturedPieces));
+        // Use custom deep copy that handles Reality Split circular references
+        const previousBoard = this.deepCopyBoardWithRealitySplit(this.board);
+        const previousCaptured = this.deepCopyCapturedPiecesWithRealitySplit(this.capturedPieces);
         
         try {
             switch (roll) {
