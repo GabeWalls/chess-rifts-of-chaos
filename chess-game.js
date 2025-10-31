@@ -1733,7 +1733,9 @@ class ChessGame {
         
         if (!effectsWithOwnTurnSwitching.includes(roll) && !effectsThatDontSwitchTurns.includes(roll)) {
             // End turn for rift effects that don't handle their own turn switching
+            // Make sure processing flag is cleared before switching
             setTimeout(() => {
+                this.processingRiftEffect = false; // Ensure flag is cleared
                 this.clearD20Highlighting();
                 this.switchPlayer();
             }, 1000); // Small delay to let player see the effect
@@ -1910,7 +1912,8 @@ class ChessGame {
         this.renderBoard();
         this.updateCapturedPieces();
         
-        // Switch player after Reality Split
+        // Clear processing flag and switch player after Reality Split
+        this.processingRiftEffect = false;
         this.switchPlayer();
     }
 
@@ -2680,9 +2683,15 @@ class ChessGame {
             if (result.kingCaptured) {
                 kingCaptured = result.color;
             }
+            // Clear the board square
+            this.board[row][col] = null;
             this.removePieceWithAnimation(row, col, delay);
             delay += 200;
         });
+        
+        // Update captured pieces display
+        this.updateCapturedPieces();
+        this.renderBoard();
         
         this.addToGameLog(`Sandworm devours all nearby pieces!`, 'effect');
         
@@ -2702,9 +2711,14 @@ class ChessGame {
                     });
                 }
                 
+                this.processingRiftEffect = false;
                 this.endGame(winner);
             }, 1500);
+            return; // Don't continue if king was captured
         }
+        
+        // Clear processing flag - switchPlayer will be called by setTimeout in applyRiftEffect
+        this.processingRiftEffect = false;
     }
 
     applyHonorableSacrifice(riftRow, riftCol, activatingPiece) {
