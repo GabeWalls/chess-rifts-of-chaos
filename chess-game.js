@@ -196,6 +196,13 @@ class ChessGame {
                 boardElement.appendChild(square);
             }
         }
+        
+        // Re-add Dragon's Breath arrows if mode is active
+        if (this.dragonBreathMode && this.dragonBreathMode.active) {
+            setTimeout(() => {
+                this.highlightDragonBreathArea(this.dragonBreathMode.riftRow, this.dragonBreathMode.riftCol);
+            }, 50);
+        }
     }
 
     getPieceSymbol(piece) {
@@ -1323,7 +1330,28 @@ class ChessGame {
                 
                 const effect = this.getRiftEffect(roll);
                 document.getElementById('rift-effect-name').textContent = effect.name;
-                document.getElementById('rift-effect-description').textContent = effect.description;
+                
+                // Extract exception from description
+                const exceptionMatch = effect.description.match(/Exception:(.+)/i);
+                let mainDescription = effect.description;
+                let exceptionText = '';
+                
+                if (exceptionMatch) {
+                    mainDescription = effect.description.substring(0, exceptionMatch.index).trim();
+                    exceptionText = exceptionMatch[1].trim();
+                }
+                
+                document.getElementById('rift-effect-description').textContent = mainDescription;
+                
+                // Display exception in red if it exists
+                const exceptionEl = document.getElementById('rift-effect-exceptions');
+                if (exceptionText) {
+                    exceptionEl.textContent = `Exception: ${exceptionText}`;
+                    exceptionEl.style.display = 'block';
+                } else {
+                    exceptionEl.style.display = 'none';
+                }
+                
                 document.getElementById('rift-effect-info').style.display = 'block';
                 
                 this.addToGameLog(`D20 rolled: ${roll} - ${effect.name}`, 'effect');
@@ -1407,7 +1435,16 @@ class ChessGame {
                 
                 const effect = this.getRiftEffect(roll);
                 document.getElementById('rift-effect-title').textContent = effect.name;
-                document.getElementById('rift-effect-description').textContent = effect.description;
+                
+                // Extract exception from description
+                const exceptionMatch = effect.description.match(/Exception:(.+)/i);
+                let mainDescription = effect.description;
+                
+                if (exceptionMatch) {
+                    mainDescription = effect.description.substring(0, exceptionMatch.index).trim();
+                }
+                
+                document.getElementById('rift-effect-description').textContent = mainDescription;
                 
                 this.addToGameLog(`D20 rolled: ${roll} - ${effect.name}`, 'effect');
                 this.applyRiftEffect(effect, roll);
@@ -2078,8 +2115,13 @@ class ChessGame {
         // Set dragon breath mode to prevent soft locks
         this.dragonBreathMode = { active: true, riftRow, riftCol };
         
-        // Highlight all squares within 3 spaces in red and add clickable arrows
-        this.highlightDragonBreathArea(riftRow, riftCol);
+        // Ensure board is rendered first
+        this.renderBoard();
+        
+        // Small delay to ensure DOM is ready, then highlight and add arrows
+        setTimeout(() => {
+            this.highlightDragonBreathArea(riftRow, riftCol);
+        }, 50);
         
         // Show simple instruction in D20 panel
         const optionsDiv = document.getElementById('d20-options-area');
@@ -2090,6 +2132,10 @@ class ChessGame {
     }
 
     highlightDragonBreathArea(riftRow, riftCol) {
+        // Clear any existing arrows first
+        document.querySelectorAll('.dragon-arrow').forEach(arrow => arrow.remove());
+        document.querySelectorAll('.dragon-target').forEach(square => square.classList.remove('dragon-target'));
+        
         // Highlight all squares within 3 spaces of the rift in red
         const directions = [
             { dr: -1, dc: -1, name: 'Northwest', arrow: '↖' },
@@ -2125,36 +2171,49 @@ class ChessGame {
             if (targetRow >= 0 && targetRow < 8 && targetCol >= 0 && targetCol < 8) {
                 const square = document.querySelector(`[data-row="${targetRow}"][data-col="${targetCol}"]`);
                 if (square) {
+                    // Check if arrow already exists
+                    const existingArrow = square.querySelector('.dragon-arrow');
+                    if (existingArrow) {
+                        existingArrow.remove();
+                    }
+                    
                     const arrowDiv = document.createElement('div');
                     arrowDiv.className = 'dragon-arrow';
                     arrowDiv.textContent = arrow;
                     arrowDiv.dataset.direction = name;
                     arrowDiv.dataset.dr = dr;
                     arrowDiv.dataset.dc = dc;
-                    arrowDiv.style.cssText = 'position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 2.5rem; color: #ff4500; font-weight: bold; cursor: pointer; z-index: 10; text-shadow: 0 0 15px rgba(255, 69, 0, 1); transition: all 0.3s ease;';
+                    arrowDiv.style.cssText = 'position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 3rem; color: #ff4500; font-weight: bold; cursor: pointer; z-index: 1000; text-shadow: 0 0 20px rgba(255, 69, 0, 1), 0 0 40px rgba(255, 69, 0, 0.8); transition: all 0.3s ease; pointer-events: auto;';
                     
                     // Add hover effect
                     arrowDiv.addEventListener('mouseenter', () => {
-                        arrowDiv.style.transform = 'translate(-50%, -50%) scale(1.3)';
-                        arrowDiv.style.textShadow = '0 0 25px rgba(255, 69, 0, 1)';
+                        arrowDiv.style.transform = 'translate(-50%, -50%) scale(1.5)';
+                        arrowDiv.style.textShadow = '0 0 30px rgba(255, 69, 0, 1), 0 0 60px rgba(255, 69, 0, 1)';
                         arrowDiv.style.color = '#ff6600';
                     });
                     
                     arrowDiv.addEventListener('mouseleave', () => {
                         arrowDiv.style.transform = 'translate(-50%, -50%) scale(1)';
-                        arrowDiv.style.textShadow = '0 0 15px rgba(255, 69, 0, 1)';
+                        arrowDiv.style.textShadow = '0 0 20px rgba(255, 69, 0, 1), 0 0 40px rgba(255, 69, 0, 0.8)';
                         arrowDiv.style.color = '#ff4500';
                     });
                     
                     arrowDiv.onclick = (e) => {
                         e.stopPropagation();
+                        e.preventDefault();
                         console.log(`Dragon's Breath: Arrow clicked for direction ${name} (${dr}, ${dc})`);
                         this.executeDragonBreathFromPanel(riftRow, riftCol, dr, dc);
                     };
+                    
                     square.appendChild(arrowDiv);
+                    console.log(`Dragon's Breath: Added arrow ${arrow} to square (${targetRow}, ${targetCol})`);
+                } else {
+                    console.error(`Dragon's Breath: Could not find square at (${targetRow}, ${targetCol})`);
                 }
             }
         });
+        
+        console.log(`Dragon's Breath: Highlighting complete. ${directions.length} arrows should be visible.`);
     }
 
     cancelDragonBreath() {

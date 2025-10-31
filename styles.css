@@ -2560,6 +2560,23 @@ body.dark-mode .rift-effect-info p {
     color: #ccc;
 }
 
+.rift-effect-exceptions {
+    color: #dc2626 !important;
+    font-weight: bold;
+    font-size: 0.85rem;
+    margin-top: 8px;
+    padding: 8px;
+    background: rgba(220, 38, 38, 0.1);
+    border-left: 3px solid #dc2626;
+    border-radius: 4px;
+}
+
+body.dark-mode .rift-effect-exceptions {
+    color: #ef4444 !important;
+    background: rgba(220, 38, 38, 0.2);
+    border-left-color: #ef4444;
+}
+
 /* D20 Options Area */
 .d20-options-area {
     background: #f8f9fa;
