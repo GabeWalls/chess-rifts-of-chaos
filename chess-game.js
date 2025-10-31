@@ -214,6 +214,60 @@ class ChessGame {
     }
 
     handleSquareClick(row, col) {
+        // Handle Foot Soldier's Gambit first (before other checks)
+        if (this.footSoldierMode && this.footSoldierMode.active) {
+            const { pieceRow, pieceCol } = this.footSoldierMode;
+            const piece = this.board[pieceRow][pieceCol];
+            
+            // If clicking on the foot soldier piece, select it and show moves
+            if (row === pieceRow && col === pieceCol) {
+                this.selectedSquare = [row, col];
+                this.clearHighlights();
+                this.highlightCoordinates(row, col);
+                this.highlightMoves(row, col);
+                this.addToGameLog(`Foot Soldier's Gambit: Select where to move ${piece.type}.`, 'effect');
+                return;
+            }
+            
+            // If a square is already selected and clicking on a valid move
+            if (this.selectedSquare && this.selectedSquare[0] === pieceRow && this.selectedSquare[1] === pieceCol) {
+                if (this.isValidMove(pieceRow, pieceCol, row, col)) {
+                    // Execute the move
+                    this.makeMove(pieceRow, pieceCol, row, col);
+                    
+                    // Clear foot soldier mode and selection
+                    this.footSoldierMode = null;
+                    this.selectedSquare = null;
+                    this.clearHighlights();
+                    this.clearCoordinateHighlights();
+                    
+                    // Clear the D20 options area
+                    const optionsDiv = document.getElementById('d20-options-area');
+                    if (optionsDiv) {
+                        optionsDiv.innerHTML = '';
+                        optionsDiv.style.display = 'none';
+                    }
+                    
+                    // Clear rift activation flag to allow activating a new rift if landed on one
+                    this.riftActivatedThisTurn = false;
+                    
+                    this.addToGameLog(`Foot Soldier's Gambit: ${piece.type} completed second move!`, 'effect');
+                    
+                    // Switch to opponent's turn after the second move
+                    this.switchPlayer();
+                    return;
+                } else {
+                    this.addToGameLog(`Invalid move for Foot Soldier's Gambit!`, 'effect');
+                    return;
+                }
+            }
+            
+            // If clicking elsewhere, clear selection
+            this.selectedSquare = null;
+            this.clearHighlights();
+            return;
+        }
+        
         // Handle portal rift selection
         if (this.portalMode && this.portalMode.active) {
             this.handlePortalRiftClick(row, col);
@@ -3103,7 +3157,18 @@ class ChessGame {
     applyFairyFountain(riftRow, riftCol, activatingPiece) {
         // Give pawn enhanced movement abilities
         activatingPiece.fairyFountain = true;
-        this.addToGameLog(`Fairy Fountain: ${activatingPiece.color} pawn gains enhanced movement!`, 'effect');
+        
+        // If this piece has a Reality Split duplicate, give it Fairy Fountain too
+        if (activatingPiece.pairedPiece) {
+            activatingPiece.pairedPiece.fairyFountain = true;
+            this.addToGameLog(`Fairy Fountain: ${activatingPiece.color} pawn and its duplicate gain enhanced movement!`, 'effect');
+        } else {
+            this.addToGameLog(`Fairy Fountain: ${activatingPiece.color} pawn gains enhanced movement!`, 'effect');
+        }
+        
+        // Clear processing flag and render board
+        this.processingRiftEffect = false;
+        this.renderBoard();
     }
 
     showRiftsBlessingChoice(playerColor) {
