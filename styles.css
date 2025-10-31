@@ -494,6 +494,11 @@ body.dark-mode .chess-square.void-space {
     color: #000;
 }
 
+/* Dark mode: Make captured pieces heading white */
+body.dark-mode .captured-pieces h4 {
+    color: #fff !important;
+}
+
 .captured-white, .captured-black {
     margin: 10px 0;
     padding: 10px;

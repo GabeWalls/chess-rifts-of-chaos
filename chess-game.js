@@ -435,26 +435,35 @@ class ChessGame {
         }, 1000);
     }
 
-    applyRiftsBlessingImmunity(playerColor) {
-        // Give immunity for one turn - none of the player's pieces can be captured
+    applyRiftsBlessingImmunity(playerColor, pieceRow = null, pieceCol = null) {
+        // Give immunity for one turn on the activating piece only
         this.riftsBlessingImmunity = { 
             active: true, 
             playerColor: playerColor,
             turnApplied: this.turnCount 
         };
         
-        // Add gold aura to all player's pieces
-        for (let row = 0; row < 8; row++) {
-            for (let col = 0; col < 8; col++) {
-                const piece = this.board[row][col];
-                if (piece && piece.color === playerColor) {
-                    piece.riftsBlessingImmunity = true;
+        if (pieceRow !== null && pieceCol !== null) {
+            // Apply immunity to specific piece (the activating piece)
+            const piece = this.board[pieceRow][pieceCol];
+            if (piece && piece.color === playerColor) {
+                piece.riftsBlessingImmunity = true;
+                this.addToGameLog(`Rift's Blessing: ${piece.color} ${piece.type} gains immunity for one turn!`, 'effect');
+            }
+        } else {
+            // Fallback: apply to all pieces (shouldn't happen, but keep for compatibility)
+            for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                    const piece = this.board[row][col];
+                    if (piece && piece.color === playerColor) {
+                        piece.riftsBlessingImmunity = true;
+                    }
                 }
             }
+            this.addToGameLog(`Rift's Blessing: ${playerColor} gains immunity for one turn!`, 'effect');
         }
         
         this.renderBoard();
-        this.addToGameLog(`Rift's Blessing: ${playerColor} gains immunity for one turn!`, 'effect');
     }
 
     removeRiftsBlessingImmunity() {
@@ -1577,8 +1586,8 @@ class ChessGame {
                         this.showRiftsBlessingChoice(activatingPiece.color);
                         return; // Don't close modal yet
                     } else {
-                        // No captured pieces - give immunity for one turn
-                        this.applyRiftsBlessingImmunity(activatingPiece.color);
+                        // No captured pieces - give immunity for one turn on the activating piece only
+                        this.applyRiftsBlessingImmunity(activatingPiece.color, riftRow, riftCol);
                         this.switchPlayer();
                     }
                     break;
@@ -2977,22 +2986,26 @@ class ChessGame {
         
         if (availablePieces.length === 0) {
             this.addToGameLog(`Rift's Blessing: No captured pieces to revive!`, 'effect');
-            setTimeout(() => this.closeModal(), 1500);
+            // Note: Immunity should be applied in the applyRiftEffect case handler with piece coordinates
+            // This function should not be called if there are no pieces, but handle it gracefully
             return;
         }
         
-        const optionsDiv = document.getElementById('rift-effect-options');
-        let buttonsHtml = '<div class="effect-choices"><p style="color: #333; margin-bottom: 10px;">Select a piece to revive:</p>';
+        // Use D20 options area instead of modal
+        const optionsDiv = document.getElementById('d20-options-area');
+        optionsDiv.style.display = 'block';
+        
+        let buttonsHtml = '<div class="effect-choices"><p style="color: #333; margin-bottom: 10px; text-align: center;">Rift\'s Blessing! Select a piece to revive:</p>';
         
         availablePieces.forEach((piece, index) => {
             buttonsHtml += `
                 <button class="effect-choice" onclick="game.reviveRiftsBlessingPiece('${playerColor}', ${index})">
-                    ${this.getPieceSymbol(piece)} ${piece.type}
+                    ${this.getPieceSymbol(piece)} ${piece.type.charAt(0).toUpperCase() + piece.type.slice(1)}
                 </button>
             `;
         });
         
-        buttonsHtml += '</div>';
+        buttonsHtml += '<button class="cancel-btn" onclick="game.cancelRiftsBlessing()">Cancel</button></div>';
         optionsDiv.innerHTML = buttonsHtml;
         
         this.addToGameLog(`Rift's Blessing activated! Choose a piece to revive.`, 'effect');
@@ -3002,23 +3015,59 @@ class ChessGame {
     reviveRiftsBlessingPiece(playerColor, pieceIndex) {
         const capturedPieces = this.capturedPieces[playerColor];
         const availablePieces = capturedPieces ? capturedPieces.filter(p => p.type !== 'king') : [];
-        const piece = availablePieces.splice(pieceIndex, 1)[0];
         
-        // Remove from captured pieces
+        if (pieceIndex >= availablePieces.length || pieceIndex < 0) {
+            this.addToGameLog(`Invalid piece selection!`, 'error');
+            return;
+        }
+        
+        // Get the selected piece (by index in the filtered array)
+        const piece = availablePieces[pieceIndex];
+        
+        // Remove from captured pieces array
         const originalIndex = capturedPieces.indexOf(piece);
         if (originalIndex !== -1) {
             capturedPieces.splice(originalIndex, 1);
         }
+        this.updateCapturedPieces();
         
-        const optionsDiv = document.getElementById('rift-effect-options');
+        // Update D20 options area
+        const optionsDiv = document.getElementById('d20-options-area');
+        optionsDiv.style.display = 'block';
         optionsDiv.innerHTML = `
             <div class="effect-choices">
-                <p style="color: #333; margin-bottom: 10px;">Click on any empty square on your half of the board to place ${piece.type}</p>
+                <p style="color: #333; margin-bottom: 10px; text-align: center;">Rift's Blessing! Click on any empty square on your half of the board to place ${piece.type.charAt(0).toUpperCase() + piece.type.slice(1)}</p>
+                <button class="cancel-btn" onclick="game.cancelRiftsBlessing()">Cancel</button>
             </div>
         `;
         
         this.riftsBlessingMode = { active: true, playerColor, piece };
         this.highlightPlayerHalf(playerColor);
+    }
+    
+    cancelRiftsBlessing() {
+        // Return piece to captured pieces if it was selected but not placed
+        if (this.riftsBlessingMode && this.riftsBlessingMode.piece) {
+            const piece = this.riftsBlessingMode.piece;
+            const playerColor = this.riftsBlessingMode.playerColor;
+            if (!this.capturedPieces[playerColor].includes(piece)) {
+                this.capturedPieces[playerColor].push(piece);
+                this.updateCapturedPieces();
+            }
+        }
+        
+        this.riftsBlessingMode = null;
+        const optionsDiv = document.getElementById('d20-options-area');
+        if (optionsDiv) {
+            optionsDiv.innerHTML = '';
+            optionsDiv.style.display = 'none';
+        }
+        this.clearD20Highlighting();
+        document.querySelectorAll('.rifts-blessing-target').forEach(square => {
+            square.classList.remove('rifts-blessing-target');
+        });
+        this.addToGameLog(`Rift's Blessing: Cancelled.`, 'effect');
+        this.switchPlayer();
     }
 
     highlightPlayerHalf(playerColor) {
