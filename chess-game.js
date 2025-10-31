@@ -1565,14 +1565,22 @@ class ChessGame {
                     }
                     this.board[riftRow][riftCol] = null;
                     this.removePieceWithAnimation(riftRow, riftCol);
+                    this.renderBoard();
                     
                     // Check if opponent has captured pieces of YOUR color
                     const opponentCapturedPieces = this.capturedPieces[opponentColor];
+                    if (!opponentCapturedPieces || opponentCapturedPieces.length === 0) {
+                        this.addToGameLog(`Necromancer's Trap: Opponent has no captured pieces. Activating piece removed.`, 'effect');
+                        this.processingRiftEffect = false;
+                        this.switchPlayer();
+                        break;
+                    }
+                    
                     const yourCapturedPieces = opponentCapturedPieces.filter(p => p.color === playerColor);
                     
                     if (yourCapturedPieces.length > 0) {
                         // Find highest ranking piece
-                        const pieceRanking = { 'queen': 9, 'rook': 5, 'bishop': 3, 'knight': 3, 'pawn': 1, 'king': 10 };
+                        const pieceRanking = { 'king': 10, 'queen': 9, 'rook': 5, 'bishop': 3, 'knight': 3, 'pawn': 1 };
                         let highestRankingPiece = yourCapturedPieces[0];
                         let highestRank = pieceRanking[yourCapturedPieces[0].type] || 0;
                         
@@ -1584,22 +1592,38 @@ class ChessGame {
                             }
                         }
                         
+                        // Create a copy of the piece to avoid reference issues
+                        const resurrectedPiece = {
+                            type: highestRankingPiece.type,
+                            color: highestRankingPiece.color,
+                            hasMoved: true // Resurrected pieces have moved
+                        };
+                        
                         // Remove from captured pieces
                         const pieceIndex = opponentCapturedPieces.indexOf(highestRankingPiece);
-                        opponentCapturedPieces.splice(pieceIndex, 1);
-                        this.updateCapturedPieces();
+                        if (pieceIndex !== -1) {
+                            opponentCapturedPieces.splice(pieceIndex, 1);
+                            this.updateCapturedPieces();
+                        }
                         
-                        // Resurrect on rift
+                        // Resurrect on rift after animation completes
                         setTimeout(() => {
-                            this.board[riftRow][riftCol] = highestRankingPiece;
-                            this.renderBoard();
-                            this.addToGameLog(`Necromancer's Trap: Highest ranking ${highestRankingPiece.color} ${highestRankingPiece.type} resurrected!`, 'effect');
+                            // Make sure the square is still empty
+                            if (!this.board[riftRow][riftCol]) {
+                                this.board[riftRow][riftCol] = resurrectedPiece;
+                                this.renderBoard();
+                                this.addToGameLog(`Necromancer's Trap: Highest ranking ${resurrectedPiece.color} ${resurrectedPiece.type} resurrected!`, 'effect');
+                            } else {
+                                this.addToGameLog(`Necromancer's Trap: Rift square occupied, could not resurrect piece.`, 'effect');
+                            }
+                            this.processingRiftEffect = false;
                             this.switchPlayer();
                         }, 1500);
                     } else {
-                        // No captured pieces - just remove activating piece
-                        this.addToGameLog(`Necromancer's Trap: No captured pieces to resurrect. Activating piece removed.`, 'effect');
+                        // No captured pieces of your color - just remove activating piece
+                        this.addToGameLog(`Necromancer's Trap: No captured pieces of ${playerColor} color to resurrect. Activating piece removed.`, 'effect');
                         this.renderBoard();
+                        this.processingRiftEffect = false;
                         this.switchPlayer();
                     }
                     break;
