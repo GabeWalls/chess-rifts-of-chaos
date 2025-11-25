@@ -208,8 +208,13 @@ body.dark-mode .beta-banner {
     flex-direction: row;
     gap: 0;
     justify-content: flex-start;
-    width: 100%;
-    margin-left: 40px; /* Match left coords (30px) + gap (10px) to align with board */
+    width: 560px; /* Match board width exactly */
+}
+
+.left-coords-spacer {
+    width: 30px;
+    flex-shrink: 0;
+    height: 0; /* Make it invisible but maintain layout spacing */
 }
 
 .board-coordinates.left-coords {
