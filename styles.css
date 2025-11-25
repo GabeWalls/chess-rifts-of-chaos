@@ -202,6 +202,10 @@ body.dark-mode .beta-banner {
 .board-coordinates {
     display: flex;
     user-select: none;
+    background: transparent !important;
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
 }
 
 .board-coordinates.bottom-coords {
@@ -209,12 +213,24 @@ body.dark-mode .beta-banner {
     gap: 0;
     justify-content: flex-start;
     width: 560px; /* Match board width exactly */
+    margin-left: 40px; /* Align with board: left coords (30px) + gap (10px) */
+    margin-right: 0;
+    padding: 0;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+/* Ensure coordinate labels have no background or border that could appear as squares */
+.coord-label {
+    background: transparent !important;
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
 }
 
 .left-coords-spacer {
-    width: 30px;
-    flex-shrink: 0;
-    height: 0; /* Make it invisible but maintain layout spacing */
+    display: none !important;
 }
 
 .board-coordinates.left-coords {
