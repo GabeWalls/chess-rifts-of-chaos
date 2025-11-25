@@ -207,8 +207,9 @@ body.dark-mode .beta-banner {
 .board-coordinates.bottom-coords {
     flex-direction: row;
     gap: 0;
-    justify-content: center;
+    justify-content: flex-start;
     width: 100%;
+    margin-left: 40px; /* Match left coords (30px) + gap (10px) to align with board */
 }
 
 .board-coordinates.left-coords {
